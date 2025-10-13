@@ -70,7 +70,6 @@ func (e *ADSR) NoteOff() {
 		return
 	}
 	if e.value <= 0 {
-		// Rien à relâcher
 		e.value = 0
 		e.state = envIdle
 		e.rStep = 0

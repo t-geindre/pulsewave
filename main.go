@@ -1,46 +1,60 @@
 package main
 
 import (
-	"math/rand"
 	"synth/audio"
-	"synth/automation"
+	"synth/effect"
 	"synth/envelop"
 	"synth/oscillator"
+	"synth/sequencer"
 	"time"
 )
 
 const SampleRate = 44100
 
 func main() {
-	osc := oscillator.NewMerger()
+	tracks := audio.NewTrackSet()
 
-	oscBase := oscillator.NewSine(SampleRate, 440)
-	osc.Append(oscBase, 1)
+	lead := sequencer.NewSequencer(SampleRate, 140, 8, 4, newLeadVoice)
+	lead.SetPattern(RandomCMajorPattern(64, []int{2, 4}, .75))
+	lead.SetLoopMode(sequencer.LoopSoft)
 
-	oscBass := oscillator.NewTuned(oscillator.NewSine(SampleRate, 220))
-	oscBass.SetOctaveOffset(-1)
-	osc.Append(oscBass, 1)
+	delay := effect.NewFeedbackDelay(SampleRate, lead)
+	delay.SetDelay(lead.GetBeatDuration() / 2)
+	delay.SetMix(0.3)
+	delay.SetFeedback(0.5)
 
-	adsr := envelop.NewADSR(SampleRate, time.Millisecond*20, time.Millisecond*50, time.Millisecond*50, 1)
-	voice := envelop.NewVoice(SampleRate, osc, adsr)
+	lp := effect.NewLowPassFilter(SampleRate, delay)
+	lp.SetCutoffHz(1000)
+	lp.SetQ(5)
 
-	cMajorScale := []float64{261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25}
+	tracks.Append(lp)
 
-	var noteOn, noteOff automation.NextFunc
-	noteOn = func(t time.Duration) (automation.NextFunc, time.Duration) {
-		voice.NoteOn(cMajorScale[rand.Intn(len(cMajorScale))], 1)
-		return noteOff, t + time.Millisecond*50
-	}
-	noteOff = func(t time.Duration) (automation.NextFunc, time.Duration) {
-		voice.NoteOff()
-		return noteOn, t + time.Millisecond*100
-	}
-	automate := automation.NewTimed(SampleRate, noteOn)
+	// LFO
+	lfo := oscillator.NewLfo(oscillator.NewSine(SampleRate, .1), func(v float64) {
+		cutoff := 500 + (v+1)*0.5*5000 // 500Hz - 5500Hz
+		lp.SetCutoffHz(cutoff)
+	})
+	tracks.Append(lfo)
+	// --
 
-	tracks := audio.NewTrackSet(voice, automate)
 	player := audio.NewPlayer(SampleRate, tracks)
 
 	for player.IsPlaying() {
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+func newLeadVoice() sequencer.Voice {
+	merged := oscillator.NewMerger()
+
+	for i := 0; i < 3; i++ {
+		osc := oscillator.NewSaw(SampleRate, 110.0)
+		osc.SetPhaseShift(float64(i) * 0.01)
+		tuned := oscillator.NewTuned(osc)
+		tuned.SetDetuneCents(float64(i) * 8.0)
+		merged.Append(tuned, 1.0)
+	}
+
+	adsr := envelop.NewADSR(SampleRate, time.Millisecond*25, time.Millisecond*100, time.Millisecond*50, .8)
+	return envelop.NewVoice(SampleRate, merged, adsr)
 }

@@ -24,8 +24,10 @@ func NewTimed(sr float64, first NextFunc) *Timed {
 func (t *Timed) NextSample() float64 {
 	if t.time >= t.nextWhen {
 		t.nextFunc, t.nextWhen = t.nextFunc(t.time)
+		t.time = 0
+		return 0
 	}
-	t.time += t.step
 
+	t.time += t.step
 	return 0
 }

@@ -20,6 +20,7 @@ func NewVoice(sr float64, osc oscillator.Oscillator, adsr *ADSR) *Voice {
 
 func (v *Voice) NoteOn(freq, velocity float64) {
 	v.osc.SetFreq(freq)
+	v.osc.ResetPhase()
 	if velocity <= 0 {
 		velocity = 1
 	}
@@ -38,4 +39,8 @@ func (v *Voice) NextSample() float64 {
 	amp := v.env.Next()
 	s := v.osc.NextSample() * amp
 	return s
+}
+
+func (v *Voice) IsActive() bool {
+	return v.env.IsActive()
 }
