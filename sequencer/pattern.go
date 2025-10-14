@@ -12,7 +12,7 @@ type NoteSpec struct {
 
 type Pattern struct {
 	dirty bool
-	notes []NoteSpec
+	Notes []NoteSpec
 	index int
 	next  int
 }
@@ -20,7 +20,7 @@ type Pattern struct {
 func NewPattern() *Pattern {
 	return &Pattern{
 		dirty: true,
-		notes: []NoteSpec{},
+		Notes: []NoteSpec{},
 		index: 0,
 	}
 }
@@ -34,7 +34,7 @@ func (p *Pattern) AddAt(at int, freq float64, length int, velocity, gate float64
 		return
 	}
 
-	p.notes = append(p.notes, NoteSpec{At: at, Freq: freq, Length: length, Velocity: velocity, Gate: gate})
+	p.Notes = append(p.Notes, NoteSpec{At: at, Freq: freq, Length: length, Velocity: velocity, Gate: gate})
 	p.dirty = true
 }
 
@@ -42,29 +42,48 @@ func (p *Pattern) Append(freq float64, length int, velocity, gate float64) {
 	p.AddAt(p.next, freq, length, velocity, gate)
 }
 
+func (p *Pattern) Prepend(freq float64, length int, velocity, gate float64) {
+	p.AddAt(0, freq, length, velocity, gate)
+
+	for i := range p.Notes {
+		p.Notes[i].At += length
+	}
+	p.next += length
+	p.dirty = true
+}
+
 func (p *Pattern) Next(at int) *NoteSpec {
-	if len(p.notes) == 0 || p.index >= len(p.notes) || p.notes[p.index].At > at {
+	if len(p.Notes) == 0 || p.index >= len(p.Notes) || p.Notes[p.index].At > at {
 		return nil
 	}
 	p.sort()
-	note := &p.notes[p.index]
+	note := &p.Notes[p.index]
 	p.index++
 
 	return note
 }
 
 func (p *Pattern) IsActive() bool {
-	return p.index < len(p.notes)
+	return p.index < len(p.Notes)
 }
 
 func (p *Pattern) Reset() {
 	p.index = 0
 }
 
+func (p *Pattern) Clone() *Pattern {
+	clone := NewPattern()
+	clone.Notes = make([]NoteSpec, len(p.Notes))
+	copy(clone.Notes, p.Notes)
+	clone.next = p.next
+	clone.dirty = p.dirty
+	return clone
+}
+
 func (p *Pattern) sort() {
 	if p.dirty {
-		sort.Slice(p.notes, func(i, j int) bool {
-			return p.notes[i].At < p.notes[j].At
+		sort.Slice(p.Notes, func(i, j int) bool {
+			return p.Notes[i].At < p.Notes[j].At
 		})
 		p.dirty = false
 	}

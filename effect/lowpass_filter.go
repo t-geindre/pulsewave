@@ -52,6 +52,7 @@ func (l *LowPassFilter) SetQ(q float64) {
 func (l *LowPassFilter) Reset() {
 	l.x1, l.x2 = 0, 0
 	l.y1, l.y2 = 0, 0
+	l.src.Reset()
 }
 
 func (l *LowPassFilter) NextSample() float64 {
@@ -91,4 +92,8 @@ func (l *LowPassFilter) recalc() {
 	l.b2 = b2 / a0
 	l.a1 = a1 / a0
 	l.a2 = a2 / a0
+}
+
+func (l *LowPassFilter) IsActive() bool {
+	return l.src.IsActive()
 }

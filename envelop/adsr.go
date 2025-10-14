@@ -112,4 +112,6 @@ func (e *ADSR) Next() float64 {
 	return e.value
 }
 
+func (e *ADSR) Value() float64 { return e.value }
+
 func (e *ADSR) IsActive() bool { return e.state != envIdle }

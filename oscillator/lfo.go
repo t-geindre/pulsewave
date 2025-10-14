@@ -17,3 +17,11 @@ func (l *Lfo) NextSample() float64 {
 	l.bind(v)
 	return 0
 }
+
+func (l *Lfo) IsActive() bool {
+	return false
+}
+
+func (l *Lfo) Reset() {
+	l.Oscillator.ResetPhase()
+}

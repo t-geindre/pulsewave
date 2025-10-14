@@ -7,12 +7,6 @@ import (
 
 type LoopMode int
 
-const (
-	LoopOff    LoopMode = iota
-	LoopStrict          // repeat right after last noteOff
-	LoopSoft            // wait for all notes to finish before repeating
-)
-
 type playingVoice struct {
 	voice  Voice
 	length int
@@ -27,7 +21,6 @@ type Sequencer struct {
 
 	// Pattern
 	pattern *Pattern
-	loop    LoopMode
 
 	// Timing
 	stepLength   int
@@ -42,7 +35,6 @@ func NewSequencer(sampleRate float64, tempo float64, maxVoices int, stepsPerBeat
 		maxVoices:    maxVoices,
 		voiceFactory: voiceFactory,
 		freeVoices:   []Voice{},
-		loop:         LoopOff,
 		stepLength: int(math.Round(
 			60.0 * float64(sampleRate) / (tempo * float64(stepsPerBeat)),
 		)),
@@ -57,36 +49,18 @@ func (s *Sequencer) SetPattern(p *Pattern) {
 	s.pattern = p
 }
 
-func (s *Sequencer) SetLoopMode(mode LoopMode) {
-	s.loop = mode
-}
-
 func (s *Sequencer) NextSample() float64 {
 	// No pattern, no sound
 	if s.pattern == nil {
 		return 0
 	}
 
-	// Advance step
-	s.toNextStep -= 1
-	if s.toNextStep <= 0 {
-		// Handle looping
-		if !s.pattern.IsActive() {
-			switch s.loop {
-			case LoopStrict:
-				s.pattern.Reset()
-				s.step = 0
-			case LoopSoft:
-				if len(s.activeVoices) == 0 {
-					s.pattern.Reset()
-					s.step = 0
-				}
-			default:
-			}
-		}
-
+	// Avance step (manage possible multiple step boundaries)
+	s.toNextStep--
+	for s.toNextStep <= 0 {
 		s.toNextStep += s.stepLength
-		// Trigger all notes at this step
+
+		// Trigger all Notes scheduled at this step
 		for {
 			note := s.pattern.Next(s.step)
 			if note == nil {
@@ -97,28 +71,35 @@ func (s *Sequencer) NextSample() float64 {
 		s.step++
 	}
 
-	// Mix active voices
-	v := 0.0
-	for i, voice := range s.activeVoices {
-		v += voice.voice.NextSample()
+	sum := 0.0
 
-		// Remove finished voices
-		if !voice.voice.IsActive() {
-			s.freeVoices = append(s.freeVoices, voice.voice)
+	// Parcours à l'envers pour permettre la suppression en place
+	for i := len(s.activeVoices) - 1; i >= 0; i-- {
+		slot := s.activeVoices[i]
+
+		// -- GATE / NoteOff (choisis le moment)
+		// Si 'length' compte "échantillons restants y compris celui-ci",
+		// tu peux décrémenter APRÈS la génération et noter off quand il devient 0.
+		// Ici je le fais AVANT pour que le NoteOff tombe pile au bon sample suivant ta sémantique.
+		if slot.length > 0 {
+			slot.length--
+			if slot.length == 0 {
+				slot.voice.NoteOff()
+			}
+		}
+
+		// -- Audio
+		sum += slot.voice.NextSample()
+
+		// -- Recycling: si l’enveloppe a fini, on libère la voix
+		if !slot.voice.IsActive() {
+			s.freeVoices = append(s.freeVoices, slot.voice)
+			// remove i (stable mais O(n); acceptable vu peu de voix)
 			s.activeVoices = append(s.activeVoices[:i], s.activeVoices[i+1:]...)
-		}
-		// Off notes
-		if voice.length <= 0 {
-			continue
-		}
-
-		voice.length--
-		if voice.length <= 0 {
-			voice.voice.NoteOff()
 		}
 	}
 
-	return v
+	return sum
 }
 
 func (s *Sequencer) triggerNote(note *NoteSpec) {
@@ -159,4 +140,19 @@ func (s *Sequencer) GetStepDuration() time.Duration {
 
 func (s *Sequencer) GetBeatDuration() time.Duration {
 	return time.Duration(s.stepLength*s.stepsPerBeat*int(time.Second)) / time.Duration(s.sr)
+}
+
+func (s *Sequencer) IsActive() bool {
+	return len(s.activeVoices) > 0 || (s.pattern != nil && s.pattern.IsActive())
+}
+
+func (s *Sequencer) Reset() {
+	s.step = 0
+	s.toNextStep = 0
+	s.pattern.Reset()
+	for _, voice := range s.activeVoices {
+		voice.voice.NoteOff()
+	}
+	s.activeVoices = []*playingVoice{}
+	s.freeVoices = []Voice{}
 }

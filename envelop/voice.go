@@ -6,11 +6,11 @@ import (
 
 type Voice struct {
 	osc  oscillator.Oscillator
-	env  *ADSR
+	env  Envelop
 	gain float64
 }
 
-func NewVoice(sr float64, osc oscillator.Oscillator, adsr *ADSR) *Voice {
+func NewVoice(sr float64, osc oscillator.Oscillator, adsr Envelop) *Voice {
 	return &Voice{
 		osc:  osc,
 		env:  adsr,

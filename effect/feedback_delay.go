@@ -125,3 +125,16 @@ func (f *FeedbackDelay) NextSample() float64 {
 
 	return out
 }
+
+func (f *FeedbackDelay) IsActive() bool {
+	return f.src.IsActive()
+}
+
+func (f *FeedbackDelay) Reset() {
+	f.src.Reset()
+	f.z = 0
+	for i := range f.buf {
+		f.buf[i] = 0
+	}
+	f.writePos = 0
+}

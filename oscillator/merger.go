@@ -34,7 +34,10 @@ func (m *Merger) Append(osc Oscillator, gain float64) {
 }
 
 func (m *Merger) SetFreq(freq float64) {
-	for _, osc := range m.oscs {
+	for i, osc := range m.oscs {
+		if m.gains[i] == 0 {
+			continue
+		}
 		osc.SetFreq(freq)
 	}
 }
