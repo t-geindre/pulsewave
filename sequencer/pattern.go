@@ -11,10 +11,11 @@ type NoteSpec struct {
 }
 
 type Pattern struct {
-	dirty bool
-	Notes []NoteSpec
-	index int
-	next  int
+	dirty  bool
+	Notes  []NoteSpec
+	index  int
+	next   int
+	length int
 }
 
 func NewPattern() *Pattern {
@@ -73,11 +74,29 @@ func (p *Pattern) Reset() {
 
 func (p *Pattern) Clone() *Pattern {
 	clone := NewPattern()
+
 	clone.Notes = make([]NoteSpec, len(p.Notes))
 	copy(clone.Notes, p.Notes)
+
 	clone.next = p.next
 	clone.dirty = p.dirty
+	clone.length = p.length
+	clone.index = p.index
+
 	return clone
+}
+
+func (p *Pattern) Length() int {
+	p.sort()
+	return p.length
+}
+
+func (p *Pattern) Move(offset int) {
+	for i := range p.Notes {
+		p.Notes[i].At += offset
+	}
+	p.next += offset
+	p.dirty = true
 }
 
 func (p *Pattern) sort() {
@@ -86,5 +105,10 @@ func (p *Pattern) sort() {
 			return p.Notes[i].At < p.Notes[j].At
 		})
 		p.dirty = false
+
+		p.length = 0
+		for _, n := range p.Notes {
+			p.length += n.Length
+		}
 	}
 }

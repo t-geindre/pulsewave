@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 	"synth/audio"
+	"synth/oscillator"
 )
 
 type Unison struct {
@@ -11,7 +12,7 @@ type Unison struct {
 	makeVoice audio.SourceFactory
 }
 
-func NewUnison(makeVoice audio.SourceFactory, voices int, detuneCents, panSpread, curveExp float64) *Unison {
+func NewUnison(makeVoice audio.SourceFactory, voices int, detuneCents, panSpread, phaseSpread, curveExp float64) *Unison {
 	u := &Unison{
 		Merger:    NewMerger(),
 		makeVoice: makeVoice,
@@ -39,7 +40,12 @@ func NewUnison(makeVoice audio.SourceFactory, voices int, detuneCents, panSpread
 		jitter := (rand.Float64()*2 - 1) * 0.05
 		curveJ := curve * (1 + jitter)
 
-		voice := NewTuner(makeVoice())
+		innerVoice := makeVoice()
+		if phasable, ok := innerVoice.(oscillator.Oscillator); ok {
+			phasable.SetPhaseShift(curveJ * phaseSpread) // rad
+		}
+
+		voice := NewTuner(innerVoice)
 
 		if voices%2 == 1 && float64(i) == center {
 			voice.SetDetuneCents(0)

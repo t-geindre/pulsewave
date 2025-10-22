@@ -24,7 +24,8 @@ type Sequencer struct {
 	voiceFactory audio.SourceFactory
 
 	// Pattern
-	pattern *Pattern
+	patterns []*Pattern
+	index    int
 
 	// Timing
 	stepLength   int
@@ -46,15 +47,25 @@ func NewSequencer(sampleRate float64, tempo float64, maxVoices int, stepsPerBeat
 		step:         0,
 		sr:           sampleRate,
 		stepsPerBeat: stepsPerBeat,
+		patterns:     make([]*Pattern, 0),
 	}
 }
 
 func (s *Sequencer) Append(p *Pattern) {
-	s.pattern = p
+	p = p.Clone()
+	p.Move(s.index)
+	s.index += p.Length()
+	s.patterns = append(s.patterns, p)
+}
+
+func (s *Sequencer) AppendAndRepeat(p *Pattern, times int) {
+	for i := 0; i < times; i++ {
+		s.Append(p)
+	}
 }
 
 func (s *Sequencer) NextValue() (float64, float64) {
-	if s.pattern == nil {
+	if len(s.patterns) == 0 {
 		return 0, 0
 	}
 
@@ -65,11 +76,17 @@ func (s *Sequencer) NextValue() (float64, float64) {
 
 		// Trigger all Notes scheduled at this step
 		for {
-			note := s.pattern.Next(s.step)
-			if note == nil {
+			triggered := false
+			for _, p := range s.patterns {
+				note := p.Next(s.step)
+				if note != nil {
+					s.triggerNote(note)
+					triggered = true
+				}
+			}
+			if !triggered {
 				break
 			}
-			s.triggerNote(note)
 		}
 		s.step++
 	}
@@ -141,13 +158,29 @@ func (s *Sequencer) GetBeatDuration() time.Duration {
 }
 
 func (s *Sequencer) IsActive() bool {
-	return len(s.activeVoices) > 0 || (s.pattern != nil && s.pattern.IsActive())
+	if len(s.patterns) == 0 {
+		return false
+	}
+
+	if len(s.activeVoices) > 0 {
+		return true
+	}
+
+	for _, p := range s.patterns {
+		if p.IsActive() {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *Sequencer) Reset() {
 	s.step = 0
 	s.toNextStep = 0
-	s.pattern.Reset()
+	for _, p := range s.patterns {
+		p.Reset()
+	}
 	for _, voice := range s.activeVoices {
 		voice.voice.NoteOff()
 	}

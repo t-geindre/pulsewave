@@ -13,7 +13,7 @@ func NewPlayer(sr int, src Source) *Player {
 		panic(err)
 	}
 
-	player.SetVolume(.8)
+	player.SetVolume(1)
 	player.Play()
 
 	return &Player{*player}

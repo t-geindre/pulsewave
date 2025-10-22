@@ -2,51 +2,15 @@ package main
 
 import (
 	"synth/audio"
-	"synth/effect"
-	"synth/envelop"
-	"synth/oscillator"
-	"synth/sequencer"
+	"synth/song"
 	"time"
 )
 
 const SampleRate = 44100
+const BPM = 120
 
 func main() {
-	voiceFactory := func() audio.Source {
-
-		makeVoice := func() audio.Source {
-			osc := oscillator.NewSaw(SampleRate)
-			return osc
-		}
-		uni := effect.NewUnison(makeVoice, 8, 12, 0.9, 0.75)
-
-		bass := effect.NewTuner(oscillator.NewTriangle(SampleRate))
-		bass.SetOctaveOffset(-1)
-
-		merger := effect.NewMerger()
-		merger.Append(uni, 1, 1)
-		merger.Append(bass, .5, .5)
-
-		tuner := effect.NewTuner(merger)
-
-		adsr := envelop.NewADSR(SampleRate, time.Millisecond*5, time.Millisecond*100, time.Millisecond*50, .8)
-		voice := envelop.NewVoice(tuner, adsr)
-
-		return voice
-	}
-
-	seq := sequencer.NewSequencer(SampleRate, 120, 4, 4, voiceFactory)
-	seq.Append(CrazyFrogLeadPattern())
-
-	delay := effect.NewFeedback(SampleRate, seq)
-	delay.SetDelay(seq.GetBeatDuration() / 2)
-	delay.SetMix(.3)
-	delay.SetFeedback(.4)
-
-	tracks := audio.NewTrackSet(delay)
-	tracks.SetLoop(true)
-
-	player := audio.NewPlayer(SampleRate, tracks)
+	player := audio.NewPlayer(SampleRate, song.NewCrazyFrog(SampleRate))
 
 	for player.IsPlaying() {
 		time.Sleep(100 * time.Millisecond)
@@ -54,7 +18,7 @@ func main() {
 }
 
 /*
-const BPM = 120
+
 
 func main() {
 	tracks := audio.NewTrackSet()
@@ -125,24 +89,7 @@ func newKickVoice() sequencer.Voice {
 	return envelop.NewMultiEnvVoice(envelop.NewVoice(SampleRate, kick, adsr), pitchMod)
 }
 
-func newBassVoice() sequencer.Voice {
-	merger := oscillator.NewMerger()
-	for i := 0; i < 8; i++ {
-		osc := oscillator.NewSaw(SampleRate, 110.0)
-		tuned := oscillator.NewTuner(osc)
-		tuned.SetDetuneCents(float64(i) * 2.0)
-		tuned.SetOctaveOffset(-1)
-		merger.Append(tuned, 1.0)
-	}
 
-	sine := oscillator.NewSine(SampleRate, 110.0)
-	ts := oscillator.NewTuner(sine)
-	ts.SetOctaveOffset(-2)
-	merger.Append(ts, 0.4)
-
-	adsr := envelop.NewADSR(SampleRate, time.Millisecond*10, time.Millisecond*10, time.Millisecond*10, .7)
-	return envelop.NewVoice(SampleRate, merger, adsr)
-}
 
 func newHighHatVoice() sequencer.Voice {
 	noise := oscillator.NewNoise()
