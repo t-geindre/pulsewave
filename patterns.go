@@ -139,14 +139,14 @@ func CrazyFrogBassPattern() *sequencer.Pattern {
 	rep(4, sequencer.C4)
 
 	rep(2, sequencer.D4)
-	rep(2, sequencer.A4)
-	rep(2, sequencer.D5)
+	rep(2, sequencer.D4)
+	rep(2, sequencer.D4)
 	rep(1, sequencer.D4)
 	rep(2, sequencer.C4)
 	rep(1, sequencer.C4)
-	rep(2, sequencer.A3)
+	rep(2, sequencer.A4)
 	rep(2, sequencer.E4)
-	rep(8, sequencer.D4)
+	rep(10, sequencer.D4)
 
 	return p
 }

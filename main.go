@@ -10,29 +10,30 @@ import (
 )
 
 const SampleRate = 44100
+const BPM = 120
 
 func main() {
 	tracks := audio.NewTrackSet()
 	tracks.SetLoop(true)
 
-	lead := sequencer.NewSequencer(SampleRate, 120, 4, 4, newLeadVoice)
+	lead := sequencer.NewSequencer(SampleRate, BPM, 4, 4, newLeadVoice)
 	lead.SetPattern(CrazyFrogLeadPattern())
 
 	leadDelay := effect.NewFeedbackDelay(SampleRate, lead)
 	leadDelay.SetDelay(lead.GetBeatDuration() / 2)
-	leadDelay.SetMix(0.3)
-	leadDelay.SetFeedback(0.4)
+	leadDelay.SetMix(.3)
+	leadDelay.SetFeedback(.4)
 	tracks.Append(leadDelay, 1)
 
-	kicks := sequencer.NewSequencer(SampleRate, 120, 2, 4, newKickVoice)
+	kicks := sequencer.NewSequencer(SampleRate, BPM, 2, 4, newKickVoice)
 	kicks.SetPattern(CrazyFrogKickPattern())
-	tracks.Append(kicks, .8)
+	tracks.Append(kicks, 1)
 
-	highHat := sequencer.NewSequencer(SampleRate, 120, 8, 4, newHighHatVoice)
+	highHat := sequencer.NewSequencer(SampleRate, BPM, 1, 4, newHighHatVoice)
 	highHat.SetPattern(CrazyFrogHighHatPattern())
 	tracks.Append(highHat, .2)
 
-	bass := sequencer.NewSequencer(SampleRate, 120, 4, 4, newBassVoice)
+	bass := sequencer.NewSequencer(SampleRate, BPM, 4, 4, newBassVoice)
 	bass.SetPattern(CrazyFrogBassPattern())
 	tracks.Append(bass, .4)
 
@@ -101,6 +102,6 @@ func newBassVoice() sequencer.Voice {
 
 func newHighHatVoice() sequencer.Voice {
 	noise := oscillator.NewNoise()
-	adsr := envelop.NewADSR(SampleRate, time.Millisecond*10, time.Millisecond*50, 0, 0)
+	adsr := envelop.NewADSR(SampleRate, time.Millisecond*5, time.Millisecond*70, 0, 0)
 	return envelop.NewVoice(SampleRate, noise, adsr)
 }
