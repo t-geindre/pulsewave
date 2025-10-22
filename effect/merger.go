@@ -71,3 +71,12 @@ func (m *Merger) NoteOff() {
 		src.NoteOff()
 	}
 }
+
+func (m *Merger) SetGain(index int, left, right float64) {
+	if index < 0 || index >= len(m.gains) {
+		return
+	}
+
+	m.gains[index][0] = left
+	m.gains[index][1] = right
+}

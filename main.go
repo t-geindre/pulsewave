@@ -13,24 +13,37 @@ const SampleRate = 44100
 
 func main() {
 	voiceFactory := func() audio.Source {
-		sine := oscillator.NewSine(SampleRate)
 
-		triangle := oscillator.NewSaw(SampleRate)
+		makeVoice := func() audio.Source {
+			osc := oscillator.NewSaw(SampleRate)
+			return osc
+		}
+		uni := effect.NewUnison(makeVoice, 8, 12, 0.9, 0.75)
 
-		merged := effect.NewMerger()
-		merged.Append(sine, 1, 1)
-		merged.Append(triangle, 0.1, 0.1)
+		bass := effect.NewTuner(oscillator.NewTriangle(SampleRate))
+		bass.SetOctaveOffset(-1)
 
-		adsr := envelop.NewADSR(SampleRate, time.Millisecond*10, time.Millisecond*100, time.Millisecond*50, .8)
-		voice := envelop.NewVoice(merged, adsr)
+		merger := effect.NewMerger()
+		merger.Append(uni, 1, 1)
+		merger.Append(bass, .5, .5)
+
+		tuner := effect.NewTuner(merger)
+
+		adsr := envelop.NewADSR(SampleRate, time.Millisecond*5, time.Millisecond*100, time.Millisecond*50, .8)
+		voice := envelop.NewVoice(tuner, adsr)
 
 		return voice
 	}
 
 	seq := sequencer.NewSequencer(SampleRate, 120, 4, 4, voiceFactory)
-	seq.SetPattern(CrazyFrogLeadPattern())
+	seq.Append(CrazyFrogLeadPattern())
 
-	tracks := audio.NewTrackSet(seq)
+	delay := effect.NewFeedback(SampleRate, seq)
+	delay.SetDelay(seq.GetBeatDuration() / 2)
+	delay.SetMix(.3)
+	delay.SetFeedback(.4)
+
+	tracks := audio.NewTrackSet(delay)
 	tracks.SetLoop(true)
 
 	player := audio.NewPlayer(SampleRate, tracks)
@@ -48,7 +61,7 @@ func main() {
 	tracks.SetLoop(true)
 
 	lead := sequencer.NewSequencer(SampleRate, BPM, 4, 4, newLeadVoice)
-	lead.SetPattern(CrazyFrogLeadPattern())
+	lead.Append(CrazyFrogLeadPattern())
 
 	leadDelay := effect.NewFeedback(SampleRate, lead)
 	leadDelay.SetDelay(lead.GetBeatDuration() / 2)
@@ -57,15 +70,15 @@ func main() {
 	tracks.Append(leadDelay, 1)
 
 	kicks := sequencer.NewSequencer(SampleRate, BPM, 2, 4, newKickVoice)
-	kicks.SetPattern(CrazyFrogKickPattern())
+	kicks.Append(CrazyFrogKickPattern())
 	tracks.Append(kicks, 1)
 
 	highHat := sequencer.NewSequencer(SampleRate, BPM, 1, 4, newHighHatVoice)
-	highHat.SetPattern(CrazyFrogHighHatPattern())
+	highHat.Append(CrazyFrogHighHatPattern())
 	tracks.Append(highHat, .2)
 
 	bass := sequencer.NewSequencer(SampleRate, BPM, 4, 4, newBassVoice)
-	bass.SetPattern(CrazyFrogBassPattern())
+	bass.Append(CrazyFrogBassPattern())
 	tracks.Append(bass, .4)
 
 	player := audio.NewPlayer(SampleRate, tracks)

@@ -6,11 +6,14 @@ import (
 	"time"
 )
 
-type LoopMode int
-
 type playingVoice struct {
 	voice  audio.Source
 	length int
+}
+
+type pattern struct {
+	at      int
+	pattern Pattern
 }
 
 type Sequencer struct {
@@ -46,7 +49,7 @@ func NewSequencer(sampleRate float64, tempo float64, maxVoices int, stepsPerBeat
 	}
 }
 
-func (s *Sequencer) SetPattern(p *Pattern) {
+func (s *Sequencer) Append(p *Pattern) {
 	s.pattern = p
 }
 
