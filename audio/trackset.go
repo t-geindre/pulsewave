@@ -7,27 +7,31 @@ type TrackSet struct {
 }
 
 func NewTrackSet(sources ...Source) *TrackSet {
-	return &TrackSet{sources: sources}
+	t := &TrackSet{}
+	for _, src := range sources {
+		t.Append(src, 1)
+	}
+	return t
 }
 
-func (m *TrackSet) NextSample() float64 {
-	v := 0.0
+func (m *TrackSet) NextValue() (float64, float64) {
+	vl, vr := .0, .0
 	active := false
 
 	for i, src := range m.sources {
-		if acc, ok := src.(Resettable); ok {
-			if acc.IsActive() {
-				active = true
-			}
+		if src.IsActive() {
+			active = true
 		}
-		v += src.NextSample() * m.gains[i]
+		l, r := src.NextValue()
+		vl += l * m.gains[i]
+		vr += r * m.gains[i]
 	}
 
 	if !active && m.loop {
 		m.Reset()
 	}
 
-	return v
+	return vl, vr
 }
 
 func (m *TrackSet) Append(source Source, gain float64) {
@@ -41,10 +45,8 @@ func (m *TrackSet) SetLoop(loop bool) {
 
 func (m *TrackSet) IsActive() bool {
 	for _, src := range m.sources {
-		if acc, ok := src.(Resettable); ok {
-			if acc.IsActive() {
-				return true
-			}
+		if src.IsActive() {
+			return true
 		}
 	}
 	return false
@@ -52,8 +54,12 @@ func (m *TrackSet) IsActive() bool {
 
 func (m *TrackSet) Reset() {
 	for _, src := range m.sources {
-		if acc, ok := src.(Resettable); ok {
-			acc.Reset()
-		}
+		src.Reset()
 	}
+}
+
+func (m *TrackSet) NoteOn(_, _ float64) {
+}
+
+func (m *TrackSet) NoteOff() {
 }

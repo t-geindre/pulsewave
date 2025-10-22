@@ -8,10 +8,8 @@ type Saw struct {
 	phaseShift float64 // [0..1)
 }
 
-func NewSaw(sampleRate, freq float64) *Saw {
-	s := &Saw{sr: sampleRate}
-	s.SetFreq(freq)
-	return s
+func NewSaw(sampleRate float64) *Saw {
+	return &Saw{sr: sampleRate}
 }
 
 func (s *Saw) SetFreq(freq float64) {
@@ -26,7 +24,7 @@ func (s *Saw) SetFreq(freq float64) {
 	s.step = s.freq / s.sr
 }
 
-func (s *Saw) NextSample() float64 {
+func (s *Saw) NextValue() (float64, float64) {
 	t := frac01(s.phase + s.phaseShift)
 	dt := s.step
 
@@ -38,9 +36,22 @@ func (s *Saw) NextSample() float64 {
 	if s.phase >= 1.0 {
 		s.phase -= 1.0
 	}
-	return y
+
+	return y, y
 }
 
-func (s *Saw) ResetPhase() { s.phase = 0 }
+func (s *Saw) Reset() { s.phase = 0 }
 
 func (s *Saw) SetPhaseShift(p float64) { s.phaseShift = frac01(p) }
+
+func (s *Saw) IsActive() bool {
+	return true
+}
+
+func (s *Saw) NoteOn(freq, _ float64) {
+	s.SetFreq(freq)
+	s.Reset()
+}
+
+func (s *Saw) NoteOff() {
+}

@@ -9,13 +9,17 @@ type LowPassFilter struct {
 	src   audio.Source
 	sr    float64
 	cutHz float64
-	Q     float64 // quality fact (0.1..~10) — 0.707 = Butterworth
+	Q     float64 // 0.1..~10 ; 0.707 = Butterworth
 
+	// Mono coefficients
 	b0, b1, b2 float64
 	a1, a2     float64
 
-	x1, x2 float64
-	y1, y2 float64
+	// L/R states
+	x1 [2]float64
+	x2 [2]float64
+	y1 [2]float64
+	y2 [2]float64
 }
 
 func NewLowPassFilter(sampleRate float64, src audio.Source) *LowPassFilter {
@@ -50,24 +54,38 @@ func (l *LowPassFilter) SetQ(q float64) {
 }
 
 func (l *LowPassFilter) Reset() {
-	l.x1, l.x2 = 0, 0
-	l.y1, l.y2 = 0, 0
+	l.x1 = [2]float64{}
+	l.x2 = [2]float64{}
+	l.y1 = [2]float64{}
+	l.y2 = [2]float64{}
 	l.src.Reset()
 }
 
-func (l *LowPassFilter) NextSample() float64 {
-	x := l.src.NextSample()
+func (l *LowPassFilter) NextValue() (float64, float64) {
+	xL, xR := l.src.NextValue()
 
-	y := l.b0*x + l.b1*l.x1 + l.b2*l.x2 - l.a1*l.y1 - l.a2*l.y2
+	yL := l.processSample(0, xL)
+	yR := l.processSample(1, xR)
 
-	l.x2 = l.x1
-	l.x1 = x
-	l.y2 = l.y1
-	l.y1 = y
-
-	if y > -1e-20 && y < 1e-20 {
-		y = 0
+	if yL > -1e-20 && yL < 1e-20 {
+		yL = 0
 	}
+	if yR > -1e-20 && yR < 1e-20 {
+		yR = 0
+	}
+
+	return yL, yR
+}
+
+func (l *LowPassFilter) processSample(ch int, x float64) float64 {
+	// biquad direct form I (RBJ)
+	y := l.b0*x + l.b1*l.x1[ch] + l.b2*l.x2[ch] - l.a1*l.y1[ch] - l.a2*l.y2[ch]
+
+	// shift states
+	l.x2[ch] = l.x1[ch]
+	l.x1[ch] = x
+	l.y2[ch] = l.y1[ch]
+	l.y1[ch] = y
 
 	return y
 }
@@ -86,7 +104,7 @@ func (l *LowPassFilter) recalc() {
 	a1 := -2 * cos
 	a2 := 1 - alpha
 
-	// norm a0=1
+	// normalization a0=1
 	l.b0 = b0 / a0
 	l.b1 = b1 / a0
 	l.b2 = b2 / a0
@@ -96,4 +114,12 @@ func (l *LowPassFilter) recalc() {
 
 func (l *LowPassFilter) IsActive() bool {
 	return l.src.IsActive()
+}
+
+func (l *LowPassFilter) NoteOn(freq, velocity float64) {
+	l.src.NoteOn(freq, velocity)
+}
+
+func (l *LowPassFilter) NoteOff() {
+	l.src.NoteOff()
 }

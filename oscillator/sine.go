@@ -9,10 +9,33 @@ type Sine struct {
 	sr         float64
 }
 
-func NewSine(sampleRate, freq float64) *Sine {
-	s := &Sine{sr: sampleRate}
+func NewSine(sampleRate float64) *Sine {
+	return &Sine{sr: sampleRate}
+}
+
+func (s *Sine) NextValue() (L, R float64) {
+	v := math.Sin(s.phase + s.phaseShift) // applique le shift à la lecture
+	s.phase += s.step
+	if s.phase >= 2*math.Pi {
+		s.phase -= 2 * math.Pi
+	}
+	return v, v
+}
+
+func (s *Sine) IsActive() bool {
+	return true
+}
+
+func (s *Sine) Reset() {
+	s.phase = 0
+}
+
+func (s *Sine) NoteOn(freq, _ float64) {
 	s.SetFreq(freq)
-	return s
+	s.Reset()
+}
+
+func (s *Sine) NoteOff() {
 }
 
 func (s *Sine) SetFreq(freq float64) {
@@ -22,18 +45,7 @@ func (s *Sine) SetFreq(freq float64) {
 	s.step = 2 * math.Pi * freq / s.sr
 }
 
-func (s *Sine) NextSample() float64 {
-	v := math.Sin(s.phase + s.phaseShift) // applique le shift à la lecture
-	s.phase += s.step
-	if s.phase >= 2*math.Pi {
-		s.phase -= 2 * math.Pi
-	}
-	return v
-}
-
-func (s *Sine) ResetPhase() { s.phase = 0 } // reset propre (le shift est lu)
 func (s *Sine) SetPhaseShift(cycles float64) {
-	// cycles -> [0..1) -> radians
 	c := math.Mod(cycles, 1.0)
 	if c < 0 {
 		c += 1.0

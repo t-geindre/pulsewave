@@ -54,7 +54,7 @@ func NewADSR(sampleRate float64, attack, decay, release time.Duration, sustain f
 	}
 }
 
-func (e *ADSR) NoteOn() {
+func (e *ADSR) NoteOn(_, _ float64) {
 	if e.attack <= 0 {
 		e.value = 1
 		e.state = envDecay
@@ -79,7 +79,7 @@ func (e *ADSR) NoteOff() {
 	e.rStep = e.value / (e.release * e.sr) // linéaire jusqu'à 0
 }
 
-func (e *ADSR) Next() float64 {
+func (e *ADSR) NextValue() (float64, float64) {
 	switch e.state {
 	case envIdle:
 		e.value = 0
@@ -109,9 +109,14 @@ func (e *ADSR) Next() float64 {
 			e.state = envIdle
 		}
 	}
-	return e.value
+	return e.value, e.value
 }
 
 func (e *ADSR) Value() float64 { return e.value }
 
 func (e *ADSR) IsActive() bool { return e.state != envIdle }
+
+func (e *ADSR) Reset() {
+	e.state = envIdle
+	e.value = 0
+}

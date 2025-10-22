@@ -1,46 +1,45 @@
 package envelop
 
 import (
-	"synth/oscillator"
+	"synth/audio"
 )
 
 type Voice struct {
-	osc  oscillator.Oscillator
-	env  Envelop
+	src  audio.Source
+	env  audio.Source
 	gain float64
 }
 
-func NewVoice(sr float64, osc oscillator.Oscillator, adsr Envelop) *Voice {
+func NewVoice(src, env audio.Source) *Voice {
 	return &Voice{
-		osc:  osc,
-		env:  adsr,
+		src:  src,
+		env:  env,
 		gain: 1,
 	}
 }
 
 func (v *Voice) NoteOn(freq, velocity float64) {
-	v.osc.SetFreq(freq)
-	v.osc.ResetPhase()
-	if velocity <= 0 {
-		velocity = 1
-	}
-	if velocity > 1 {
-		velocity = 1
-	}
+	v.src.NoteOn(freq, velocity)
+	v.env.NoteOn(freq, velocity)
 	v.gain = velocity
-	v.env.NoteOn()
 }
 
 func (v *Voice) NoteOff() {
+	v.src.NoteOff()
 	v.env.NoteOff()
 }
 
-func (v *Voice) NextSample() float64 {
-	amp := v.env.Next()
-	s := v.osc.NextSample() * amp
-	return s
+func (v *Voice) NextValue() (float64, float64) {
+	amp, _ := v.env.NextValue()
+	l, r := v.src.NextValue()
+	return l * amp * v.gain, r * amp * v.gain
 }
 
 func (v *Voice) IsActive() bool {
 	return v.env.IsActive()
+}
+
+func (v *Voice) Reset() {
+	v.src.Reset()
+	v.env.Reset()
 }

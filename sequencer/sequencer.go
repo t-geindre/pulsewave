@@ -2,22 +2,23 @@ package sequencer
 
 import (
 	"math"
+	"synth/audio"
 	"time"
 )
 
 type LoopMode int
 
 type playingVoice struct {
-	voice  Voice
+	voice  audio.Source
 	length int
 }
 
 type Sequencer struct {
 	// Voices
-	freeVoices   []Voice
+	freeVoices   []audio.Source
 	activeVoices []*playingVoice
 	maxVoices    int
-	voiceFactory VoiceFactory
+	voiceFactory audio.SourceFactory
 
 	// Pattern
 	pattern *Pattern
@@ -30,11 +31,11 @@ type Sequencer struct {
 	stepsPerBeat int
 }
 
-func NewSequencer(sampleRate float64, tempo float64, maxVoices int, stepsPerBeat int, voiceFactory VoiceFactory) *Sequencer {
+func NewSequencer(sampleRate float64, tempo float64, maxVoices int, stepsPerBeat int, voiceFactory audio.SourceFactory) *Sequencer {
 	return &Sequencer{
 		maxVoices:    maxVoices,
 		voiceFactory: voiceFactory,
-		freeVoices:   []Voice{},
+		freeVoices:   []audio.Source{},
 		stepLength: int(math.Round(
 			60.0 * float64(sampleRate) / (tempo * float64(stepsPerBeat)),
 		)),
@@ -49,13 +50,12 @@ func (s *Sequencer) SetPattern(p *Pattern) {
 	s.pattern = p
 }
 
-func (s *Sequencer) NextSample() float64 {
-	// No pattern, no sound
+func (s *Sequencer) NextValue() (float64, float64) {
 	if s.pattern == nil {
-		return 0
+		return 0, 0
 	}
 
-	// Avance step (manage possible multiple step boundaries)
+	// Advance step
 	s.toNextStep--
 	for s.toNextStep <= 0 {
 		s.toNextStep += s.stepLength
@@ -71,16 +71,12 @@ func (s *Sequencer) NextSample() float64 {
 		s.step++
 	}
 
-	sum := 0.0
+	vl, vr := .0, .0
 
-	// Parcours à l'envers pour permettre la suppression en place
+	// Reverse iteration to allow removal
 	for i := len(s.activeVoices) - 1; i >= 0; i-- {
 		slot := s.activeVoices[i]
 
-		// -- GATE / NoteOff (choisis le moment)
-		// Si 'length' compte "échantillons restants y compris celui-ci",
-		// tu peux décrémenter APRÈS la génération et noter off quand il devient 0.
-		// Ici je le fais AVANT pour que le NoteOff tombe pile au bon sample suivant ta sémantique.
 		if slot.length > 0 {
 			slot.length--
 			if slot.length == 0 {
@@ -88,18 +84,17 @@ func (s *Sequencer) NextSample() float64 {
 			}
 		}
 
-		// -- Audio
-		sum += slot.voice.NextSample()
+		l, r := slot.voice.NextValue()
+		vl += l
+		vr += r
 
-		// -- Recycling: si l’enveloppe a fini, on libère la voix
 		if !slot.voice.IsActive() {
 			s.freeVoices = append(s.freeVoices, slot.voice)
-			// remove i (stable mais O(n); acceptable vu peu de voix)
 			s.activeVoices = append(s.activeVoices[:i], s.activeVoices[i+1:]...)
 		}
 	}
 
-	return sum
+	return vl, vr
 }
 
 func (s *Sequencer) triggerNote(note *NoteSpec) {
@@ -120,7 +115,7 @@ func (s *Sequencer) triggerNote(note *NoteSpec) {
 	})
 }
 
-func (s *Sequencer) getFreeVoice() Voice {
+func (s *Sequencer) getFreeVoice() audio.Source {
 	if len(s.freeVoices) > 0 {
 		voice := s.freeVoices[len(s.freeVoices)-1]
 		s.freeVoices = s.freeVoices[:len(s.freeVoices)-1]
@@ -154,5 +149,11 @@ func (s *Sequencer) Reset() {
 		voice.voice.NoteOff()
 	}
 	s.activeVoices = []*playingVoice{}
-	s.freeVoices = []Voice{}
+	s.freeVoices = []audio.Source{}
+}
+
+func (s *Sequencer) NoteOn(_, _ float64) {
+}
+
+func (s *Sequencer) NoteOff() {
 }

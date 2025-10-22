@@ -1,8 +1,9 @@
 package oscillator
 
+import "synth/audio"
+
 type Oscillator interface {
-	NextSample() float64
+	audio.Source
 	SetFreq(freq float64)
-	ResetPhase()
 	SetPhaseShift(phase float64)
 }

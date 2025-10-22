@@ -12,10 +12,8 @@ type Exponential struct {
 	dcComp     bool
 }
 
-func NewExponential(sampleRate, freq float64) *Exponential {
-	e := &Exponential{sr: sampleRate}
-	e.SetFreq(freq)
-	return e
+func NewExponential(sampleRate float64) *Exponential {
+	return &Exponential{sr: sampleRate}
 }
 
 func (e *Exponential) SetFreq(freq float64) {
@@ -34,7 +32,7 @@ func (e *Exponential) SetPhaseShift(p float64) {
 	e.phaseShift = frac01(p)
 }
 
-func (e *Exponential) ResetPhase() { e.phase = 0 }
+func (e *Exponential) Reset() { e.phase = 0 }
 
 func (e *Exponential) SetShape(s float64) { e.shape = s }
 func (e *Exponential) SetDCComp(b bool)   { e.dcComp = b }
@@ -46,7 +44,7 @@ func (e *Exponential) mapExpo(t float64) float64 {
 	return math.Expm1(e.shape*t) / math.Expm1(e.shape)
 }
 
-func (e *Exponential) NextSample() float64 {
+func (e *Exponential) NextValue() (float64, float64) {
 	t := frac01(e.phase + e.phaseShift)
 	dt := e.step
 
@@ -66,5 +64,17 @@ func (e *Exponential) NextSample() float64 {
 		e.phase -= 1.0
 	}
 
-	return y
+	return y, y
+}
+
+func (e *Exponential) IsActive() bool {
+	return true
+}
+
+func (e *Exponential) NoteOn(freq, velocity float64) {
+	e.SetFreq(freq)
+	e.Reset()
+}
+
+func (e *Exponential) NoteOff() {
 }

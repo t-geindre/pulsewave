@@ -31,16 +31,18 @@ func RandomCMajorPattern(want int, lengths []int, gate float64) *sequencer.Patte
 }
 
 func CMajorScalePattern() *sequencer.Pattern {
-	pattern := sequencer.NewPattern()
-	pattern.Append(sequencer.C4, 4, 1, .85)
-	pattern.Append(sequencer.D4, 4, 1, .85)
-	pattern.Append(sequencer.E4, 4, 1, .85)
-	pattern.Append(sequencer.F4, 4, 1, .85)
-	pattern.Append(sequencer.G4, 4, 1, .85)
-	pattern.Append(sequencer.A4, 4, 1, .85)
-	pattern.Append(sequencer.B4, 4, 1, .85)
-	pattern.Append(sequencer.C5, 4, 1, .85)
+	const L = 4
+	const G = .1
 
+	pattern := sequencer.NewPattern()
+	pattern.Append(sequencer.C4, L, 1, G)
+	pattern.Append(sequencer.D4, L, 1, G)
+	pattern.Append(sequencer.E4, L, 1, G)
+	pattern.Append(sequencer.F4, L, 1, G)
+	pattern.Append(sequencer.G4, L, 1, G)
+	pattern.Append(sequencer.A4, L, 1, G)
+	pattern.Append(sequencer.B4, L, 1, G)
+	pattern.Append(sequencer.C5, L, 1, G)
 	return pattern
 }
 

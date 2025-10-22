@@ -9,10 +9,8 @@ type Square struct {
 	pw         float64 // 0..1
 }
 
-func NewSquare(sampleRate, freq float64) *Square {
-	s := &Square{sr: sampleRate, pw: 0.5}
-	s.SetFreq(freq)
-	return s
+func NewSquare(sampleRate float64) *Square {
+	return &Square{sr: sampleRate, pw: 0.5}
 }
 
 func (s *Square) SetFreq(freq float64) {
@@ -27,7 +25,7 @@ func (s *Square) SetFreq(freq float64) {
 	s.step = s.freq / s.sr
 }
 
-func (s *Square) NextSample() float64 {
+func (s *Square) NextValue() (float64, float64) {
 	t := frac01(s.phase + s.phaseShift)
 	dt := s.step
 
@@ -43,7 +41,8 @@ func (s *Square) NextSample() float64 {
 	if s.phase >= 1.0 {
 		s.phase -= 1.0
 	}
-	return y
+
+	return y, y
 }
 
 func (s *Square) SetPulseWidth(pw float64) {
@@ -56,5 +55,17 @@ func (s *Square) SetPulseWidth(pw float64) {
 	s.pw = pw
 }
 
-func (s *Square) ResetPhase()             { s.phase = 0 }
+func (s *Square) Reset()                  { s.phase = 0 }
 func (s *Square) SetPhaseShift(p float64) { s.phaseShift = frac01(p) }
+
+func (s *Square) IsActive() bool {
+	return true
+}
+
+func (s *Square) NoteOn(freq, _ float64) {
+	s.SetFreq(freq)
+	s.Reset()
+}
+
+func (s *Square) NoteOff() {
+}

@@ -10,10 +10,8 @@ type Triangle struct {
 	step       float64 // freq/sr
 }
 
-func NewTriangle(sampleRate, freq float64) *Triangle {
-	t := &Triangle{sr: sampleRate}
-	t.SetFreq(freq)
-	return t
+func NewTriangle(sampleRate float64) *Triangle {
+	return &Triangle{sr: sampleRate}
 }
 
 func (t *Triangle) SetFreq(freq float64) {
@@ -28,7 +26,7 @@ func (t *Triangle) SetFreq(freq float64) {
 	t.step = t.freq / t.sr
 }
 
-func (t *Triangle) NextSample() float64 {
+func (t *Triangle) NextValue() (float64, float64) {
 	ph := frac01(t.phase + t.phaseShift)
 
 	y := 1.0 - 4.0*math.Abs(ph-0.5)
@@ -37,8 +35,21 @@ func (t *Triangle) NextSample() float64 {
 	if t.phase >= 1.0 {
 		t.phase -= 1.0
 	}
-	return y
+
+	return y, y
 }
 
-func (t *Triangle) ResetPhase()             { t.phase = 0 }
+func (t *Triangle) Reset()                  { t.phase = 0 }
 func (t *Triangle) SetPhaseShift(p float64) { t.phaseShift = frac01(p) }
+
+func (t *Triangle) IsActive() bool {
+	return true
+}
+
+func (t *Triangle) NoteOn(freq, velocity float64) {
+	t.SetFreq(freq)
+	t.Reset()
+}
+
+func (t *Triangle) NoteOff() {
+}

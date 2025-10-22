@@ -9,15 +9,25 @@ func NewNoise() *Noise {
 	return &Noise{}
 }
 
-func (n Noise) NextSample() float64 {
-	return rand.Float64()*2 - 1 // Range -1 to 1
+func (n *Noise) NextValue() (L, R float64) {
+	return rand.Float64()*2 - 1, rand.Float64()*2 - 1
 }
 
-func (n Noise) SetFreq(float64) {
+func (n *Noise) IsActive() bool {
+	return true
 }
 
-func (n Noise) ResetPhase() {
+func (n *Noise) Reset() {
 }
 
-func (n Noise) SetPhaseShift(float64) {
+func (n *Noise) NoteOn(_, _ float64) {
+}
+
+func (n *Noise) NoteOff() {
+}
+
+func (n *Noise) SetFreq(_ float64) {
+}
+
+func (n *Noise) SetPhaseShift(_ float64) {
 }

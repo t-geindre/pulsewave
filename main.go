@@ -10,6 +10,37 @@ import (
 )
 
 const SampleRate = 44100
+
+func main() {
+	voiceFactory := func() audio.Source {
+		sine := oscillator.NewSine(SampleRate)
+
+		triangle := oscillator.NewSaw(SampleRate)
+
+		merged := effect.NewMerger()
+		merged.Append(sine, 1, 1)
+		merged.Append(triangle, 0.1, 0.1)
+
+		adsr := envelop.NewADSR(SampleRate, time.Millisecond*10, time.Millisecond*100, time.Millisecond*50, .8)
+		voice := envelop.NewVoice(merged, adsr)
+
+		return voice
+	}
+
+	seq := sequencer.NewSequencer(SampleRate, 120, 4, 4, voiceFactory)
+	seq.SetPattern(CrazyFrogLeadPattern())
+
+	tracks := audio.NewTrackSet(seq)
+	tracks.SetLoop(true)
+
+	player := audio.NewPlayer(SampleRate, tracks)
+
+	for player.IsPlaying() {
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+/*
 const BPM = 120
 
 func main() {
@@ -19,7 +50,7 @@ func main() {
 	lead := sequencer.NewSequencer(SampleRate, BPM, 4, 4, newLeadVoice)
 	lead.SetPattern(CrazyFrogLeadPattern())
 
-	leadDelay := effect.NewFeedbackDelay(SampleRate, lead)
+	leadDelay := effect.NewFeedback(SampleRate, lead)
 	leadDelay.SetDelay(lead.GetBeatDuration() / 2)
 	leadDelay.SetMix(.3)
 	leadDelay.SetFeedback(.4)
@@ -49,18 +80,18 @@ func newLeadVoice() sequencer.Voice {
 	for i := 0; i < 3; i++ {
 		osc := oscillator.NewSaw(SampleRate, 110.0)
 		osc.SetPhaseShift(float64(i) * 0.01)
-		tuned := oscillator.NewTuned(osc)
+		tuned := oscillator.NewTuner(osc)
 		tuned.SetDetuneCents(float64(i) * 8.0)
 		merged.Append(tuned, 1.0)
 	}
 
 	sq := oscillator.NewSquare(SampleRate, 220.0)
 	sq.SetPulseWidth(0.25)
-	tq := oscillator.NewTuned(sq)
+	tq := oscillator.NewTuner(sq)
 	merged.Append(tq, 0.5)
 
 	tr := oscillator.NewSine(SampleRate, 110.0)
-	tt := oscillator.NewTuned(tr)
+	tt := oscillator.NewTuner(tr)
 	tt.SetOctaveOffset(-1)
 	merged.Append(tt, 0.8)
 
@@ -85,14 +116,14 @@ func newBassVoice() sequencer.Voice {
 	merger := oscillator.NewMerger()
 	for i := 0; i < 8; i++ {
 		osc := oscillator.NewSaw(SampleRate, 110.0)
-		tuned := oscillator.NewTuned(osc)
+		tuned := oscillator.NewTuner(osc)
 		tuned.SetDetuneCents(float64(i) * 2.0)
 		tuned.SetOctaveOffset(-1)
 		merger.Append(tuned, 1.0)
 	}
 
 	sine := oscillator.NewSine(SampleRate, 110.0)
-	ts := oscillator.NewTuned(sine)
+	ts := oscillator.NewTuner(sine)
 	ts.SetOctaveOffset(-2)
 	merger.Append(ts, 0.4)
 
@@ -105,3 +136,4 @@ func newHighHatVoice() sequencer.Voice {
 	adsr := envelop.NewADSR(SampleRate, time.Millisecond*5, time.Millisecond*70, 0, 0)
 	return envelop.NewVoice(SampleRate, noise, adsr)
 }
+*/
