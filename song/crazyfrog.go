@@ -33,65 +33,96 @@ func NewCrazyFrog(SampleRate float64) audio.Source {
 	leadDelay.SetMix(.4)
 	leadDelay.SetFeedback(.3)
 
-	c.Append(leadDelay, .9)
+	c.Append(leadDelay, 1)
 
 	// Bass
 	bass := sequencer.NewSequencer(SampleRate, BPM, 4, SPB, c.bassVoiceFactory)
 	bass.AppendAndRepeat(c.bassPattern(), Repeat)
 
-	lpfBass := effect.NewLowPassFilter(SampleRate, bass)
-	lpfBass.SetCutoffHz(800)
-	lpfBass.SetQ(.7)
+	bassDelay := effect.NewFeedback(SampleRate, bass)
+	bassDelay.SetDelay(time.Millisecond * 125)
+	bassDelay.SetMix(.5)
+	bassDelay.SetFeedback(.6)
 
-	c.Append(lpfBass, .08)
+	c.Append(bassDelay, .3)
 
 	// High hat
 	hh := sequencer.NewSequencer(SampleRate, BPM, 4, SPB, c.highHatVoiceFactory)
-	hh.AppendAndRepeat(c.highHatPattern(), 10)
+	hh.AppendAndRepeat(c.highHatPattern(), Repeat)
 
-	c.Append(hh, .2)
+	c.Append(hh, .15)
 
 	// Kick
 	kick := sequencer.NewSequencer(SampleRate, BPM, 4, SPB, c.kickVoiceFactory)
 	kick.AppendAndRepeat(c.kickPattern(), Repeat)
+
 	c.Append(kick, .9)
 
 	return c
 }
 
 func (c *CrazyFrog) leadVoiceFactory() audio.Source {
+	merger := effect.NewMerger()
+
 	// Saw unison
 	uni := effect.NewUnison(func() audio.Source {
-		osc := oscillator.NewSaw(c.sr)
-		return osc
-	}, 8, 12, 0.9, .1, 0.75)
+		return oscillator.NewSaw(c.sr)
+	}, 8, 12, 0.9, 0.1, 0.75)
 
-	// Bass line on lead
-	bass := effect.NewTuner(oscillator.NewTriangle(c.sr))
-	bass.SetOctaveOffset(-1)
+	// LPF mod on unison
+	lpf := effect.NewLowPassFilter(c.sr, uni)
+	lpf.SetQ(.7)
+	merger.Append(lpf, 1, 1)
 
-	merger := effect.NewMerger()
-	merger.Append(uni, 1, 1)
-	merger.Append(bass, .5, .5)
+	lpfMod := envelop.NewADSR(c.sr, 0, time.Millisecond*600, 0, 0)
+	merger.Append(lpfMod, 0, 0)
 
-	adsr := envelop.NewADSR(c.sr, time.Millisecond*5, time.Millisecond*100, time.Millisecond*50, .8)
+	merger.Append(audio.NewCallbackSrc(func() (float64, float64) {
+		v, _ := lpfMod.NextValue()
+		lpf.SetCutoffHz(2000 + v*6000.0)
+		return 0, 0
+	}), 0, 0)
+
+	// Sine lead
+	sine := oscillator.NewSine(c.sr)
+	bass := effect.NewTuner(sine)
+	bass.SetOctaveOffset(0)
+	merger.Append(bass, .2, .2)
+
+	adsr := envelop.NewADSR(c.sr, time.Millisecond*5, time.Millisecond*600, time.Millisecond*50, 1)
 	voice := envelop.NewVoice(merger, adsr)
 
 	return voice
 }
 
 func (c *CrazyFrog) bassVoiceFactory() audio.Source {
+	merger := effect.NewMerger()
+
 	// Unison saw
 	uni := effect.NewUnison(func() audio.Source {
-		osc := oscillator.NewSquare(c.sr)
+		osc := oscillator.NewSaw(c.sr)
 		return osc
-	}, 6, 8, 0.9, .9, 0.75)
+	}, 6, 12, 0.3, 0, 0.75)
+
+	// LPF + mod
+	lpf := effect.NewLowPassFilter(c.sr, uni)
+	lpf.SetQ(.7)
+	merger.Append(lpf, 1, 1)
+
+	lpfMod := envelop.NewADSR(c.sr, 0, time.Millisecond*150, 0, 0)
+	merger.Append(lpfMod, 0, 0)
+
+	merger.Append(audio.NewCallbackSrc(func() (float64, float64) {
+		v, _ := lpfMod.NextValue()
+		lpf.SetCutoffHz(200 + v*4000.0)
+		return 0, 0
+	}), 0, 0)
 
 	// Octave down
-	tuner := effect.NewTuner(uni)
-	tuner.SetOctaveOffset(-2)
+	tuner := effect.NewTuner(merger)
+	tuner.SetOctaveOffset(-1)
 
-	adsr := envelop.NewADSR(c.sr, time.Millisecond*10, time.Millisecond*10, time.Millisecond*10, .7)
+	adsr := envelop.NewADSR(c.sr, time.Millisecond*10, time.Millisecond*150, time.Millisecond*10, .7)
 	return envelop.NewVoice(tuner, adsr)
 }
 
@@ -147,7 +178,12 @@ func (_ *CrazyFrog) leadPattern() *sequencer.Pattern {
 	p.Append(sequencer.A3, 2, 1, .85)
 
 	p.Append(sequencer.E4, 2, 1, .85)
-	p.Append(sequencer.D4, 10, 1, .65)
+	p.Append(sequencer.D4, 2, 1, .85)
+
+	p.Append(0, 2, 1, .85)
+	p.Append(sequencer.D4, 2, .8, .85)
+	p.Append(0, 2, 1, .85)
+	p.Append(sequencer.D4, 2, .2, .85)
 
 	return p
 }
