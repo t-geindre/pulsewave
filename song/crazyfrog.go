@@ -33,7 +33,7 @@ func NewCrazyFrog(SampleRate float64) audio.Source {
 	leadDelay.SetMix(.4)
 	leadDelay.SetFeedback(.3)
 
-	c.Append(leadDelay, .8)
+	c.Append(leadDelay, .9)
 
 	// Bass
 	bass := sequencer.NewSequencer(SampleRate, BPM, 4, SPB, c.bassVoiceFactory)
@@ -48,7 +48,7 @@ func NewCrazyFrog(SampleRate float64) audio.Source {
 	// High hat
 	hh := sequencer.NewSequencer(SampleRate, BPM, 4, SPB, c.highHatVoiceFactory)
 	hh.AppendAndRepeat(c.highHatPattern(), 10)
-	
+
 	c.Append(hh, .2)
 
 	// Kick
@@ -115,7 +115,7 @@ func (c *CrazyFrog) kickVoiceFactory() audio.Source {
 	})
 	merger.Append(kick, 1, 1)
 
-	adsr := envelop.NewADSR(c.sr, time.Millisecond*1, time.Millisecond*450, 0, 0.0)
+	adsr := envelop.NewADSR(c.sr, time.Millisecond*1, time.Millisecond*500, 0, 0.0)
 	return envelop.NewVoice(merger, adsr)
 }
 
@@ -147,7 +147,7 @@ func (_ *CrazyFrog) leadPattern() *sequencer.Pattern {
 	p.Append(sequencer.A3, 2, 1, .85)
 
 	p.Append(sequencer.E4, 2, 1, .85)
-	p.Append(sequencer.D4, 10, 1, .85/4*3)
+	p.Append(sequencer.D4, 10, 1, .65)
 
 	return p
 }
@@ -161,8 +161,11 @@ func (_ *CrazyFrog) kickPattern() *sequencer.Pattern {
 }
 
 func (c *CrazyFrog) highHatPattern() *sequencer.Pattern {
-	p := c.kickPattern().Clone()
-	p.Prepend(0, 2, 0, 0)
+	p := sequencer.NewPattern()
+	for i := 0; i < 14; i++ {
+		p.Append(0, 2, 1, .95)
+		p.Append(sequencer.C4, 2, 1, .95)
+	}
 	return p
 }
 

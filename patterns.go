@@ -32,7 +32,7 @@ func RandomCMajorPattern(want int, lengths []int, gate float64) *sequencer.Patte
 
 func CMajorScalePattern() *sequencer.Pattern {
 	const L = 4
-	const G = .1
+	const G = .75
 
 	pattern := sequencer.NewPattern()
 	pattern.Append(sequencer.C4, L, 1, G)
@@ -69,6 +69,27 @@ func TetrisThemeAPattern() *sequencer.Pattern {
 	p.Append(sequencer.C5, 4, 1, .75)
 	p.Append(sequencer.A4, 4, 1, .75)
 	p.Append(sequencer.A4, 4, 1, .75)
+
+	return p
+}
+
+func PiratesBassPattern() *sequencer.Pattern {
+	p := sequencer.NewPattern()
+
+	p.Append(0, 2, 1, .75)
+	p.Append(sequencer.D3, 4, 1, .75)
+
+	p.Append(0, 2, 1, .75)
+	p.Append(sequencer.F3, 4, 1, .75)
+
+	p.Append(sequencer.F4, 1, 1, .75)
+	p.Append(sequencer.G4, 1, 1, .75)
+	p.Append(sequencer.E4, 2, 1, .75)
+	p.Append(sequencer.E4, 2, 1, .75)
+
+	p.Append(sequencer.D4, 1, 1, .75)
+	p.Append(sequencer.C4, 1, 1, .75)
+	p.Append(sequencer.D4, 2, 1, .75)
 
 	return p
 }

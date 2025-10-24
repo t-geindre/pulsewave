@@ -31,10 +31,6 @@ func (p *Pattern) AddAt(at int, freq float64, length int, velocity, gate float64
 		p.next = at + length
 	}
 
-	if freq <= 0 || length <= 0 {
-		return
-	}
-
 	p.Notes = append(p.Notes, NoteSpec{At: at, Freq: freq, Length: length, Velocity: velocity, Gate: gate})
 	p.dirty = true
 }
@@ -60,6 +56,10 @@ func (p *Pattern) Next(at int) *NoteSpec {
 	p.sort()
 	note := &p.Notes[p.index]
 	p.index++
+
+	if note.Freq == 0 {
+		return nil
+	}
 
 	return note
 }
