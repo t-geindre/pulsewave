@@ -61,5 +61,5 @@ func (m *TrackSet) Reset() {
 func (m *TrackSet) NoteOn(_, _ float64) {
 }
 
-func (m *TrackSet) NoteOff() {
+func (m *TrackSet) NoteOff(float64) {
 }

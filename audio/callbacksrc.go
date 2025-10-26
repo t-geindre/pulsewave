@@ -24,5 +24,5 @@ func (c *CallbackSrc) Reset() {
 func (c *CallbackSrc) NoteOn(freq, velocity float64) {
 }
 
-func (c *CallbackSrc) NoteOff() {
+func (c *CallbackSrc) NoteOff(float64) {
 }

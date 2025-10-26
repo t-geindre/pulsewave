@@ -53,5 +53,5 @@ func (s *Saw) NoteOn(freq, _ float64) {
 	s.Reset()
 }
 
-func (s *Saw) NoteOff() {
+func (s *Saw) NoteOff(float64) {
 }

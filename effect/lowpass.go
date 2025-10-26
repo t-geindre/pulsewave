@@ -120,6 +120,6 @@ func (l *LowPassFilter) NoteOn(freq, velocity float64) {
 	l.src.NoteOn(freq, velocity)
 }
 
-func (l *LowPassFilter) NoteOff() {
-	l.src.NoteOff()
+func (l *LowPassFilter) NoteOff(freq float64) {
+	l.src.NoteOff(freq)
 }

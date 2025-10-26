@@ -2,14 +2,14 @@ package envelop
 
 import "time"
 
-type envState int
+type EnvState int
 
 const (
-	envIdle envState = iota
-	envAttack
-	envDecay
-	envSustain
-	envRelease
+	EnvIdle EnvState = iota
+	EnvAttack
+	EnvDecay
+	EnvSustain
+	EnvRelease
 )
 
 type ADSR struct {
@@ -19,7 +19,7 @@ type ADSR struct {
 	release float64
 
 	sr    float64
-	state envState
+	state EnvState
 	value float64
 	aStep float64
 	dStep float64
@@ -46,7 +46,7 @@ func NewADSR(sampleRate float64, attack, decay, release time.Duration, sustain f
 		sustain: sustain,
 		release: release.Seconds(),
 		sr:      sampleRate,
-		state:   envIdle,
+		state:   EnvIdle,
 		value:   0,
 		aStep:   aStep,
 		dStep:   dStep,
@@ -57,56 +57,56 @@ func NewADSR(sampleRate float64, attack, decay, release time.Duration, sustain f
 func (e *ADSR) NoteOn(_, _ float64) {
 	if e.attack <= 0 {
 		e.value = 1
-		e.state = envDecay
+		e.state = EnvDecay
 	} else {
-		e.state = envAttack
+		e.state = EnvAttack
 	}
 }
 
-func (e *ADSR) NoteOff() {
+func (e *ADSR) NoteOff(float64) {
 	if e.release <= 0 {
 		e.value = 0
-		e.state = envIdle
+		e.state = EnvIdle
 		return
 	}
 	if e.value <= 0 {
 		e.value = 0
-		e.state = envIdle
+		e.state = EnvIdle
 		e.rStep = 0
 		return
 	}
-	e.state = envRelease
+	e.state = EnvRelease
 	e.rStep = e.value / (e.release * e.sr) // linéaire jusqu'à 0
 }
 
 func (e *ADSR) NextValue() (float64, float64) {
 	switch e.state {
-	case envIdle:
+	case EnvIdle:
 		e.value = 0
-	case envAttack:
+	case EnvAttack:
 		e.value += e.aStep
 		if e.value >= 1.0 || e.attack == 0 {
 			e.value = 1.0
-			e.state = envDecay
+			e.state = EnvDecay
 		}
-	case envDecay:
+	case EnvDecay:
 		if e.decay == 0 {
 			e.value = e.sustain
-			e.state = envSustain
+			e.state = EnvSustain
 		} else {
 			e.value -= e.dStep
 			if e.value <= e.sustain {
 				e.value = e.sustain
-				e.state = envSustain
+				e.state = EnvSustain
 			}
 		}
-	case envSustain:
+	case EnvSustain:
 		// Keep sustain level
-	case envRelease:
+	case EnvRelease:
 		e.value -= e.rStep
 		if e.value <= 0 {
 			e.value = 0
-			e.state = envIdle
+			e.state = EnvIdle
 		}
 	}
 	return e.value, e.value
@@ -114,9 +114,13 @@ func (e *ADSR) NextValue() (float64, float64) {
 
 func (e *ADSR) Value() float64 { return e.value }
 
-func (e *ADSR) IsActive() bool { return e.state != envIdle }
+func (e *ADSR) IsActive() bool { return e.state != EnvIdle }
 
 func (e *ADSR) Reset() {
-	e.state = envIdle
+	e.state = EnvIdle
 	e.value = 0
+}
+
+func (e *ADSR) GetState() EnvState {
+	return e.state
 }

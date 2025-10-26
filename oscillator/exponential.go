@@ -76,5 +76,5 @@ func (e *Exponential) NoteOn(freq, velocity float64) {
 	e.Reset()
 }
 
-func (e *Exponential) NoteOff() {
+func (e *Exponential) NoteOff(float64) {
 }

@@ -100,7 +100,7 @@ func (s *Sequencer) NextValue() (float64, float64) {
 		if slot.length > 0 {
 			slot.length--
 			if slot.length == 0 {
-				slot.voice.NoteOff()
+				slot.voice.NoteOff(0)
 			}
 		}
 
@@ -182,7 +182,7 @@ func (s *Sequencer) Reset() {
 		p.Reset()
 	}
 	for _, voice := range s.activeVoices {
-		voice.voice.NoteOff()
+		voice.voice.NoteOff(0)
 	}
 	s.activeVoices = []*playingVoice{}
 	s.freeVoices = []audio.Source{}
@@ -191,5 +191,5 @@ func (s *Sequencer) Reset() {
 func (s *Sequencer) NoteOn(_, _ float64) {
 }
 
-func (s *Sequencer) NoteOff() {
+func (s *Sequencer) NoteOff(float64) {
 }

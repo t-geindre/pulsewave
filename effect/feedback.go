@@ -172,6 +172,6 @@ func (f *Feedback) NoteOn(freq, velocity float64) {
 	f.src.NoteOn(freq, velocity)
 }
 
-func (f *Feedback) NoteOff() {
-	f.src.NoteOff()
+func (f *Feedback) NoteOff(freq float64) {
+	f.src.NoteOff(freq)
 }

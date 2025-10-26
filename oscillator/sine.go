@@ -35,7 +35,7 @@ func (s *Sine) NoteOn(freq, _ float64) {
 	s.Reset()
 }
 
-func (s *Sine) NoteOff() {
+func (s *Sine) NoteOff(float64) {
 }
 
 func (s *Sine) SetFreq(freq float64) {

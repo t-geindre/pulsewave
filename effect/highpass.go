@@ -121,6 +121,6 @@ func (h *HighPassFilter) NoteOn(freq, velocity float64) {
 	h.src.NoteOn(freq, velocity)
 }
 
-func (h *HighPassFilter) NoteOff() {
-	h.src.NoteOff()
+func (h *HighPassFilter) NoteOff(freq float64) {
+	h.src.NoteOff(freq)
 }

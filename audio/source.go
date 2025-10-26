@@ -14,7 +14,7 @@ type Source interface {
 	NoteOn(freq, velocity float64)
 
 	// NoteOff stops playing the current note.
-	NoteOff()
+	NoteOff(freq float64)
 }
 
 type SourceFactory func() Source

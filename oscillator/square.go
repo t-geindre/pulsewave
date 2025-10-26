@@ -67,5 +67,5 @@ func (s *Square) NoteOn(freq, _ float64) {
 	s.Reset()
 }
 
-func (s *Square) NoteOff() {
+func (s *Square) NoteOff(float64) {
 }

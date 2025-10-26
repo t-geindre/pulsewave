@@ -66,9 +66,9 @@ func (m *Merger) NoteOn(freq, velocity float64) {
 	}
 }
 
-func (m *Merger) NoteOff() {
+func (m *Merger) NoteOff(freq float64) {
 	for _, src := range m.srcs {
-		src.NoteOff()
+		src.NoteOff(freq)
 	}
 }
 

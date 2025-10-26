@@ -51,5 +51,5 @@ func (t *Triangle) NoteOn(freq, velocity float64) {
 	t.Reset()
 }
 
-func (t *Triangle) NoteOff() {
+func (t *Triangle) NoteOff(float64) {
 }

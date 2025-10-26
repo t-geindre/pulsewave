@@ -23,11 +23,11 @@ func (n *Noise) Reset() {
 func (n *Noise) NoteOn(_, _ float64) {
 }
 
-func (n *Noise) NoteOff() {
+func (n *Noise) NoteOff(float64) {
 }
 
-func (n *Noise) SetFreq(_ float64) {
+func (n *Noise) SetFreq(float64) {
 }
 
-func (n *Noise) SetPhaseShift(_ float64) {
+func (n *Noise) SetPhaseShift(float64) {
 }
