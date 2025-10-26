@@ -21,7 +21,7 @@ func NewVoice(src audio.Source, envs ...audio.Source) *Voice {
 func (v *Voice) NoteOn(freq, velocity float64) {
 	v.src.NoteOn(freq, velocity)
 	for _, e := range v.envs {
-		e.NoteOn(freq, velocity)
+		e.NoteOn(0, velocity) // Explicit freq=0 for envelopes
 	}
 	v.gain = velocity // TODO linear softening to target gain
 }
@@ -43,12 +43,12 @@ func (v *Voice) NextValue() (float64, float64) {
 }
 
 func (v *Voice) IsActive() bool {
-	for _, e := range v.envs {
-		if e.IsActive() {
-			return true
+	if len(v.envs) > 0 {
+		if !v.envs[0].IsActive() {
+			return false
 		}
 	}
-	return false
+	return v.src.IsActive()
 }
 
 func (v *Voice) Reset() {

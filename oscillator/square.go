@@ -63,7 +63,9 @@ func (s *Square) IsActive() bool {
 }
 
 func (s *Square) NoteOn(freq, _ float64) {
-	s.SetFreq(freq)
+	if freq > 0 {
+		s.SetFreq(freq)
+	}
 	s.Reset()
 }
 

@@ -72,7 +72,9 @@ func (e *Exponential) IsActive() bool {
 }
 
 func (e *Exponential) NoteOn(freq, velocity float64) {
-	e.SetFreq(freq)
+	if freq > 0 {
+		e.SetFreq(freq)
+	}
 	e.Reset()
 }
 

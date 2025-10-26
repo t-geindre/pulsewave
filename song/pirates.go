@@ -45,7 +45,7 @@ func NewPirates(SampleRate float64) audio.Source {
 	bassSeq.Append(p.bassPattern(true))
 	bassSeq.Append(p.bassPattern(false))
 
-	p.Append(bassSeq, .6)
+	p.Append(bassSeq, .8)
 
 	return p
 }

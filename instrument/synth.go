@@ -15,8 +15,11 @@ type Synth struct {
 func NewSynth(SampleRate float64) *Synth {
 	// Oscillator
 	oscVoice := func() audio.Source {
-		osc := oscillator.NewSaw(SampleRate)
-		return osc
+		merger := effect.NewMerger()
+		merger.Append(oscillator.NewSaw(SampleRate), 1, 1)
+		merger.Append(oscillator.NewSquare(SampleRate), 1, 1)
+		merger.Append(oscillator.NewSine(SampleRate), 1, 1)
+		return merger
 	}
 
 	// Unison
@@ -26,9 +29,13 @@ func NewSynth(SampleRate float64) *Synth {
 	lpf := effect.NewLowPassFilter(SampleRate, unison)
 	lpf.SetQ(.7)
 
-	lpfModSrc := envelop.NewADSR(SampleRate, time.Millisecond*0, time.Millisecond*50, 0, 0)
+	lpfModSrc := oscillator.NewSine(SampleRate) //envelop.NewADSR(SampleRate, time.Millisecond*0, time.Millisecond*1500, time.Millisecond*1500, 0)
+	lpfModSrc.SetFreq(.1)
+	lpfModSrc.SetPhaseShift(.25)
+
 	lpfModApp := audio.NewCallbackSrc(func() (L, R float64) {
 		v, _ := lpfModSrc.NextValue()
+		v = (v + 1) / 2 // Normalize to [0,1]
 		lpf.SetCutoffHz(500 + v*4000)
 		return 0, 0
 	})
@@ -45,7 +52,7 @@ func NewSynth(SampleRate float64) *Synth {
 
 	// Delay
 	delay := effect.NewFeedback(SampleRate, voice)
-	delay.SetDelay(time.Millisecond * 200)
+	delay.SetDelay(time.Millisecond * 300)
 	delay.SetMix(.3)
 	delay.SetFeedback(.4)
 

@@ -49,7 +49,9 @@ func (s *Saw) IsActive() bool {
 }
 
 func (s *Saw) NoteOn(freq, _ float64) {
-	s.SetFreq(freq)
+	if freq > 0 {
+		s.SetFreq(freq)
+	}
 	s.Reset()
 }
 

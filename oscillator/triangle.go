@@ -47,7 +47,9 @@ func (t *Triangle) IsActive() bool {
 }
 
 func (t *Triangle) NoteOn(freq, velocity float64) {
-	t.SetFreq(freq)
+	if freq > 0 {
+		t.SetFreq(freq)
+	}
 	t.Reset()
 }
 
