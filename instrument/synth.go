@@ -17,8 +17,10 @@ func NewSynth(SampleRate float64) *Synth {
 	oscVoice := func() audio.Source {
 		merger := effect.NewMerger()
 		merger.Append(oscillator.NewSaw(SampleRate), 1, 1)
-		merger.Append(oscillator.NewSquare(SampleRate), 1, 1)
-		merger.Append(oscillator.NewSine(SampleRate), 1, 1)
+
+		sine := effect.NewTuner(oscillator.NewTriangle(SampleRate))
+		sine.SetOctaveOffset(-1)
+		merger.Append(sine, 1, 1)
 		return merger
 	}
 
@@ -30,7 +32,7 @@ func NewSynth(SampleRate float64) *Synth {
 	lpf.SetQ(.7)
 
 	lpfModSrc := oscillator.NewSine(SampleRate) //envelop.NewADSR(SampleRate, time.Millisecond*0, time.Millisecond*1500, time.Millisecond*1500, 0)
-	lpfModSrc.SetFreq(.1)
+	lpfModSrc.SetFreq(.6)
 	lpfModSrc.SetPhaseShift(.25)
 
 	lpfModApp := audio.NewCallbackSrc(func() (L, R float64) {

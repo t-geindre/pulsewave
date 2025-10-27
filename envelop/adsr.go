@@ -55,40 +55,72 @@ func NewADSR(sampleRate float64, attack, decay, release time.Duration, sustain f
 }
 
 func (e *ADSR) NoteOn(_, _ float64) {
+	// Si attack <= 0, on "claque" au pic puis Decay
 	if e.attack <= 0 {
-		e.value = 1
+		e.value = 1.0
+		e.state = EnvDecay
+		// dStep dépend du sustain (au cas où il a changé)
+		if e.decay > 0 {
+			e.dStep = (1.0 - e.sustain) / (e.decay * e.sr)
+		} else {
+			e.dStep = 0
+		}
+		return
+	}
+
+	// Soft-retrigger: on repart de la valeur courante sans discontinuité
+	if e.value < 0 {
+		e.value = 0
+	}
+	if e.value >= 1.0 {
+		// Si on est déjà au max, on enchaîne Decay
+		e.value = 1.0
 		e.state = EnvDecay
 	} else {
 		e.state = EnvAttack
+		// Temps d'attaque restant = (1 - value) * attack
+		e.aStep = (1.0 - e.value) / (e.attack * e.sr)
+	}
+
+	// Toujours garder dStep synchro (au cas où sustain/decay ont changé)
+	if e.decay > 0 {
+		e.dStep = (1.0 - e.sustain) / (e.decay * e.sr)
+	} else {
+		e.dStep = 0
 	}
 }
 
 func (e *ADSR) NoteOff(float64) {
-	if e.release <= 0 {
-		e.value = 0
-		e.state = EnvIdle
-		return
-	}
-	if e.value <= 0 {
+	if e.release <= 0 || e.value <= 0 {
 		e.value = 0
 		e.state = EnvIdle
 		e.rStep = 0
 		return
 	}
 	e.state = EnvRelease
-	e.rStep = e.value / (e.release * e.sr) // linéaire jusqu'à 0
+	// Release linéaire depuis le niveau courant
+	e.rStep = e.value / (e.release * e.sr)
 }
 
 func (e *ADSR) NextValue() (float64, float64) {
 	switch e.state {
 	case EnvIdle:
 		e.value = 0
+
 	case EnvAttack:
+		// aStep dépend du point de départ au moment du NoteOn
 		e.value += e.aStep
 		if e.value >= 1.0 || e.attack == 0 {
 			e.value = 1.0
 			e.state = EnvDecay
+			// dStep peut avoir été recalculé dans NoteOn ; sinon on le sécurise
+			if e.decay > 0 {
+				e.dStep = (1.0 - e.sustain) / (e.decay * e.sr)
+			} else {
+				e.dStep = 0
+			}
 		}
+
 	case EnvDecay:
 		if e.decay == 0 {
 			e.value = e.sustain
@@ -100,8 +132,10 @@ func (e *ADSR) NextValue() (float64, float64) {
 				e.state = EnvSustain
 			}
 		}
+
 	case EnvSustain:
-		// Keep sustain level
+		// niveau constant
+
 	case EnvRelease:
 		e.value -= e.rStep
 		if e.value <= 0 {
