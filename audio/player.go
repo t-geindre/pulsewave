@@ -4,7 +4,6 @@ import "github.com/hajimehoshi/ebiten/v2/audio"
 
 type Player struct {
 	audio.Player
-	src Source
 }
 
 func NewPlayer(sr int, src Source) *Player {
@@ -14,15 +13,10 @@ func NewPlayer(sr int, src Source) *Player {
 		panic(err)
 	}
 
-	player.SetVolume(1)
+	player.SetVolume(.2)
 	player.Play()
 
 	return &Player{
 		Player: *player,
-		src:    src,
 	}
-}
-
-func (p *Player) IsPlaying() bool {
-	return p.src.IsActive()
 }
