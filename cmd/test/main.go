@@ -16,38 +16,37 @@ import (
 func main() {
 	const SampleRate = 44100
 
-	// Mixer
-	mixer := dsp.NewMixer(dsp.NewParam(1), true)
+	voiceFact := func() *dsp.Voice {
+		// Oscillators
+		mixer := dsp.NewMixer(dsp.NewParam(1), true)
+		reg := dsp.NewShapeRegistry()
+		reg.Set(0, dsp.ShapeSine)
+		reg.Set(1, dsp.ShapeTriangle)
+		reg.Set(2, dsp.ShapeTriangle)
 
-	// Oscillators
-	reg := dsp.NewShapeRegistry()
-	reg.Set(0, dsp.ShapeSine)
-	reg.Set(1, dsp.ShapeSaw)
-	reg.Set(2, dsp.ShapeTriangle)
-
-	freq := dsp.NewSmoothedParam(SampleRate, 440, .001)
-	for i := 0; i < 3; i++ {
-		oscillator := dsp.NewRegOscillator(SampleRate, reg, i, freq, nil, nil)
-		input := &dsp.Input{
-			Src:  oscillator,
-			Gain: dsp.NewParam(0.3),
-			Pan:  dsp.NewParam(-0.5 + float32(i)*0.5),
+		freq := dsp.NewSmoothedParam(SampleRate, 440, .001)
+		for i := 0; i < 3; i++ {
+			oscillator := dsp.NewRegOscillator(SampleRate, reg, i, freq, nil, nil)
+			input := &dsp.Input{
+				Src:  oscillator,
+				Gain: dsp.NewParam(0.3),
+				Pan:  dsp.NewParam(-0.5 + float32(i)*0.5),
+			}
+			mixer.Add(input)
 		}
-		mixer.Add(input)
+
+		// Voice
+		adsr := dsp.NewADSR(SampleRate, time.Millisecond*5, time.Millisecond*100, 0.8, time.Millisecond*100)
+		voice := dsp.NewVoice(mixer, freq, adsr)
+
+		return voice
 	}
 
-	// Freq mod
-	//fmRate := dsp.NewOscillator(SampleRate, dsp.ShapeSine, dsp.NewParam(1), nil, nil)
-	//*freq.ModInputs() = append(*freq.ModInputs(), dsp.NewModInput(fmRate, 100.0, nil))
-
-	// Envelope
-	gain := dsp.NewParam(0)
-	adsr := dsp.NewADSR(SampleRate, time.Millisecond*10, time.Millisecond*100, 0.8, time.Millisecond*300)
-	*gain.ModInputs() = append(*gain.ModInputs(), dsp.NewModInput(adsr, 1.0, nil))
-	vca := dsp.NewVca(mixer, gain)
+	// Polyphonic voice
+	poly := dsp.NewPolyVoice(8, voiceFact)
 
 	// Player
-	p := audio.NewPlayer(SampleRate, vca)
+	p := audio.NewPlayer(SampleRate, poly)
 	p.SetBufferSize(time.Millisecond * 20)
 
 	// MIDI SETUP
@@ -64,10 +63,9 @@ func main() {
 		var ch, key, vel uint8
 		switch {
 		case msg.GetNoteStart(&ch, &key, &vel):
-			freq.SetBase(dsp.MidiKeys[key])
-			adsr.NoteOn()
+			poly.NoteOn(int(key), float32(vel/127.0))
 		case msg.GetNoteEnd(&ch, &key):
-			adsr.NoteOff()
+			poly.NoteOff(int(key))
 		default:
 			fmt.Println(msg)
 		}

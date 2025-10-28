@@ -1,6 +1,6 @@
 package dsp
 
-var MidiKeys = map[uint8]float32{
+var MidiKeys = map[int]float32{
 	127: 12543.85,
 	126: 11839.82,
 	125: 11175.30,

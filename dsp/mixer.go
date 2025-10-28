@@ -5,7 +5,7 @@ import (
 )
 
 type Input struct {
-	Src  audio.Source
+	Src  Node
 	Gain Param // linear
 	Pan  Param // -1..+1 (0 center), equal-power
 	Mute bool
@@ -39,7 +39,6 @@ func (m *Mixer) Add(in *Input) { m.Inputs = append(m.Inputs, in) }
 
 func (m *Mixer) Process(b *audio.Block) {
 	for i := 0; i < audio.BlockSize; i++ {
-		// Todo check if zeroing is needed
 		m.accL[i] = 0
 		m.accR[i] = 0
 	}
@@ -105,5 +104,13 @@ func (m *Mixer) Process(b *audio.Block) {
 	} else {
 		copy(b.L[:], m.accL[:])
 		copy(b.R[:], m.accR[:])
+	}
+}
+
+func (m *Mixer) Reset() {
+	for _, in := range m.Inputs {
+		if in != nil && in.Src != nil {
+			in.Src.Reset()
+		}
 	}
 }

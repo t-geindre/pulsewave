@@ -1,7 +1,5 @@
 package dsp
 
-import "synth/audio"
-
 type Envelope interface {
 	NoteOn()
 	NoteOff()
@@ -10,26 +8,44 @@ type Envelope interface {
 }
 
 type Voice struct {
-	audio.Source
-	freq Param
-	env  Envelope
+	Node
+	freq  Param
+	gain  Param
+	env   Envelope
+	extra []Node
 }
 
-func NewVoice(src audio.Source, freq Param, env Envelope) *Voice {
+func NewVoice(src Node, freq Param, env Envelope, extra ...Node) *Voice {
 	gain := NewParam(0)
 	*gain.ModInputs() = append(*gain.ModInputs(), NewModInput(env, 1.0, nil))
 
 	return &Voice{
-		Source: NewVca(src, gain),
-		freq:   freq,
-		env:    env,
+		Node:  NewVca(src, gain),
+		freq:  freq,
+		gain:  gain,
+		env:   env,
+		extra: extra,
 	}
 }
 
-func (v *Voice) NoteOne(freq, vel float32) {
+func (v *Voice) NoteOn(key int, vel float32) {
+	// v.gain.SetBase(vel) todo handle vel, probably with a param modulator
+	v.freq.SetBase(MidiKeys[key])
+
+	if v.env.IsIdle() {
+		v.Node.Reset()
+		for _, n := range v.extra {
+			n.Reset()
+		}
+	}
+
 	v.env.NoteOn()
 }
 
 func (v *Voice) NoteOff() {
 	v.env.NoteOff()
+}
+
+func (v *Voice) IsIdle() bool {
+	return v.env.IsIdle()
 }
