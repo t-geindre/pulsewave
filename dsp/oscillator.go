@@ -10,22 +10,34 @@ type Oscillator struct {
 	shapeIndex    int
 
 	freq       Param
-	width      Param // Square only
+	width      Param // ShapeSquare only
 	phaseShift Param
 
 	phase float64
 	sr    float64
 
-	rng uint32 // Noise only
+	rng uint32 // ShapeNoise only
 
 	buf       [audio.BlockSize]float32
 	stampedAt uint64
 }
 
-// NewOscillator creates a new Oscillator instance.
-// phaseShift: in [0..1] cycles,
-// sqrWidth: in [0..1] duty cycle for Square wave.
 func NewOscillator(
+	sampleRate float64,
+	shape OscShape,
+	freq Param,
+	phaseShift Param,
+	sqrWidth Param,
+) *Oscillator {
+	reg := NewShapeRegistry()
+	reg.Set(0, shape)
+	return NewRegOscillator(sampleRate, reg, 0, freq, phaseShift, sqrWidth)
+}
+
+// NewRegOscillator creates a new Oscillator instance.
+// phaseShift: in [0..1] cycles,
+// sqrWidth: in [0..1] duty cycle for ShapeSquare wave.
+func NewRegOscillator(
 	sampleRate float64,
 	shapeRegistry *ShapeRegistry,
 	shapeIndex int,
@@ -44,9 +56,8 @@ func NewOscillator(
 	}
 }
 
-func (s *Oscillator) ResetPhase(start float32) {
-	p := float64(start) - math.Floor(float64(start))
-	s.phase = p * 2 * math.Pi
+func (s *Oscillator) Reset() {
+	s.phase = 0
 }
 
 func (s *Oscillator) Process(block *audio.Block) {
@@ -64,7 +75,7 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 
 	shape := s.shapeRegistry.Get(s.shapeIndex)
 
-	if shape == Noise {
+	if shape == ShapeNoise {
 		for i := 0; i < audio.BlockSize; i++ {
 			x := s.xorShift32()
 			u := float32(x) * (1.0 / 4294967296.0)
@@ -77,7 +88,7 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 	fb := s.freq.Resolve(cycle)
 
 	var wb []float32
-	if shape == Square && s.width != nil {
+	if shape == ShapeSquare && s.width != nil {
 		wb = s.width.Resolve(cycle)
 	}
 
@@ -102,14 +113,14 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 		}
 
 		switch shape {
-		case Sine:
+		case ShapeSine:
 			if shift != 0 {
 				s.buf[i] = float32(math.Sin(s.phase + twoPi*shift))
 			} else {
 				s.buf[i] = float32(math.Sin(s.phase))
 			}
 
-		case Saw:
+		case ShapeSaw:
 			y := float32(2*p - 1)
 			dt := math.Abs(float64(fb[i])) / s.sr
 			if dt > 0.5 {
@@ -118,11 +129,11 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 			y -= polyBLEP(p, dt)
 			s.buf[i] = y
 
-		case Triangle:
+		case ShapeTriangle:
 			tri := 1.0 - 4.0*math.Abs(p-0.5)
 			s.buf[i] = float32(tri)
 
-		case Square:
+		case ShapeSquare:
 			duty := 0.5
 			if wb != nil {
 				d := float64(wb[i])

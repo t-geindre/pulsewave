@@ -3,6 +3,7 @@ package midi
 import (
 	"fmt"
 	"math"
+	"synth/dsp"
 
 	"gitlab.com/gomidi/midi/v2"
 )
@@ -44,7 +45,7 @@ func (r *Router) Route(msg midi.Message) {
 	case msg.GetNoteStart(&ch, &key, &vel):
 		if r.mode == modePlay {
 			vel := math.Pow(float64(vel)/127.0, .8) // Exp curve TODO move to voicer
-			r.voicer.NoteOn(KeysTable[key], vel)
+			r.voicer.NoteOn(dsp.MidiKeys[key], vel)
 			break
 		}
 
@@ -59,7 +60,7 @@ func (r *Router) Route(msg midi.Message) {
 		}
 
 	case msg.GetNoteEnd(&ch, &key):
-		r.voicer.NoteOff(KeysTable[key]) // Always process note off to avoid stuck notes
+		r.voicer.NoteOff(dsp.MidiKeys[key]) // Always process note off to avoid stuck notes
 
 	case msg.GetControlChange(&channel, &ctrl, &val):
 		if channel == 0 && ctrl == holdChannel {

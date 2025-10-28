@@ -1,34 +1,34 @@
 package dsp
 
-type Shape float32
+type OscShape int
 
 const (
-	Sine Shape = iota
-	Saw
-	Triangle
-	Square
-	Noise
+	ShapeSine OscShape = iota
+	ShapeSaw
+	ShapeTriangle
+	ShapeSquare
+	ShapeNoise
 )
 
 type ShapeRegistry struct {
-	shapes map[int]Shape
+	shapes map[int]OscShape
 }
 
 func NewShapeRegistry() *ShapeRegistry {
 	return &ShapeRegistry{}
 }
 
-func (s *ShapeRegistry) Set(id int, shape Shape) {
+func (s *ShapeRegistry) Set(id int, shape OscShape) {
 	if s.shapes == nil {
-		s.shapes = make(map[int]Shape)
+		s.shapes = make(map[int]OscShape)
 	}
 	s.shapes[id] = shape
 }
 
-func (s *ShapeRegistry) Get(id int) Shape {
+func (s *ShapeRegistry) Get(id int) OscShape {
 	if shape, ok := s.shapes[id]; ok {
 		return shape
 	}
 
-	return Sine
+	return ShapeSine
 }
