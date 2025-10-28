@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"synth/assets"
 	"synth/audio"
 	"synth/dsp"
@@ -20,34 +21,49 @@ func main() {
 		// Oscillators
 		mixer := dsp.NewMixer(dsp.NewParam(1), true)
 		reg := dsp.NewShapeRegistry()
-		reg.Set(0, dsp.ShapeSaw)
-		reg.Set(1, dsp.ShapeTriangle)
-		reg.Set(2, dsp.ShapeTriangle)
-
 		freq := dsp.NewSmoothedParam(SampleRate, 440, .001)
-		for i := 0; i < 1; i++ {
-			oscillator := dsp.NewRegOscillator(SampleRate, reg, i, freq, nil, nil)
-			input := &dsp.Input{
-				Src:  oscillator,
-				Gain: dsp.NewParam(1),
-				Pan:  dsp.NewParam(0),
-			}
-			mixer.Add(input)
-		}
+		oscg := float32(1.0 / math.Sqrt(3))
+
+		// 0
+		reg.Set(0, dsp.ShapeSaw)
+		f0 := dsp.NewTunerParam(freq, dsp.NewParam(-0.07))
+		ps0 := dsp.NewParam(.33)
+		mixer.Add(dsp.NewInput(
+			dsp.NewRegOscillator(SampleRate, reg, 0, f0, ps0, nil),
+			dsp.NewParam(oscg),
+			dsp.NewParam(-0.3),
+		))
+
+		// 1
+		reg.Set(0, dsp.ShapeSaw)
+		mixer.Add(dsp.NewInput(
+			dsp.NewRegOscillator(SampleRate, reg, 0, freq, nil, nil),
+			dsp.NewParam(oscg),
+			dsp.NewParam(0),
+		))
+
+		// 2
+		reg.Set(0, dsp.ShapeSaw)
+		f1 := dsp.NewTunerParam(freq, dsp.NewParam(+0.07))
+		mixer.Add(dsp.NewInput(
+			dsp.NewRegOscillator(SampleRate, reg, 0, f1, dsp.NewParam(.66), nil),
+			dsp.NewParam(oscg),
+			dsp.NewParam(.3),
+		))
 
 		// LPF
-		cutoff := dsp.NewSmoothedParam(SampleRate, 500, 0.001)
-		reson := dsp.NewParam(.7)
+		cutoff := dsp.NewSmoothedParam(SampleRate, 800, 0.005)
+		reson := dsp.NewParam(1)
 		lpf := dsp.NewLowPassSVF(SampleRate, mixer, cutoff, reson)
 
-		ctModRateAdsr := dsp.NewADSR(SampleRate, 0, time.Millisecond*150, 0, time.Millisecond*100)
-		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateAdsr, 4000, nil))
+		ctModRateAdsr := dsp.NewADSR(SampleRate, 0, time.Millisecond*50, 0, time.Millisecond*100)
+		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateAdsr, 1000, nil))
 
 		ctModRateOsc := dsp.NewOscillator(SampleRate, dsp.ShapeSine, dsp.NewParam(.5), dsp.NewParam(1), nil)
 		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateOsc, 200, nil))
 
 		// Voice
-		adsr := dsp.NewADSR(SampleRate, time.Millisecond*50, time.Millisecond*150, .9, time.Millisecond*100)
+		adsr := dsp.NewADSR(SampleRate, time.Millisecond*10, time.Millisecond*800, .9, time.Millisecond*100)
 		voice := dsp.NewVoice(lpf, freq, adsr, ctModRateAdsr, ctModRateOsc)
 
 		return voice
@@ -56,8 +72,19 @@ func main() {
 	// Polyphonic voice
 	poly := dsp.NewPolyVoice(8, voiceFact)
 
+	// Delay
+	delay := dsp.NewFeedbackDelay(
+		SampleRate,
+		2.0,
+		poly,
+		dsp.NewParam(0.35), // delay time in seconds
+		dsp.NewParam(0.3),  // feedback amount (0-1)
+		dsp.NewParam(0.2),  // mix
+		dsp.NewParam(2000), // mix amount (0-1)
+	)
+
 	// Player
-	p := audio.NewPlayer(SampleRate, poly)
+	p := audio.NewPlayer(SampleRate, delay)
 	p.SetBufferSize(time.Millisecond * 20)
 
 	// MIDI SETUP

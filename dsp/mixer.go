@@ -11,6 +11,14 @@ type Input struct {
 	Mute bool
 }
 
+func NewInput(src Node, gain, pan Param) *Input {
+	return &Input{
+		Src:  src,
+		Gain: gain,
+		Pan:  pan,
+	}
+}
+
 type Mixer struct {
 	Inputs []*Input
 

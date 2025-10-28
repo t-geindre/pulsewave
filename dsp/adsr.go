@@ -19,13 +19,12 @@ const (
 type ADSR struct {
 	sr float64
 
-	Atk, Dec, Sus, Rel float64 // secondes, secondes, [0..1], secondes
+	Atk, Dec, Sus, Rel float64
 
 	state State
-	value float32 // niveau courant [0..1]
+	value float32
 	gate  bool
 
-	// coefficients par-sample (calculés par bloc)
 	aCoef, dCoef, rCoef float32
 
 	buf       [audio.BlockSize]float32
@@ -50,7 +49,7 @@ func (a *ADSR) NoteOn() {
 }
 
 func (a *ADSR) Reset() {
-	a.state = EnvIdle
+	a.NoteOff()
 	a.NoteOn()
 }
 
@@ -64,8 +63,8 @@ func (a *ADSR) NoteOff() {
 func coefFromTime(t, sr float64) float32 {
 	if t <= 0 {
 		return 0
-	} // passe quasi-instantanée
-	// One-pole approx: y += (target - y)*(1 - exp(-1/(t*sr)))
+	}
+
 	return float32(1 - math.Exp(-1.0/(t*sr)))
 }
 
@@ -86,14 +85,12 @@ func (a *ADSR) Resolve(cycle uint64) []float32 {
 		case EnvIdle:
 			a.value = 0
 		case EnvAttack:
-			// vers 1.0
 			a.value += (1 - a.value) * a.aCoef
 			if a.value > 0.9999 || a.aCoef == 0 {
 				a.value = 1
 				a.state = EnvDecay
 			}
 		case EnvDecay:
-			// vers EnvSustain
 			target := float32(a.Sus)
 			a.value += (target - a.value) * a.dCoef
 			if (a.dCoef == 0 && a.value == target) || (a.value-target)*(1) <= 1e-6 {
@@ -105,9 +102,8 @@ func (a *ADSR) Resolve(cycle uint64) []float32 {
 				a.state = EnvRelease
 			}
 		case EnvRelease:
-			// vers 0.0
 			a.value += (0 - a.value) * a.rCoef
-			if a.value < 1e-5 {
+			if a.value < 0.001 || a.rCoef == 0 {
 				a.value = 0
 				a.state = EnvIdle
 			}
