@@ -35,3 +35,24 @@ func softClip(x float32) float32 {
 	ax := float32(math.Abs(float64(x)))
 	return x / (1 + ax)
 }
+
+// LPF (Uni pole) from cutoff (Hz)
+func lpfCoef(cutHz, sr float64) float32 {
+	if cutHz <= 0 {
+		return 0
+	}
+
+	// bilinear simple / one-pole exp
+	// alpha ~= 1 - exp(-2π fc / sr)
+	return float32(1 - math.Exp(-2*math.Pi*cutHz/sr))
+}
+
+func clamp01(x float32) float32 {
+	if x < 0 {
+		return 0
+	}
+	if x > 1 {
+		return 1
+	}
+	return x
+}

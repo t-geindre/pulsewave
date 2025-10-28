@@ -1,5 +1,9 @@
 package dsp
 
+type Resettable interface {
+	Reset()
+}
+
 type Envelope interface {
 	NoteOn()
 	NoteOff()
@@ -12,10 +16,10 @@ type Voice struct {
 	freq  Param
 	gain  Param
 	env   Envelope
-	extra []Node
+	extra []Resettable
 }
 
-func NewVoice(src Node, freq Param, env Envelope, extra ...Node) *Voice {
+func NewVoice(src Node, freq Param, env Envelope, extra ...Resettable) *Voice {
 	gain := NewParam(0)
 	*gain.ModInputs() = append(*gain.ModInputs(), NewModInput(env, 1.0, nil))
 
@@ -32,11 +36,9 @@ func (v *Voice) NoteOn(key int, vel float32) {
 	// v.gain.SetBase(vel) todo handle vel, probably with a param modulator
 	v.freq.SetBase(MidiKeys[key])
 
-	if v.env.IsIdle() {
-		v.Node.Reset()
-		for _, n := range v.extra {
-			n.Reset()
-		}
+	v.Node.Reset()
+	for _, n := range v.extra {
+		n.Reset()
 	}
 
 	v.env.NoteOn()

@@ -20,24 +20,35 @@ func main() {
 		// Oscillators
 		mixer := dsp.NewMixer(dsp.NewParam(1), true)
 		reg := dsp.NewShapeRegistry()
-		reg.Set(0, dsp.ShapeSine)
+		reg.Set(0, dsp.ShapeSaw)
 		reg.Set(1, dsp.ShapeTriangle)
 		reg.Set(2, dsp.ShapeTriangle)
 
 		freq := dsp.NewSmoothedParam(SampleRate, 440, .001)
-		for i := 0; i < 3; i++ {
+		for i := 0; i < 1; i++ {
 			oscillator := dsp.NewRegOscillator(SampleRate, reg, i, freq, nil, nil)
 			input := &dsp.Input{
 				Src:  oscillator,
-				Gain: dsp.NewParam(0.3),
-				Pan:  dsp.NewParam(-0.5 + float32(i)*0.5),
+				Gain: dsp.NewParam(1),
+				Pan:  dsp.NewParam(0),
 			}
 			mixer.Add(input)
 		}
 
+		// LPF
+		cutoff := dsp.NewSmoothedParam(SampleRate, 500, 0.001)
+		reson := dsp.NewParam(.7)
+		lpf := dsp.NewLowPassSVF(SampleRate, mixer, cutoff, reson)
+
+		ctModRateAdsr := dsp.NewADSR(SampleRate, 0, time.Millisecond*150, 0, time.Millisecond*100)
+		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateAdsr, 4000, nil))
+
+		ctModRateOsc := dsp.NewOscillator(SampleRate, dsp.ShapeSine, dsp.NewParam(.5), dsp.NewParam(1), nil)
+		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateOsc, 200, nil))
+
 		// Voice
-		adsr := dsp.NewADSR(SampleRate, time.Millisecond*5, time.Millisecond*100, 0.8, time.Millisecond*100)
-		voice := dsp.NewVoice(mixer, freq, adsr)
+		adsr := dsp.NewADSR(SampleRate, time.Millisecond*50, time.Millisecond*150, .9, time.Millisecond*100)
+		voice := dsp.NewVoice(lpf, freq, adsr, ctModRateAdsr, ctModRateOsc)
 
 		return voice
 	}

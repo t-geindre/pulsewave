@@ -48,6 +48,12 @@ func (a *ADSR) NoteOn() {
 		a.state = EnvAttack
 	}
 }
+
+func (a *ADSR) Reset() {
+	a.state = EnvIdle
+	a.NoteOn()
+}
+
 func (a *ADSR) NoteOff() {
 	a.gate = false
 	if a.state != EnvIdle {
@@ -82,7 +88,7 @@ func (a *ADSR) Resolve(cycle uint64) []float32 {
 		case EnvAttack:
 			// vers 1.0
 			a.value += (1 - a.value) * a.aCoef
-			if a.value > 0.9999 {
+			if a.value > 0.9999 || a.aCoef == 0 {
 				a.value = 1
 				a.state = EnvDecay
 			}
