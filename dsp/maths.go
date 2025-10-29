@@ -47,6 +47,7 @@ func lpfCoef(cutHz, sr float64) float32 {
 	return float32(1 - math.Exp(-2*math.Pi*cutHz/sr))
 }
 
+// clamp01 clamps x to the range [0, 1]
 func clamp01(x float32) float32 {
 	if x < 0 {
 		return 0
@@ -55,4 +56,17 @@ func clamp01(x float32) float32 {
 		return 1
 	}
 	return x
+}
+
+// centeredPower applies a centered power function to x with exponent gamma
+func centeredPower(x, gamma float64) float64 {
+	if gamma == 1 {
+		return x
+	}
+	s := 1.0
+	if x < 0 {
+		s = -1
+		x = -x
+	}
+	return s * math.Pow(x, gamma)
 }

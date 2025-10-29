@@ -149,6 +149,11 @@ func (d *FeedbackDelay) safeResolve(p Param, cycle uint64) []float32 {
 	return p.Resolve(cycle)
 }
 
+func (d *FeedbackDelay) Reset() {
+	// Todo check if we should do something here
+}
+
+// todo move this elsewhere
 var zeroBlock = func() [audio.BlockSize]float32 {
 	var z [audio.BlockSize]float32
 	for i := 0; i < audio.BlockSize; i++ {

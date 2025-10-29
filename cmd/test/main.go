@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"synth/assets"
 	"synth/audio"
 	"synth/dsp"
@@ -17,50 +16,66 @@ import (
 func main() {
 	const SampleRate = 44100
 
+	// Shape registry (uniq for all voices)
+	reg := dsp.NewShapeRegistry()
+	reg.Set(0, dsp.ShapeSaw)
+	reg.Set(1, dsp.ShapeTriangle)
+	reg.Set(2, dsp.ShapeSine)
+
+	// Voice factory
 	voiceFact := func() *dsp.Voice {
-		// Oscillators
-		mixer := dsp.NewMixer(dsp.NewParam(1), true)
-		reg := dsp.NewShapeRegistry()
+		// Base frequency param (uniq per voice)
 		freq := dsp.NewSmoothedParam(SampleRate, 440, .001)
-		oscg := float32(1.0 / math.Sqrt(3))
 
-		// 0
-		reg.Set(0, dsp.ShapeSaw)
-		f0 := dsp.NewTunerParam(freq, dsp.NewParam(-0.07))
-		ps0 := dsp.NewParam(.33)
-		mixer.Add(dsp.NewInput(
-			dsp.NewRegOscillator(SampleRate, reg, 0, f0, ps0, nil),
-			dsp.NewParam(oscg),
-			dsp.NewParam(-0.3),
-		))
+		// Oscillator factory
+		oscFact := func(ph, dt dsp.Param) dsp.Node {
+			// Mixer, registry
+			mixer := dsp.NewMixer(dsp.NewParam(1), false)
+			ft := dsp.NewTunerParam(freq, dt)
 
-		// 1
-		reg.Set(0, dsp.ShapeSaw)
-		mixer.Add(dsp.NewInput(
-			dsp.NewRegOscillator(SampleRate, reg, 0, freq, nil, nil),
-			dsp.NewParam(oscg),
-			dsp.NewParam(0),
-		))
+			// 0
+			mixer.Add(dsp.NewInput(
+				dsp.NewRegOscillator(SampleRate, reg, 0, ft, ph, nil),
+				dsp.NewParam(.33),
+				dsp.NewParam(0),
+			))
+			// 1
+			mixer.Add(dsp.NewInput(
+				dsp.NewRegOscillator(SampleRate, reg, 1, dsp.NewTunerParam(ft, dsp.NewParam(-12)), ph, nil),
+				dsp.NewParam(.33),
+				dsp.NewParam(0),
+			))
 
-		// 2
-		reg.Set(0, dsp.ShapeSaw)
-		f1 := dsp.NewTunerParam(freq, dsp.NewParam(+0.07))
-		mixer.Add(dsp.NewInput(
-			dsp.NewRegOscillator(SampleRate, reg, 0, f1, dsp.NewParam(.66), nil),
-			dsp.NewParam(oscg),
-			dsp.NewParam(.3),
-		))
+			// 2
+			mixer.Add(dsp.NewInput(
+				dsp.NewRegOscillator(SampleRate, reg, 2, dsp.NewTunerParam(ft, dsp.NewParam(+24)), ph, nil),
+				dsp.NewParam(0.1),
+				dsp.NewParam(0),
+			))
+			return mixer
+		}
+
+		// Unison
+		unison := dsp.NewUnison(dsp.UnisonOpts{
+			SampleRate:   SampleRate,
+			NumVoices:    4,
+			Factory:      oscFact,
+			PanSpread:    dsp.NewParam(1.0),
+			PhaseSpread:  dsp.NewParam(.1),
+			DetuneSpread: dsp.NewParam(12.0),
+			CurveGamma:   dsp.NewParam(1),
+		})
 
 		// LPF
 		cutoff := dsp.NewSmoothedParam(SampleRate, 800, 0.005)
 		reson := dsp.NewParam(1)
-		lpf := dsp.NewLowPassSVF(SampleRate, mixer, cutoff, reson)
+		lpf := dsp.NewLowPassSVF(SampleRate, unison, cutoff, reson)
 
 		ctModRateAdsr := dsp.NewADSR(SampleRate, 0, time.Millisecond*50, 0, time.Millisecond*100)
-		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateAdsr, 1000, nil))
+		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateAdsr, 2000, nil))
 
 		ctModRateOsc := dsp.NewOscillator(SampleRate, dsp.ShapeSine, dsp.NewParam(.5), dsp.NewParam(1), nil)
-		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateOsc, 200, nil))
+		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateOsc, 300, nil))
 
 		// Voice
 		adsr := dsp.NewADSR(SampleRate, time.Millisecond*10, time.Millisecond*800, .9, time.Millisecond*100)
@@ -83,9 +98,12 @@ func main() {
 		dsp.NewParam(2000), // mix amount (0-1)
 	)
 
+	// Headroom
+	headroom := dsp.NewVca(delay, dsp.NewParam(0.7))
+
 	// Player
-	p := audio.NewPlayer(SampleRate, delay)
-	p.SetBufferSize(time.Millisecond * 20)
+	p := audio.NewPlayer(SampleRate, headroom)
+	p.SetBufferSize(time.Millisecond * 30)
 
 	// MIDI SETUP
 	defer midi.CloseDriver()

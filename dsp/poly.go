@@ -4,7 +4,7 @@ type PolyVoice struct {
 	voices  map[int]*Voice
 	max     int
 	factory func() *Voice
-	Node
+	*Mixer
 }
 
 func NewPolyVoice(max int, factory func() *Voice) *PolyVoice {
@@ -12,7 +12,7 @@ func NewPolyVoice(max int, factory func() *Voice) *PolyVoice {
 		voices:  make(map[int]*Voice),
 		max:     max,
 		factory: factory,
-		Node:    NewMixer(NewParam(1), false),
+		Mixer:   NewMixer(NewParam(1), true),
 	}
 }
 
@@ -38,11 +38,7 @@ func (p *PolyVoice) NoteOn(key int, vel float32) {
 	vc.NoteOn(key, vel)
 	p.voices[key] = vc
 
-	(p.Node.(*Mixer)).Add(&Input{
-		Src:  vc,
-		Gain: NewParam(1),
-		Pan:  NewParam(0),
-	})
+	p.Mixer.Add(NewInput(vc, NewParam(1), NewParam(0)))
 }
 
 func (p *PolyVoice) NoteOff(key int) {

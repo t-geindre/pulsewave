@@ -1,6 +1,6 @@
 package audio
 
-const BlockSize = 256
+const BlockSize = 512
 
 type Block struct {
 	// Cycle Unique identifier for the current block

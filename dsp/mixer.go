@@ -43,7 +43,15 @@ func NewMixer(masterGain Param, softClip bool) *Mixer {
 	return m
 }
 
-func (m *Mixer) Add(in *Input) { m.Inputs = append(m.Inputs, in) }
+func (m *Mixer) Add(in *Input) int {
+	m.Inputs = append(m.Inputs, in)
+
+	return len(m.Inputs) - 1
+}
+
+func (m *Mixer) Clear() {
+	m.Inputs = m.Inputs[:0]
+}
 
 func (m *Mixer) Process(b *audio.Block) {
 	for i := 0; i < audio.BlockSize; i++ {

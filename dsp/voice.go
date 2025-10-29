@@ -36,8 +36,8 @@ func (v *Voice) NoteOn(key int, vel float32) {
 	// v.gain.SetBase(vel) todo handle vel, probably with a param modulator
 	v.freq.SetBase(MidiKeys[key])
 
+	v.Node.Reset()
 	if v.env.IsIdle() {
-		v.Node.Reset()
 	}
 	for _, n := range v.extra {
 		n.Reset()
