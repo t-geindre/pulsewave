@@ -1,14 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"synth/assets"
 	"synth/audio"
 	"synth/dsp"
-	"synth/ui"
 	"time"
 
-	"github.com/hajimehoshi/ebiten/v2"
 	"gitlab.com/gomidi/midi/v2"
 	_ "gitlab.com/gomidi/midi/v2/drivers/rtmididrv" // autoregisters driver
 )
@@ -58,12 +54,12 @@ func main() {
 		// Unison
 		unison := dsp.NewUnison(dsp.UnisonOpts{
 			SampleRate:   SampleRate,
-			NumVoices:    4,
+			NumVoices:    8,
 			Factory:      oscFact,
 			PanSpread:    dsp.NewParam(1.0),
 			PhaseSpread:  dsp.NewParam(.1),
-			DetuneSpread: dsp.NewParam(12.0),
-			CurveGamma:   dsp.NewParam(1),
+			DetuneSpread: dsp.NewParam(24.0),
+			CurveGamma:   dsp.NewParam(1.5),
 		})
 
 		// LPF
@@ -71,8 +67,8 @@ func main() {
 		reson := dsp.NewParam(1)
 		lpf := dsp.NewLowPassSVF(SampleRate, unison, cutoff, reson)
 
-		ctModRateAdsr := dsp.NewADSR(SampleRate, 0, time.Millisecond*50, 0, time.Millisecond*100)
-		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateAdsr, 2000, nil))
+		ctModRateAdsr := dsp.NewADSR(SampleRate, time.Millisecond*5, time.Millisecond*50, 0, time.Millisecond*100)
+		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateAdsr, 4000, nil))
 
 		ctModRateOsc := dsp.NewOscillator(SampleRate, dsp.ShapeSine, dsp.NewParam(.5), dsp.NewParam(1), nil)
 		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateOsc, 300, nil))
@@ -99,10 +95,13 @@ func main() {
 	)
 
 	// Headroom
-	headroom := dsp.NewVca(delay, dsp.NewParam(0.7))
+	headroom := dsp.NewVca(delay, dsp.NewParam(0.8))
+
+	// Trim HF
+	clean := dsp.NewLowPassSVF(SampleRate, headroom, dsp.NewParam(18000), dsp.NewParam(0.5))
 
 	// Player
-	p := audio.NewPlayer(SampleRate, headroom)
+	p := audio.NewPlayer(SampleRate, clean)
 	p.SetBufferSize(time.Millisecond * 30)
 
 	// MIDI SETUP
@@ -111,7 +110,7 @@ func main() {
 	ips := midi.GetInPorts()
 	in, err := midi.FindInPort(ips[1].String())
 	if err != nil {
-		fmt.Println("can't find VMPK")
+		panic(err)
 		return
 	}
 
@@ -123,7 +122,7 @@ func main() {
 		case msg.GetNoteEnd(&ch, &key):
 			poly.NoteOff(int(key))
 		default:
-			fmt.Println(msg)
+			// fmt.Println(msg) ignore
 		}
 	})
 	_ = stopFn // Todo
@@ -133,16 +132,19 @@ func main() {
 	}
 
 	// UI
-	asts := assets.NewLoader()
-	asts.AddImage("ui/background", "assets/imgs/background.png")
-	asts.AddImage("ui/arrow", "assets/imgs/arrow.png")
-	asts.AddImage("ui/selected", "assets/imgs/selected.png")
-	asts.AddFont("ui/font", "assets/fonts/roboto/Roboto-Medium.ttf") // Roboto medium, letter spacing 3, size 20, color white
-	asts.AddFace("ui/face", "ui/font", 21)
-	asts.MustLoad()
-
-	err = ebiten.RunGame(ui.NewUi(asts))
-	if err != nil {
-		panic(err)
+	for {
+		time.Sleep(time.Second)
 	}
+	//asts := assets.NewLoader()
+	//asts.AddImage("ui/background", "assets/imgs/background.png")
+	//asts.AddImage("ui/arrow", "assets/imgs/arrow.png")
+	//asts.AddImage("ui/selected", "assets/imgs/selected.png")
+	//asts.AddFont("ui/font", "assets/fonts/roboto/Roboto-Medium.ttf") // Roboto medium, letter spacing 3, size 20, color white
+	//asts.AddFace("ui/face", "ui/font", 21)
+	//asts.MustLoad()
+	//
+	//err = ebiten.RunGame(ui.NewUi(asts))
+	//if err != nil {
+	//	panic(err)
+	//}
 }

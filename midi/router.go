@@ -75,6 +75,6 @@ func (r *Router) Route(msg midi.Message) {
 			r.menu.Wheel(val)
 		}
 	default:
-		fmt.Println("UNKNOWN COMMAND", msg.String())
+		// fmt.Println("UNKNOWN COMMAND", msg.String()) Ignore
 	}
 }

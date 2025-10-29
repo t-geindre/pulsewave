@@ -35,7 +35,7 @@ func main() {
 	ips := midi.GetInPorts()
 	in, err := midi.FindInPort(ips[1].String())
 	if err != nil {
-		fmt.Println("can't find VMPK")
+		panic(err)
 		return
 	}
 

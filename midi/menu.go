@@ -1,9 +1,5 @@
 package midi
 
-import (
-	"fmt"
-)
-
 type Node struct {
 	Parent   *Node
 	Label    string
@@ -38,14 +34,12 @@ func (m *Menu) Wheel(v uint8) {
 		}
 		m.cursor = m.cursor % len(m.current.Children)
 	}
-	fmt.Printf("\r %s          ", m.current.Children[m.cursor].Label)
 }
 
 func (m *Menu) Forward() {
 }
 
 func (m *Menu) Backward() {
-	fmt.Println("backward")
 }
 
 func (m *Menu) build() {

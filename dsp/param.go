@@ -17,8 +17,8 @@ type ParamSimple struct {
 	stampedAt uint64
 }
 
-func NewParam(base float32) *SmoothedParam {
-	return &SmoothedParam{
+func NewParam(base float32) *ParamSimple {
+	return &ParamSimple{
 		base: base,
 	}
 }
@@ -37,10 +37,18 @@ func (s *ParamSimple) Resolve(cycle uint64) []float32 {
 
 	for _, mi := range s.inputs {
 		src := mi.Src.Resolve(cycle)
-		for i := 0; i < audio.BlockSize; i++ {
-			s.buf[i] += mi.Amount * src[i]
+		if mi.Map == nil {
+			for i := 0; i < audio.BlockSize; i++ {
+				s.buf[i] += mi.Amount * src[i]
+			}
+		} else {
+			for i := 0; i < audio.BlockSize; i++ {
+				s.buf[i] += mi.Amount * mi.Map(src[i])
+			}
 		}
 	}
+
+	s.stampedAt = cycle
 
 	return s.buf[:]
 }

@@ -62,10 +62,7 @@ func (m *Mixer) Process(b *audio.Block) {
 	// Sum
 	m.tmp.Cycle = b.Cycle
 	for _, in := range m.Inputs {
-		if in == nil || in.Src == nil {
-			continue
-		}
-		if in.Mute {
+		if in == nil || in.Src == nil || in.Mute {
 			continue
 		}
 
