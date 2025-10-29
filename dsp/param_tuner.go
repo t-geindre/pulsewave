@@ -1,7 +1,6 @@
 package dsp
 
 import (
-	"math"
 	"synth/audio"
 )
 
@@ -27,9 +26,29 @@ func (p *TunerParam) Resolve(cycle uint64) []float32 {
 	}
 	base := p.Param.Resolve(cycle)
 	semi := p.st.Resolve(cycle)
+
+	// Fast path: if semi is (nearly) constant across the block, compute once.
+	const eps = 1e-9
+	s0 := semi[0]
+	isFlat := true
+	for i := 1; i < audio.BlockSize; i++ {
+		if diff := semi[i] - s0; diff > eps || diff < -eps {
+			isFlat = false
+			break
+		}
+	}
+	if isFlat {
+		r := fastExpSemi(s0)
+		for i := 0; i < audio.BlockSize; i++ {
+			p.buf[i] = base[i] * r
+		}
+		p.stampedAt = cycle
+		return p.buf[:]
+	}
+
+	// General path
 	for i := 0; i < audio.BlockSize; i++ {
-		ratio := float32(math.Pow(2, float64(semi[i])/12.0))
-		p.buf[i] = base[i] * ratio
+		p.buf[i] = base[i] * fastExpSemi(semi[i])
 	}
 	p.stampedAt = cycle
 	return p.buf[:]

@@ -1,6 +1,8 @@
 package dsp
 
-import "math"
+import (
+	"math"
+)
 
 // polyBLEP Polynomial Band-Limited Step
 func polyBLEP(t, dt float64) float32 {
@@ -21,15 +23,6 @@ func polyBLEP(t, dt float64) float32 {
 	return 0
 }
 
-// panGains computes left and right gain factors for a given pan
-// value p in [-1, +1] using equal-power panning
-func panGains(p float32) (gl, gr float32) {
-	theta := (float64(p) + 1.0) * 0.25 * math.Pi
-	gl = float32(math.Cos(theta))
-	gr = float32(math.Sin(theta))
-	return
-}
-
 // softClip applies a soft clipping function to the input x
 func softClip(x float32) float32 {
 	ax := float32(math.Abs(float64(x)))
@@ -37,14 +30,20 @@ func softClip(x float32) float32 {
 }
 
 // LPF (Uni pole) from cutoff (Hz)
-func lpfCoef(cutHz, sr float64) float32 {
-	if cutHz <= 0 {
+// uses a LUT + interpolation for performances
+func fastLpfCoef(cutHz, sr float64) float32 {
+	x := 2 * math.Pi * cutHz / sr
+	if x <= 0 {
 		return 0
 	}
-
-	// bilinear simple / one-pole exp
-	// alpha ~= 1 - exp(-2π fc / sr)
-	return float32(1 - math.Exp(-2*math.Pi*cutHz/sr))
+	if x >= expNegXMax {
+		return 1
+	}
+	u := x * (4096.0 / expNegXMax)
+	i := int(u)
+	f := float32(u - float64(i))
+	en := expNegLUT[i] + f*(expNegLUT[i+1]-expNegLUT[i]) // e^{-x}
+	return 1 - en
 }
 
 // clamp01 clamps x to the range [0, 1]
@@ -69,4 +68,93 @@ func centeredPower(x, gamma float64) float64 {
 		x = -x
 	}
 	return s * math.Pow(x, gamma)
+}
+
+// fastPanGains computes left and right gain factors for a given pan
+// value p in [-1, +1] using equal-power panning
+// uses a LUT + interpolation for performances
+func fastPanGains(p float32) (gl, gr float32) {
+	if p <= -1 {
+		return panLUT[0][0], panLUT[0][1]
+	}
+	if p >= 1 {
+		return panLUT[1024][0], panLUT[1024][1]
+	}
+	x := (p + 1) * 512 // 0..1024
+	i := int(x)
+	f := x - float32(i)
+	a := panLUT[i]
+	b := panLUT[i+1]
+	return a[0] + f*(b[0]-a[0]), a[1] + f*(b[1]-a[1])
+}
+
+// fastExpSemi computes 2^(semi/12) using a LUT for cents and ldexp for octaves
+func fastExpSemi(semi float32) float32 {
+	oct := int(math.Floor(float64(semi) / 12.0))
+	remSemi := semi - float32(oct*12)
+
+	intSemi := int(math.Floor(float64(remSemi)))
+	if intSemi < 0 {
+		intSemi = 0
+	}
+	fracSemi := remSemi - float32(intSemi)
+
+	cents := fracSemi * centsPerSemi
+	if cents < 0 {
+		cents = 0
+	}
+	if cents > centsPerSemi {
+		cents = centsPerSemi
+	}
+	i := int(cents)
+	if i >= centsMax {
+		oct += 0
+		i = centsMax
+	}
+	t := cents - float32(i)
+
+	rFrac := centLUT[i]
+	if i < centsMax {
+		rFrac = rFrac + t*(centLUT[i+1]-rFrac)
+	}
+
+	if intSemi > 0 {
+		rFrac *= float32(math.Exp2(float64(intSemi) / 12.0))
+	}
+
+	return float32(math.Ldexp(float64(rFrac), oct))
+}
+
+var panLUT [1025][2]float32 // [gl,gr]
+
+const expNegXMax = math.Pi // ~2π*fc/sr at fc≈sr/2
+var expNegLUT [4097]float32
+
+const (
+	centsPerSemi = 100.0
+	centsMax     = 100
+)
+
+var centLUT [centsMax + 1]float32
+
+func init() {
+	// LUT pan
+	for i := 0; i <= 1024; i++ {
+		p := -1 + 2*float64(i)/1024
+		gl := math.Sqrt(0.5 * (1 - p))
+		gr := math.Sqrt(0.5 * (1 + p))
+		panLUT[i][0] = float32(gl)
+		panLUT[i][1] = float32(gr)
+	}
+
+	// LUT expNeg
+	for i := 0; i <= 4096; i++ {
+		x := float64(i) * expNegXMax / 4096.0
+		expNegLUT[i] = float32(math.Exp(-x))
+	}
+
+	// LUT cent exp
+	for c := 0; c <= centsMax; c++ {
+		centLUT[c] = float32(math.Exp2(float64(c) / 1200.0))
+	}
 }

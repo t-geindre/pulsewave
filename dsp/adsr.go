@@ -32,13 +32,17 @@ type ADSR struct {
 }
 
 func NewADSR(sr float64, atk, dec time.Duration, sus float64, rel time.Duration) *ADSR {
-	return &ADSR{
+	a := &ADSR{
 		sr:  sr,
 		Atk: atk.Seconds(),
 		Dec: dec.Seconds(),
 		Sus: sus,
 		Rel: rel.Seconds(),
 	}
+
+	a.prepare()
+
+	return a
 }
 
 func (a *ADSR) NoteOn() {
@@ -78,7 +82,6 @@ func (a *ADSR) Resolve(cycle uint64) []float32 {
 	if a.stampedAt == cycle {
 		return a.buf[:]
 	}
-	a.prepare()
 
 	for i := 0; i < audio.BlockSize; i++ {
 		switch a.state {

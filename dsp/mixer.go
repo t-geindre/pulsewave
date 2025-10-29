@@ -86,7 +86,7 @@ func (m *Mixer) Process(b *audio.Block) {
 			}
 			gl, gr := float32(1), float32(1)
 			if panB != nil {
-				gl, gr = panGains(panB[i])
+				gl, gr = fastPanGains(panB[i])
 			}
 			m.accL[i] += m.tmp.L[i] * g * gl
 			m.accR[i] += m.tmp.R[i] * g * gr

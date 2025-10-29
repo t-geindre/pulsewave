@@ -6,8 +6,7 @@ import (
 )
 
 type SmoothedParam struct {
-	sr           float64
-	timeConstant float32 // s, ex: 0.005 cutoff, 0.001 amp/pitch
+	alpha float32
 
 	base   float32
 	inputs []ParamModInput
@@ -18,12 +17,12 @@ type SmoothedParam struct {
 	stampedAt uint64
 }
 
-func NewSmoothedParam(sr float64, base, tc float32) *SmoothedParam {
+// NewSmoothedParam tc: ex: 0.005 cutoff, 0.001 amp/pitch
+func NewSmoothedParam(sr float64, base float32, tc float64) *SmoothedParam {
 	return &SmoothedParam{
-		sr:           sr,
-		base:         base,
-		timeConstant: tc,
-		last:         base,
+		base:  base,
+		last:  base,
+		alpha: float32(1.0 - math.Exp(-1.0/(tc*sr))),
 	}
 }
 
@@ -52,10 +51,9 @@ func (s *SmoothedParam) Resolve(cycle uint64) []float32 {
 		}
 	}
 
-	alpha := float32(1.0 - math.Exp(-1.0/(float64(s.timeConstant)*s.sr)))
 	cur := s.last
 	for i := 0; i < audio.BlockSize; i++ {
-		cur += alpha * (s.buf[i] - cur)
+		cur += s.alpha * (s.buf[i] - cur)
 		s.buf[i] = cur
 	}
 	s.last = cur

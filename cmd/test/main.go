@@ -58,7 +58,7 @@ func main() {
 			Factory:      oscFact,
 			PanSpread:    dsp.NewParam(1.0),
 			PhaseSpread:  dsp.NewParam(.1),
-			DetuneSpread: dsp.NewParam(24.0),
+			DetuneSpread: dsp.NewParam(12.0),
 			CurveGamma:   dsp.NewParam(1.5),
 		})
 
@@ -102,7 +102,7 @@ func main() {
 
 	// Player
 	p := audio.NewPlayer(SampleRate, clean)
-	p.SetBufferSize(time.Millisecond * 30)
+	p.SetBufferSize(time.Millisecond * 20)
 
 	// MIDI SETUP
 	defer midi.CloseDriver()

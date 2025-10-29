@@ -77,7 +77,7 @@ func (d *FeedbackDelay) Process(b *audio.Block) {
 	var alpha float32
 	if d.ToneHz != nil {
 		tone := d.ToneHz.Resolve(b.Cycle)
-		alpha = lpfCoef(float64(tone[0]), d.sr)
+		alpha = fastLpfCoef(float64(tone[0]), d.sr)
 	} else {
 		alpha = 0
 	}
