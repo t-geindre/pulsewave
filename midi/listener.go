@@ -1,7 +1,7 @@
 package midi
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 	"synth/msg"
 
@@ -10,7 +10,7 @@ import (
 	"gitlab.com/gomidi/midi/v2/drivers"
 )
 
-var ErrNoMidiDevice = fmt.Errorf("no midi device found")
+var ErrNoMidiDevice = errors.New("no midi device found")
 
 type Listener struct {
 	logger zerolog.Logger

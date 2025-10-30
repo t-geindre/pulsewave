@@ -11,7 +11,7 @@ type Entry struct {
 	*ebiten.Image
 }
 
-func NewEntry(asts *assets.Loader, str string) *Entry {
+func NewEntry(asts *assets.Loader, str string) (*Entry, error) {
 	const Spacing = 2 // Todo get it from config
 	const Width = 329.0
 	const Height = 24.0
@@ -19,7 +19,10 @@ func NewEntry(asts *assets.Loader, str string) *Entry {
 	w, h := Width, Height
 	img := ebiten.NewImage(int(w), int(h))
 
-	face := asts.GetFace("ui/face")
+	face, err := asts.GetFace("ui/face")
+	if err != nil {
+		return nil, err
+	}
 
 	opts := &text.DrawOptions{}
 	_, th := text.Measure(str, face, 0)
@@ -31,7 +34,11 @@ func NewEntry(asts *assets.Loader, str string) *Entry {
 		opts.GeoM.Translate(text.Advance(s, face)+Spacing, 0)
 	}
 
-	arrow := asts.GetImage("ui/arrow")
+	arrow, err := asts.GetImage("ui/arrow")
+	if err != nil {
+		return nil, err
+	}
+
 	bds := arrow.Bounds()
 
 	arrOpts := &ebiten.DrawImageOptions{}
@@ -41,5 +48,5 @@ func NewEntry(asts *assets.Loader, str string) *Entry {
 
 	return &Entry{
 		Image: img,
-	}
+	}, nil
 }

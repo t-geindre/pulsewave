@@ -60,18 +60,19 @@ func main() {
 	player.Play()
 
 	// UI
-	for {
-		time.Sleep(time.Millisecond * 100)
-	}
 	asts := assets.NewLoader()
 	asts.AddImage("ui/background", "assets/imgs/background.png")
 	asts.AddImage("ui/arrow", "assets/imgs/arrow.png")
 	asts.AddImage("ui/selected", "assets/imgs/selected.png")
 	asts.AddFont("ui/font", "assets/fonts/Roboto-Medium.ttf") // Roboto medium, letter spacing 3, size 20, color white
 	asts.AddFace("ui/face", "ui/font", 21)
-	asts.MustLoad()
+	err = asts.Load()
+	onError(err, "failed to load assets")
 
-	err = ebiten.RunGame(ui.NewUi(asts))
+	ui, err := ui.NewUi(asts)
+	onError(err, "failed to create ui")
+
+	err = ebiten.RunGame(ui)
 	onError(err, "failed to run ui")
 }
 

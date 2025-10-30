@@ -17,25 +17,37 @@ type Ui struct {
 	current        int
 }
 
-func NewUi(asts *assets.Loader) *Ui {
-	bg := asts.GetImage("ui/background")
+func NewUi(asts *assets.Loader) (*Ui, error) {
+	bg, err := asts.GetImage("ui/background")
+	if err != nil {
+		return nil, err
+	}
+
 	bds := bg.Bounds()
 
 	ebiten.SetWindowSize(bds.Dx(), bds.Dy())
+
+	entries := make([]*Entry, 0)
+	for _, name := range []string{"Oscillators", "Effects", "Filters", "Envelope", "Settings"} {
+		entry, err := NewEntry(asts, name)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+
+	selected, err := asts.GetImage("ui/selected")
+	if err != nil {
+		return nil, err
+	}
 
 	ui := &Ui{
 		background: bg,
 		w:          bds.Dx(),
 		h:          bds.Dy(),
-		menu: []*Entry{
-			NewEntry(asts, "Oscillators"),
-			NewEntry(asts, "Effects"),
-			NewEntry(asts, "Filters"),
-			NewEntry(asts, "Envelope"),
-			NewEntry(asts, "Settings"),
-		},
-		selected: asts.GetImage("ui/selected"),
-		current:  0,
+		menu:       entries,
+		selected:   selected,
+		current:    0,
 	}
 
 	sbds := ui.selected.Bounds()
@@ -44,7 +56,7 @@ func NewUi(asts *assets.Loader) *Ui {
 	ui.selectedXShift = float64(sbds.Dx()-ebds.Dx()) / 2
 	ui.selectedYShift = float64(sbds.Dy()-ebds.Dy()) / 2
 
-	return ui
+	return ui, nil
 }
 
 func (u *Ui) Update() error {

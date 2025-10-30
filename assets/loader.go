@@ -1,7 +1,12 @@
 package assets
 
 import (
+	"errors"
+	"fmt"
+	"os"
+
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
@@ -12,7 +17,10 @@ const (
 	TypeRaw
 )
 
-// todo remove panic and return errors instead
+var ErrUnknownAssetType = errors.New("unknown asset type")
+var ErrFontNotFound = errors.New("font not found for face")
+var ErrAssetNotFound = errors.New("asset not found")
+
 type toLoad struct {
 	Path, Name string
 	Val        float64
@@ -63,22 +71,34 @@ func (l *Loader) Add(name, path string, t int, v float64) {
 	})
 }
 
-func (l *Loader) MustLoad() {
+func (l *Loader) Load() error {
 	if l.Loaded {
-		panic("loader already loaded")
+		return nil
 	}
 
 	for _, item := range l.ToLoad {
 		switch item.Type {
 		case TypeImage:
-			l.Images[item.Name] = MustLoadImage(item.Path)
+			img, _, err := ebitenutil.NewImageFromFile(item.Path)
+			if err != nil {
+				return err
+			}
+			l.Images[item.Name] = img
 		case TypeFont:
-			l.Fonts[item.Name] = MustLoadFont(item.Path)
+			obj, err := doLoadFont(item.Path)
+			if err != nil {
+				return err
+			}
+			l.Fonts[item.Name] = obj
 		case TypeRaw:
-			l.Raws[item.Name] = MustLoadRaw(item.Path)
+			raw, err := os.ReadFile(item.Path)
+			if err != nil {
+				return err
+			}
+			l.Raws[item.Name] = raw
 		case TypeFace: //Depends on font being loaded first
 		default:
-			panic("Unknown asset type")
+			return ErrUnknownAssetType
 		}
 	}
 
@@ -86,7 +106,7 @@ func (l *Loader) MustLoad() {
 		if item.Type == TypeFace {
 			font, ok := l.Fonts[item.Path]
 			if !ok {
-				panic("Font not found for face: " + item.Name)
+				return fmt.Errorf("%s: %w", item.Path, ErrFontNotFound)
 			}
 			l.Faces[item.Name] = &text.GoTextFace{
 				Source: font,
@@ -97,49 +117,57 @@ func (l *Loader) MustLoad() {
 
 	l.ToLoad = nil
 	l.Loaded = true
+
+	return nil
 }
 
-func (l *Loader) GetImage(name string) *ebiten.Image {
+func (l *Loader) GetImage(name string) (*ebiten.Image, error) {
 	img, ok := l.Images[name]
 	if !ok {
-		panic("Image not found: " + name)
+		return nil, fmt.Errorf("%v: Image %s", ErrAssetNotFound, name)
 	}
 
-	return img
+	return img, nil
 }
 
-func (l *Loader) GetFont(name string) *text.GoTextFaceSource {
+func (l *Loader) GetFont(name string) (*text.GoTextFaceSource, error) {
 	font, ok := l.Fonts[name]
 	if !ok {
-		panic("Font not found: " + name)
+		return nil, fmt.Errorf("%v: Font %s", ErrAssetNotFound, name)
 	}
 
-	return font
+	return font, nil
 }
 
-func (l *Loader) GetFace(name string) text.Face {
+func (l *Loader) GetFace(name string) (text.Face, error) {
 	face, ok := l.Faces[name]
 	if !ok {
-		panic("Face not found: " + name)
+		return nil, fmt.Errorf("%v: Face %s", ErrAssetNotFound, name)
 	}
 
-	return face
+	return face, nil
 }
 
-func (l *Loader) GetRaw(name string) []byte {
+func (l *Loader) GetRaw(name string) ([]byte, error) {
 	raw, ok := l.Raws[name]
 	if !ok {
-		panic("Raw data not found: " + name)
+		return nil, fmt.Errorf("%v:tRaw %s", ErrAssetNotFound, name)
 	}
 
-	return raw
+	return raw, nil
 }
 
-func (l *Loader) GetPath(name string) string {
-	for _, item := range l.ToLoad {
-		if item.Name == name {
-			return item.Path
-		}
+func doLoadFont(path string) (*text.GoTextFaceSource, error) {
+	r, err := os.Open(path)
+	if err != nil {
+		return nil, err
 	}
-	panic("Path not found for asset: " + name)
+	defer r.Close()
+
+	f, err := text.NewGoTextFaceSource(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return f, nil
 }
