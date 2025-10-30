@@ -2,62 +2,87 @@ package dsp
 
 import "synth/audio"
 
+// todo use polyVoice and allow to steal a voice
+type polyVoice struct {
+	key   int
+	voice *Voice
+	input *Input
+	index uint64
+}
+
 type PolyVoice struct {
-	voices map[int]*Voice
-	inputs map[int]*Input
 	*Mixer
+	voices []*polyVoice
+	index  uint64
 }
 
 func NewPolyVoice(voices int, factory func() *Voice) *PolyVoice {
 	p := &PolyVoice{
-		voices: make(map[int]*Voice, voices),
-		inputs: make(map[int]*Input, voices),
+		voices: make([]*polyVoice, voices),
 		Mixer:  NewMixer(NewParam(1), false),
 	}
 
 	gp, pp := NewParam(1), NewParam(0)
 	for i := 0; i < voices; i++ {
-		vc := factory()
-		in := NewInput(vc, gp, pp)
-		in.Mute = true
-		p.Mixer.Add(in)
-		p.voices[i], p.inputs[i] = vc, in
+		vc := &polyVoice{}
+		vc.voice = factory()
+		vc.input = NewInput(vc.voice, gp, pp)
+		vc.input.Mute = true
+		p.Mixer.Add(vc.input)
+		p.voices[i] = vc
 	}
 
 	return p
 }
 
 func (p *PolyVoice) NoteOn(key int, vel float32) {
-	if vc, ok := p.voices[key]; ok {
-		vc.NoteOn(key, vel)
-		return
+	p.index++
+
+	for _, s := range p.voices {
+		if s.key == key {
+			s.index = p.index
+			s.voice.NoteOn(key, vel)
+			s.input.Mute = false
+			return
+		}
 	}
 
-	for n, vc := range p.voices {
-		if vc.IsIdle() {
-			in := p.inputs[n]
+	for _, s := range p.voices {
+		if s.voice.IsIdle() {
+			s.key = key
+			s.index = p.index
+			s.voice.NoteOn(key, vel)
+			s.input.Mute = false
+			return
+		}
+	}
 
-			delete(p.voices, n)
-			delete(p.inputs, n)
+	lru := p.voices[0]
+	for _, s := range p.voices[1:] {
+		if s.index < lru.index {
+			lru = s
+		}
+	}
 
-			p.voices[key], p.inputs[key] = vc, in
+	lru.key = key
+	lru.index = p.index
+	lru.voice.NoteOff()
+	lru.voice.NoteOn(key, vel)
+	lru.input.Mute = false
+}
 
-			vc.NoteOn(key, vel)
+func (p *PolyVoice) NoteOff(key int) {
+	for _, s := range p.voices {
+		if s.key == key {
+			s.voice.NoteOff()
 			return
 		}
 	}
 }
 
-func (p *PolyVoice) NoteOff(key int) {
-	if vc, ok := p.voices[key]; ok {
-		vc.NoteOff()
-	}
-}
-
 func (p *PolyVoice) Process(b *audio.Block) {
-	for i, vc := range p.voices {
-		p.inputs[i].Mute = vc.IsIdle()
+	for _, s := range p.voices {
+		s.input.Mute = s.voice.IsIdle()
 	}
-
 	p.Mixer.Process(b)
 }
