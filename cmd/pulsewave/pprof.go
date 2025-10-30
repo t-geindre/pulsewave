@@ -13,8 +13,12 @@ import (
 var pprofPort = "6060"
 
 func init() {
+	l := logger()
 	go func() {
-		fmt.Printf("Starting pprof server, http://localhost:%s/debug/pprof/", pprofPort)
+		l.Info().
+			Str("url", fmt.Sprintf("http://localhost:%s/debug/pprof/", pprofPort)).
+			Msg("starting pprof server")
+
 		err := http.ListenAndServe(fmt.Sprintf("localhost:%s", pprofPort), nil)
 		if err != nil {
 			panic(err)

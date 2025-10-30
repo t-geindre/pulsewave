@@ -12,6 +12,7 @@ const (
 	TypeRaw
 )
 
+// todo remove panic and return errors instead
 type toLoad struct {
 	Path, Name string
 	Val        float64

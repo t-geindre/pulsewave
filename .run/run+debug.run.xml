@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="run+debug" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="br-gaming-academy" />
+    <working_directory value="$PROJECT_DIR$/synth" />
+    <parameters value="--debug" />
+    <kind value="PACKAGE" />
+    <package value="synth/cmd/pulsewave" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/synth/cmd/test/main.go" />
+    <method v="2" />
+  </configuration>
+</component>
