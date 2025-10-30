@@ -1,0 +1,13 @@
+{
+  	"images": [
+      {"name": "ui/background", "path": "assets/imgs/background.png"},
+      {"name": "ui/arrow", "path": "assets/imgs/arrow.png"},
+      {"name": "ui/selected", "path": "assets/imgs/selected.png"}
+    ],
+    "fonts": [
+      {"name": "ui/font", "path": "assets/fonts/Roboto-Medium.ttf"}
+    ],
+    "faces": [
+      {"name": "ui/face", "font": "ui/font", "size": 21}
+    ]
+}

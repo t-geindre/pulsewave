@@ -60,12 +60,9 @@ func main() {
 	player.Play()
 
 	// UI
-	asts := assets.NewLoader()
-	asts.AddImage("ui/background", "assets/imgs/background.png")
-	asts.AddImage("ui/arrow", "assets/imgs/arrow.png")
-	asts.AddImage("ui/selected", "assets/imgs/selected.png")
-	asts.AddFont("ui/font", "assets/fonts/Roboto-Medium.ttf") // Roboto medium, letter spacing 3, size 20, color white
-	asts.AddFace("ui/face", "ui/font", 21)
+	asts, err := assets.NewFromJson("assets/assets.json")
+	onError(err, "failed to create assets loader")
+
 	err = asts.Load()
 	onError(err, "failed to load assets")
 

@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -44,6 +45,35 @@ func NewLoader() *Loader {
 		Raws:   make(map[string][]byte),
 		Faces:  make(map[string]text.Face),
 	}
+}
+
+func NewFromJson(path string) (*Loader, error) {
+	loader := NewLoader()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var asts Assets
+	err = json.Unmarshal(raw, &asts)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, img := range asts.Images {
+		loader.AddImage(img.Name, img.Path)
+	}
+	for _, font := range asts.Fonts {
+		loader.AddFont(font.Name, font.Path)
+	}
+	for _, raw := range asts.Raws {
+		loader.AddRaw(raw.Name, raw.Path)
+	}
+	for _, face := range asts.Faces {
+		loader.AddFace(face.Name, face.Font, face.Size)
+	}
+
+	return loader, nil
 }
 
 func (l *Loader) AddImage(name, path string) {
