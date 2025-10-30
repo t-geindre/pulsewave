@@ -1,9 +1,12 @@
 package main
 
 import (
+	"synth/assets"
 	"synth/dsp"
+	"synth/ui"
 	"time"
 
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 
 	"gitlab.com/gomidi/midi/v2"
@@ -142,16 +145,16 @@ func main() {
 	for {
 		time.Sleep(time.Second)
 	}
-	//asts := assets.NewLoader()
-	//asts.AddImage("ui/background", "assets/imgs/background.png")
-	//asts.AddImage("ui/arrow", "assets/imgs/arrow.png")
-	//asts.AddImage("ui/selected", "assets/imgs/selected.png")
-	//asts.AddFont("ui/font", "assets/fonts/roboto/Roboto-Medium.ttf") // Roboto medium, letter spacing 3, size 20, color white
-	//asts.AddFace("ui/face", "ui/font", 21)
-	//asts.MustLoad()
-	//
-	//err = ebiten.RunGame(ui.NewUi(asts))
-	//if err != nil {
-	//	panic(err)
-	//}
+	asts := assets.NewLoader()
+	asts.AddImage("ui/background", "assets/imgs/background.png")
+	asts.AddImage("ui/arrow", "assets/imgs/arrow.png")
+	asts.AddImage("ui/selected", "assets/imgs/selected.png")
+	asts.AddFont("ui/font", "assets/fonts/Roboto-Medium.ttf") // Roboto medium, letter spacing 3, size 20, color white
+	asts.AddFace("ui/face", "ui/font", 21)
+	asts.MustLoad()
+
+	err = ebiten.RunGame(ui.NewUi(asts))
+	if err != nil {
+		panic(err)
+	}
 }
