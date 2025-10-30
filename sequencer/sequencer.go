@@ -2,12 +2,13 @@ package sequencer
 
 import (
 	"math"
-	"synth/audio"
+	"synth/dsp"
+	"synth/out"
 	"time"
 )
 
 type playingVoice struct {
-	voice  audio.Source
+	voice  dsp.Source
 	length int
 }
 
@@ -18,10 +19,10 @@ type pattern struct {
 
 type Sequencer struct {
 	// Voices
-	freeVoices   []audio.Source
+	freeVoices   []dsp.Source
 	activeVoices []*playingVoice
 	maxVoices    int
-	voiceFactory audio.SourceFactory
+	voiceFactory out.SourceFactory
 
 	// Pattern
 	patterns []*Pattern
@@ -35,11 +36,11 @@ type Sequencer struct {
 	stepsPerBeat int
 }
 
-func NewSequencer(sampleRate float64, tempo float64, maxVoices int, stepsPerBeat int, voiceFactory audio.SourceFactory) *Sequencer {
+func NewSequencer(sampleRate float64, tempo float64, maxVoices int, stepsPerBeat int, voiceFactory out.SourceFactory) *Sequencer {
 	return &Sequencer{
 		maxVoices:    maxVoices,
 		voiceFactory: voiceFactory,
-		freeVoices:   []audio.Source{},
+		freeVoices:   []dsp.Source{},
 		stepLength: int(math.Round(
 			60.0 * float64(sampleRate) / (tempo * float64(stepsPerBeat)),
 		)),
@@ -135,7 +136,7 @@ func (s *Sequencer) triggerNote(note *NoteSpec) {
 	})
 }
 
-func (s *Sequencer) getFreeVoice() audio.Source {
+func (s *Sequencer) getFreeVoice() dsp.Source {
 	if len(s.freeVoices) > 0 {
 		voice := s.freeVoices[len(s.freeVoices)-1]
 		s.freeVoices = s.freeVoices[:len(s.freeVoices)-1]
@@ -185,7 +186,7 @@ func (s *Sequencer) Reset() {
 		voice.voice.NoteOff(0)
 	}
 	s.activeVoices = []*playingVoice{}
-	s.freeVoices = []audio.Source{}
+	s.freeVoices = []dsp.Source{}
 }
 
 func (s *Sequencer) NoteOn(_, _ float64) {

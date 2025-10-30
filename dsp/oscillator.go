@@ -2,7 +2,6 @@ package dsp
 
 import (
 	"math"
-	"synth/audio"
 )
 
 type Oscillator struct {
@@ -18,7 +17,7 @@ type Oscillator struct {
 
 	rng uint32 // ShapeNoise only
 
-	buf       [audio.BlockSize]float32
+	buf       [BlockSize]float32
 	stampedAt uint64
 }
 
@@ -60,9 +59,9 @@ func (s *Oscillator) Reset() {
 	s.phase = 0
 }
 
-func (s *Oscillator) Process(block *audio.Block) {
+func (s *Oscillator) Process(block *Block) {
 	v := s.Resolve(block.Cycle)
-	for i := 0; i < audio.BlockSize; i++ {
+	for i := 0; i < BlockSize; i++ {
 		block.L[i] = v[i]
 		block.R[i] = v[i]
 	}
@@ -76,7 +75,7 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 	shape := s.shapeRegistry.Get(s.shapeIndex)
 
 	if shape == ShapeNoise {
-		for i := 0; i < audio.BlockSize; i++ {
+		for i := 0; i < BlockSize; i++ {
 			x := s.xorShift32()
 			u := float32(x) * (1.0 / 4294967296.0)
 			s.buf[i] = 2*u - 1
@@ -101,7 +100,7 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 	const invTwoPi = 1.0 / twoPi
 	k := twoPi / s.sr
 
-	for i := 0; i < audio.BlockSize; i++ {
+	for i := 0; i < BlockSize; i++ {
 		p := s.phase * invTwoPi
 		p -= math.Floor(p)
 

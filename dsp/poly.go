@@ -1,7 +1,5 @@
 package dsp
 
-import "synth/audio"
-
 // todo use polyVoice and allow to steal a voice
 type polyVoice struct {
 	key   int
@@ -80,7 +78,7 @@ func (p *PolyVoice) NoteOff(key int) {
 	}
 }
 
-func (p *PolyVoice) Process(b *audio.Block) {
+func (p *PolyVoice) Process(b *Block) {
 	for _, s := range p.voices {
 		s.input.Mute = s.voice.IsIdle()
 	}

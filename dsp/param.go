@@ -1,9 +1,5 @@
 package dsp
 
-import (
-	"synth/audio"
-)
-
 type Param interface {
 	SetBase(value float32)
 	Resolve(cycle uint64) []float32
@@ -13,7 +9,7 @@ type Param interface {
 type ParamSimple struct {
 	base      float32
 	inputs    []ParamModInput
-	buf       [audio.BlockSize]float32
+	buf       [BlockSize]float32
 	stampedAt uint64
 }
 
@@ -31,18 +27,18 @@ func (s *ParamSimple) Resolve(cycle uint64) []float32 {
 		return s.buf[:]
 	}
 
-	for i := 0; i < audio.BlockSize; i++ {
+	for i := 0; i < BlockSize; i++ {
 		s.buf[i] = s.base
 	}
 
 	for _, mi := range s.inputs {
 		src := mi.Src.Resolve(cycle)
 		if mi.Map == nil {
-			for i := 0; i < audio.BlockSize; i++ {
+			for i := 0; i < BlockSize; i++ {
 				s.buf[i] += mi.Amount * src[i]
 			}
 		} else {
-			for i := 0; i < audio.BlockSize; i++ {
+			for i := 0; i < BlockSize; i++ {
 				s.buf[i] += mi.Amount * mi.Map(src[i])
 			}
 		}

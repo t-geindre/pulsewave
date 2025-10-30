@@ -1,4 +1,4 @@
-package audio
+package dsp
 
 import (
 	"encoding/binary"
@@ -10,6 +10,25 @@ const (
 	bytesPerSample = 4 // float32
 	frameBytes     = channels * bytesPerSample
 )
+
+// BlockSize batch size for audio processing
+const BlockSize = 256
+
+type Block struct {
+	// Cycle Unique identifier for the current block
+	Cycle uint64
+
+	// Channels L/R
+	L, R [BlockSize]float32
+
+	// Remaining samples to process
+	left int
+}
+
+type Source interface {
+	// Process fills the given Block with audio data
+	Process(*Block)
+}
 
 type Stream struct {
 	source Source
@@ -35,7 +54,9 @@ func (s *Stream) Read(p []byte) (int, error) {
 	done := 0
 	for done < frames {
 		if s.block.left == 0 {
-			s.pullBlock()
+			s.block.Cycle++
+			s.block.left = BlockSize
+			s.source.Process(s.block)
 		}
 
 		toCopy := s.block.left
@@ -58,10 +79,4 @@ func (s *Stream) Read(p []byte) (int, error) {
 	}
 
 	return done * frameBytes, nil
-}
-
-func (s *Stream) pullBlock() {
-	s.block.Cycle++
-	s.block.left = BlockSize
-	s.source.Process(s.block)
 }

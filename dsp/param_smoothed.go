@@ -2,7 +2,6 @@ package dsp
 
 import (
 	"math"
-	"synth/audio"
 )
 
 type SmoothedParam struct {
@@ -13,7 +12,7 @@ type SmoothedParam struct {
 
 	last float32
 
-	buf       [audio.BlockSize]float32
+	buf       [BlockSize]float32
 	stampedAt uint64
 }
 
@@ -34,25 +33,25 @@ func (s *SmoothedParam) Resolve(cycle uint64) []float32 {
 		return s.buf[:]
 	}
 
-	for i := 0; i < audio.BlockSize; i++ {
+	for i := 0; i < BlockSize; i++ {
 		s.buf[i] = s.base
 	}
 
 	for _, mi := range s.inputs {
 		src := mi.Src.Resolve(cycle) // read-only
 		if mi.Map == nil {
-			for i := 0; i < audio.BlockSize; i++ {
+			for i := 0; i < BlockSize; i++ {
 				s.buf[i] += mi.Amount * src[i]
 			}
 		} else {
-			for i := 0; i < audio.BlockSize; i++ {
+			for i := 0; i < BlockSize; i++ {
 				s.buf[i] += mi.Amount * mi.Map(src[i])
 			}
 		}
 	}
 
 	cur := s.last
-	for i := 0; i < audio.BlockSize; i++ {
+	for i := 0; i < BlockSize; i++ {
 		cur += s.alpha * (s.buf[i] - cur)
 		s.buf[i] = cur
 	}

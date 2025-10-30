@@ -2,17 +2,18 @@ package midi
 
 import (
 	"sync"
-	"synth/audio"
+	"synth/dsp"
+	"synth/out"
 )
 
 type Voicer struct {
 	max     int
-	voices  map[float64]audio.Source
-	factory audio.SourceFactory
+	voices  map[float64]dsp.Source
+	factory out.SourceFactory
 	mut     sync.Mutex
 }
 
-func NewVoicer(maxVoices int, factory audio.SourceFactory) *Voicer {
+func NewVoicer(maxVoices int, factory out.SourceFactory) *Voicer {
 	v := &Voicer{
 		max:     maxVoices,
 		factory: factory,
@@ -48,7 +49,7 @@ func (v *Voicer) IsActive() bool {
 }
 
 func (v *Voicer) Reset() {
-	v.voices = make(map[float64]audio.Source, v.max)
+	v.voices = make(map[float64]dsp.Source, v.max)
 }
 
 func (v *Voicer) NoteOn(freq, velocity float64) {

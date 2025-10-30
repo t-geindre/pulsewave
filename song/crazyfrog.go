@@ -1,26 +1,27 @@
 package song
 
 import (
-	"synth/audio"
+	"synth/dsp"
 	"synth/effect"
 	"synth/envelop"
 	"synth/oscillator"
+	"synth/out"
 	"synth/sequencer"
 	"time"
 )
 
 type CrazyFrog struct {
-	*audio.TrackSet
+	*out.TrackSet
 	sr float64
 }
 
-func NewCrazyFrog(SampleRate float64) audio.Source {
+func NewCrazyFrog(SampleRate float64) dsp.Source {
 	const BPM = 120
 	const SPB = 4 // Step per beat
 	const Repeat = 10
 
 	c := &CrazyFrog{
-		TrackSet: audio.NewTrackSet(),
+		TrackSet: out.NewTrackSet(),
 		sr:       SampleRate,
 	}
 
@@ -61,11 +62,11 @@ func NewCrazyFrog(SampleRate float64) audio.Source {
 	return c
 }
 
-func (c *CrazyFrog) leadVoiceFactory() audio.Source {
+func (c *CrazyFrog) leadVoiceFactory() dsp.Source {
 	merger := effect.NewMerger()
 
 	// Saw unison
-	uni := effect.NewUnison(func() audio.Source {
+	uni := effect.NewUnison(func() dsp.Source {
 		return oscillator.NewSaw(c.sr)
 	}, 8, 12, 0.9, 0.1, 0.75)
 
@@ -77,7 +78,7 @@ func (c *CrazyFrog) leadVoiceFactory() audio.Source {
 	lpfMod := envelop.NewADSR(c.sr, 0, time.Millisecond*600, 0, 0)
 	merger.Append(lpfMod, 0, 0)
 
-	merger.Append(audio.NewCallbackSrc(func() (float64, float64) {
+	merger.Append(out.NewCallbackSrc(func() (float64, float64) {
 		v, _ := lpfMod.NextValue()
 		lpf.SetCutoffHz(2000 + v*6000.0)
 		return 0, 0
@@ -95,11 +96,11 @@ func (c *CrazyFrog) leadVoiceFactory() audio.Source {
 	return voice
 }
 
-func (c *CrazyFrog) bassVoiceFactory() audio.Source {
+func (c *CrazyFrog) bassVoiceFactory() dsp.Source {
 	merger := effect.NewMerger()
 
 	// Unison saw
-	uni := effect.NewUnison(func() audio.Source {
+	uni := effect.NewUnison(func() dsp.Source {
 		osc := oscillator.NewSaw(c.sr)
 		return osc
 	}, 6, 12, 0.3, 0, 0.75)
@@ -112,7 +113,7 @@ func (c *CrazyFrog) bassVoiceFactory() audio.Source {
 	lpfMod := envelop.NewADSR(c.sr, 0, time.Millisecond*150, 0, 0)
 	merger.Append(lpfMod, 0, 0)
 
-	merger.Append(audio.NewCallbackSrc(func() (float64, float64) {
+	merger.Append(out.NewCallbackSrc(func() (float64, float64) {
 		v, _ := lpfMod.NextValue()
 		lpf.SetCutoffHz(200 + v*4000.0)
 		return 0, 0
@@ -126,20 +127,20 @@ func (c *CrazyFrog) bassVoiceFactory() audio.Source {
 	return envelop.NewVoice(tuner, adsr)
 }
 
-func (c *CrazyFrog) highHatVoiceFactory() audio.Source {
+func (c *CrazyFrog) highHatVoiceFactory() dsp.Source {
 	noise := oscillator.NewNoise()
 	adsr := envelop.NewADSR(c.sr, time.Millisecond*5, time.Millisecond*70, 0, 0)
 	return envelop.NewVoice(noise, adsr)
 }
 
-func (c *CrazyFrog) kickVoiceFactory() audio.Source {
+func (c *CrazyFrog) kickVoiceFactory() dsp.Source {
 	merger := effect.NewMerger()
 
 	picthMod := envelop.NewADSR(c.sr, 0, time.Millisecond*100, 0, 0.0)
 	merger.Append(picthMod, 0, 0)
 
 	sine := oscillator.NewSine(c.sr)
-	kick := audio.NewCallbackSrc(func() (float64, float64) {
+	kick := out.NewCallbackSrc(func() (float64, float64) {
 		v, _ := picthMod.NextValue()
 		sine.SetFreq(60.0 + v*300.0)
 		return sine.NextValue()

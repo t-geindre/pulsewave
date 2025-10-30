@@ -1,9 +1,5 @@
 package dsp
 
-import (
-	"synth/audio"
-)
-
 type Input struct {
 	Src  Node
 	Gain Param // linear
@@ -25,10 +21,10 @@ type Mixer struct {
 	MasterGain Param // linear
 	SoftClip   bool  // soft limiter/tanh
 
-	accL [audio.BlockSize]float32
-	accR [audio.BlockSize]float32
+	accL [BlockSize]float32
+	accR [BlockSize]float32
 
-	tmp audio.Block
+	tmp Block
 }
 
 func NewMixer(masterGain Param, softClip bool) *Mixer {
@@ -37,8 +33,8 @@ func NewMixer(masterGain Param, softClip bool) *Mixer {
 		SoftClip:   softClip,
 	}
 
-	m.tmp.L = [audio.BlockSize]float32{}
-	m.tmp.R = [audio.BlockSize]float32{}
+	m.tmp.L = [BlockSize]float32{}
+	m.tmp.R = [BlockSize]float32{}
 
 	return m
 }
@@ -53,8 +49,8 @@ func (m *Mixer) Clear() {
 	m.Inputs = m.Inputs[:0]
 }
 
-func (m *Mixer) Process(b *audio.Block) {
-	for i := 0; i < audio.BlockSize; i++ {
+func (m *Mixer) Process(b *Block) {
+	for i := 0; i < BlockSize; i++ {
 		m.accL[i] = 0
 		m.accR[i] = 0
 	}
@@ -79,7 +75,7 @@ func (m *Mixer) Process(b *audio.Block) {
 		in.Src.Process(&m.tmp)
 
 		// Sum
-		for i := 0; i < audio.BlockSize; i++ {
+		for i := 0; i < BlockSize; i++ {
 			g := float32(1)
 			if gainB != nil {
 				g = gainB[i]
@@ -96,7 +92,7 @@ func (m *Mixer) Process(b *audio.Block) {
 	// Master gain
 	if m.MasterGain != nil {
 		gb := m.MasterGain.Resolve(b.Cycle)
-		for i := 0; i < audio.BlockSize; i++ {
+		for i := 0; i < BlockSize; i++ {
 			yL := m.accL[i] * gb[i]
 			yR := m.accR[i] * gb[i]
 			if m.SoftClip {
@@ -110,7 +106,7 @@ func (m *Mixer) Process(b *audio.Block) {
 	}
 
 	if m.SoftClip {
-		for i := 0; i < audio.BlockSize; i++ {
+		for i := 0; i < BlockSize; i++ {
 			b.L[i] = softClip(m.accL[i])
 			b.R[i] = softClip(m.accR[i])
 		}

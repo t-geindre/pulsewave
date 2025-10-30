@@ -2,7 +2,6 @@ package dsp
 
 import (
 	"math"
-	"synth/audio"
 )
 
 type LowPassSVF struct {
@@ -25,8 +24,8 @@ func NewLowPassSVF(sr float64, src Node, cutoff Param, q Param) *LowPassSVF {
 	}
 }
 
-func (f *LowPassSVF) Process(b *audio.Block) {
-	var in audio.Block
+func (f *LowPassSVF) Process(b *Block) {
+	var in Block
 	in.Cycle = b.Cycle
 	f.Src.Process(&in)
 
@@ -37,7 +36,7 @@ func (f *LowPassSVF) Process(b *audio.Block) {
 	minFc := 5.0
 	maxFc := 0.49 * nyq
 
-	for i := 0; i < audio.BlockSize; i++ {
+	for i := 0; i < BlockSize; i++ {
 		x := float64(in.L[i])
 
 		fc := float64(cb[i])

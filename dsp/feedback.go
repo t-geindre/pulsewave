@@ -2,11 +2,10 @@ package dsp
 
 import (
 	"math"
-	"synth/audio"
 )
 
 type FeedbackDelay struct {
-	Src audio.Source
+	Src Source
 
 	Time     Param // secondes (0..max)
 	Feedback Param // 0..~0.95 (clampé)
@@ -23,7 +22,7 @@ type FeedbackDelay struct {
 	lpfL, lpfR float32
 }
 
-func NewFeedbackDelay(sr float64, maxDelaySeconds float64, src audio.Source,
+func NewFeedbackDelay(sr float64, maxDelaySeconds float64, src Source,
 	time Param, feedback Param, mix Param, toneHz Param,
 ) *FeedbackDelay {
 	if maxDelaySeconds <= 0 {
@@ -65,8 +64,8 @@ func readInterp(buf []float32, idx float64) float32 {
 	return a + (b-a)*f
 }
 
-func (d *FeedbackDelay) Process(b *audio.Block) {
-	var in audio.Block
+func (d *FeedbackDelay) Process(b *Block) {
+	var in Block
 	in.Cycle = b.Cycle
 	d.Src.Process(&in)
 
@@ -85,7 +84,7 @@ func (d *FeedbackDelay) Process(b *audio.Block) {
 	N := float64(d.maxSamps)
 	w := float64(d.wpos)
 
-	for i := 0; i < audio.BlockSize; i++ {
+	for i := 0; i < BlockSize; i++ {
 		xL := in.L[i]
 		xR := in.R[i]
 
@@ -154,9 +153,9 @@ func (d *FeedbackDelay) Reset() {
 }
 
 // todo move this elsewhere
-var zeroBlock = func() [audio.BlockSize]float32 {
-	var z [audio.BlockSize]float32
-	for i := 0; i < audio.BlockSize; i++ {
+var zeroBlock = func() [BlockSize]float32 {
+	var z [BlockSize]float32
+	for i := 0; i < BlockSize; i++ {
 		z[i] = 0
 	}
 	return z

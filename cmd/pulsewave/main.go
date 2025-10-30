@@ -1,9 +1,10 @@
 package main
 
 import (
-	"synth/audio"
 	"synth/dsp"
 	"time"
+
+	"github.com/hajimehoshi/ebiten/v2/audio"
 
 	"gitlab.com/gomidi/midi/v2"
 	_ "gitlab.com/gomidi/midi/v2/drivers/rtmididrv" // autoregisters driver
@@ -101,8 +102,14 @@ func main() {
 	clean := dsp.NewLowPassSVF(SampleRate, headroom, dsp.NewParam(18000), dsp.NewParam(0.5))
 
 	// Player
-	p := audio.NewPlayer(SampleRate, clean)
-	p.SetBufferSize(time.Millisecond * 20)
+	ctx := audio.NewContext(SampleRate)
+	player, err := ctx.NewPlayerF32(dsp.NewStream(clean))
+	if err != nil {
+		panic(err)
+	}
+
+	player.SetBufferSize(time.Millisecond * 20)
+	player.Play()
 
 	// MIDI SETUP
 	defer midi.CloseDriver()

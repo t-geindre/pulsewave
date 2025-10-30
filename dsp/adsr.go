@@ -2,7 +2,6 @@ package dsp
 
 import (
 	"math"
-	"synth/audio"
 	"time"
 )
 
@@ -27,7 +26,7 @@ type ADSR struct {
 
 	aCoef, dCoef, rCoef float32
 
-	buf       [audio.BlockSize]float32
+	buf       [BlockSize]float32
 	stampedAt uint64
 }
 
@@ -83,7 +82,7 @@ func (a *ADSR) Resolve(cycle uint64) []float32 {
 		return a.buf[:]
 	}
 
-	for i := 0; i < audio.BlockSize; i++ {
+	for i := 0; i < BlockSize; i++ {
 		switch a.state {
 		case EnvIdle:
 			a.value = 0

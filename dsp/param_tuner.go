@@ -1,13 +1,9 @@
 package dsp
 
-import (
-	"synth/audio"
-)
-
 type TunerParam struct {
 	Param
 	st        Param
-	buf       [audio.BlockSize]float32
+	buf       [BlockSize]float32
 	stampedAt uint64
 }
 
@@ -31,7 +27,7 @@ func (p *TunerParam) Resolve(cycle uint64) []float32 {
 	const eps = 1e-9
 	s0 := semi[0]
 	isFlat := true
-	for i := 1; i < audio.BlockSize; i++ {
+	for i := 1; i < BlockSize; i++ {
 		if diff := semi[i] - s0; diff > eps || diff < -eps {
 			isFlat = false
 			break
@@ -39,7 +35,7 @@ func (p *TunerParam) Resolve(cycle uint64) []float32 {
 	}
 	if isFlat {
 		r := fastExpSemi(s0)
-		for i := 0; i < audio.BlockSize; i++ {
+		for i := 0; i < BlockSize; i++ {
 			p.buf[i] = base[i] * r
 		}
 		p.stampedAt = cycle
@@ -47,7 +43,7 @@ func (p *TunerParam) Resolve(cycle uint64) []float32 {
 	}
 
 	// General path
-	for i := 0; i < audio.BlockSize; i++ {
+	for i := 0; i < BlockSize; i++ {
 		p.buf[i] = base[i] * fastExpSemi(semi[i])
 	}
 	p.stampedAt = cycle

@@ -1,24 +1,25 @@
 package song
 
 import (
-	"synth/audio"
+	"synth/dsp"
 	"synth/effect"
 	"synth/envelop"
 	"synth/oscillator"
+	"synth/out"
 	"synth/sequencer"
 	"time"
 )
 
 type Pirates struct {
-	*audio.TrackSet
+	*out.TrackSet
 	sr float64
 }
 
-func NewPirates(SampleRate float64) audio.Source {
+func NewPirates(SampleRate float64) dsp.Source {
 	const BPM = 120
 
 	p := &Pirates{
-		TrackSet: audio.NewTrackSet(),
+		TrackSet: out.NewTrackSet(),
 		sr:       SampleRate,
 	}
 
@@ -50,9 +51,9 @@ func NewPirates(SampleRate float64) audio.Source {
 	return p
 }
 
-func (p *Pirates) leadVoice() audio.Source {
+func (p *Pirates) leadVoice() dsp.Source {
 	// Saw + unison
-	uni := effect.NewUnison(func() audio.Source {
+	uni := effect.NewUnison(func() dsp.Source {
 		return oscillator.NewSaw(p.sr)
 	}, 8, 8, 0.9, 0, .75)
 
@@ -66,7 +67,7 @@ func (p *Pirates) leadVoice() audio.Source {
 	lpf.SetQ(.7)
 	merge.Append(lpf, 1, 1)
 
-	cutoff := audio.NewCallbackSrc(func() (float64, float64) {
+	cutoff := out.NewCallbackSrc(func() (float64, float64) {
 		v, _ := cutoffMod.NextValue()
 		lpf.SetCutoffHz(800 + v*4000.0)
 		return 0, 0
@@ -79,8 +80,8 @@ func (p *Pirates) leadVoice() audio.Source {
 	)
 }
 
-func (p *Pirates) bassVoice() audio.Source {
-	uni := effect.NewUnison(func() audio.Source {
+func (p *Pirates) bassVoice() dsp.Source {
+	uni := effect.NewUnison(func() dsp.Source {
 		osc := oscillator.NewTriangle(p.sr)
 		return osc
 	}, 8, 24, 0.9, 0.9, .75)

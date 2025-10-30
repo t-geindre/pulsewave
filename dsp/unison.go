@@ -3,7 +3,6 @@ package dsp
 
 import (
 	"math"
-	"synth/audio"
 )
 
 type UnisonFactory func(phase Param, detuneSemi Param) Node
@@ -75,7 +74,7 @@ func (u *Unison) Reset() {
 	u.Mixer.Reset()
 }
 
-func (u *Unison) Process(b *audio.Block) {
+func (u *Unison) Process(b *Block) {
 	u.apply(b.Cycle)
 	u.Mixer.Process(b)
 }
