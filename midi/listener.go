@@ -51,47 +51,44 @@ func (l *Listener) Listen(device drivers.In, queue *msg.Queue) error {
 
 	var err error
 	l.stop, err = midi.ListenTo(device, func(message midi.Message, _ int32) {
-		var ch, key, val uint8
+		var ch, key, val8 uint8
+		var val16 int16
 		switch {
-		case message.GetNoteStart(&ch, &key, &val):
+		case message.GetNoteStart(&ch, &key, &val8):
 			queue.TryWrite(msg.Message{
 				Source: MidiSource,
 				Kind:   NoteOnKind,
 				Key:    key,
-				Val:    val,
+				Val8:   val8,
 				Chan:   ch,
 			})
-			l.logger.Debug().
-				Uint8("channel", ch).
-				Uint8("key", key).
-				Uint8("val", val).
-				Msg("Note ON")
+			l.logger.Debug().Uint8("channel", ch).Uint8("key", key).Uint8("val8", val8).Msg("Note ON")
 
 		case message.GetNoteEnd(&ch, &key):
 			queue.TryWrite(msg.Message{
 				Source: MidiSource,
 				Kind:   NoteOffKind,
 				Key:    key,
-				Val:    val,
+				Val8:   val8,
 			})
-			l.logger.Debug().
-				Uint8("channel", ch).
-				Uint8("key", key).
-				Uint8("val", val).
-				Msg("Note OFF")
-		case message.GetControlChange(&ch, &key, &val):
+			l.logger.Debug().Uint8("channel", ch).Uint8("key", key).Uint8("val8", val8).Msg("Note OFF")
+		case message.GetControlChange(&ch, &key, &val8):
 			queue.TryWrite(msg.Message{
 				Source: MidiSource,
 				Kind:   ControlChangeKind,
 				Key:    key,
-				Val:    val,
+				Val8:   val8,
 				Chan:   ch,
 			})
-			l.logger.Debug().
-				Uint8("channel", ch).
-				Uint8("controller", key).
-				Uint8("value", val).
-				Msg("Control Change")
+			l.logger.Debug().Uint8("channel", ch).Uint8("controller", key).Uint8("value", val8).Msg("Control Change")
+		case message.GetPitchBend(&ch, &val16, nil):
+			queue.TryWrite(msg.Message{
+				Source: MidiSource,
+				Kind:   PitchBendKind,
+				Val16:  val16,
+				Chan:   ch,
+			})
+			l.logger.Debug().Uint8("channel", ch).Int16("value", val16).Msg("Pitch Bend")
 		default:
 			l.logger.Debug().Str("msg", message.String()).Msg("message ignored")
 		}

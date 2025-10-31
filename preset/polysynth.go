@@ -8,9 +8,13 @@ import (
 type Polysynth struct {
 	dsp.Node
 	voice *dsp.PolyVoice
+	pitch dsp.Param
 }
 
 func NewPolysynth(SampleRate float64) *Polysynth {
+	// Main pitch bend param
+	pitchBend := dsp.NewParam(0)
+
 	// Shape registry (uniq for all voices)
 	reg := dsp.NewShapeRegistry()
 	reg.Set(0, dsp.ShapeSaw)
@@ -21,12 +25,13 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	voiceFact := func() *dsp.Voice {
 		// Base frequency param (uniq per voice)
 		freq := dsp.NewSmoothedParam(SampleRate, 440, .001)
+		pitch := dsp.NewTunerParam(freq, pitchBend)
 
 		// Oscillator factory
 		oscFact := func(ph, dt dsp.Param) dsp.Node {
 			// Mixer, registry
 			mixer := dsp.NewMixer(dsp.NewParam(1), false)
-			ft := dsp.NewTunerParam(freq, dt)
+			ft := dsp.NewTunerParam(pitch, dt)
 
 			// 0
 			mixer.Add(dsp.NewInput(
@@ -96,6 +101,7 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	return &Polysynth{
 		Node:  delay,
 		voice: poly,
+		pitch: pitchBend,
 	}
 }
 
@@ -105,4 +111,8 @@ func (p *Polysynth) NoteOn(key int, vel float32) {
 
 func (p *Polysynth) NoteOff(key int) {
 	p.voice.NoteOff(key)
+}
+
+func (p *Polysynth) SetPitchBend(semiTones float32) {
+	p.pitch.SetBase(semiTones)
 }

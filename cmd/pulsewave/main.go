@@ -36,6 +36,7 @@ func main() {
 
 	router.AddRoute(midiInId, midiAudioOutId, midi.MidiSource, midi.NoteOnKind)
 	router.AddRoute(midiInId, midiAudioOutId, midi.MidiSource, midi.NoteOffKind)
+	router.AddRoute(midiInId, midiAudioOutId, midi.MidiSource, midi.PitchBendKind)
 
 	router.AddRoute(midiInId, miniUiOutId, midi.MidiSource, midi.ControlChangeKind)
 
