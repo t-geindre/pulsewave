@@ -1,5 +1,9 @@
 package dsp
 
+import (
+	"github.com/viterin/vek/vek32"
+)
+
 type Input struct {
 	Src  Node
 	Gain Param // linear
@@ -8,11 +12,7 @@ type Input struct {
 }
 
 func NewInput(src Node, gain, pan Param) *Input {
-	return &Input{
-		Src:  src,
-		Gain: gain,
-		Pan:  pan,
-	}
+	return &Input{Src: src, Gain: gain, Pan: pan}
 }
 
 type Mixer struct {
@@ -28,41 +28,32 @@ type Mixer struct {
 }
 
 func NewMixer(masterGain Param, softClip bool) *Mixer {
-	m := &Mixer{
-		MasterGain: masterGain,
-		SoftClip:   softClip,
-	}
-
+	m := &Mixer{MasterGain: masterGain, SoftClip: softClip}
 	m.tmp.L = [BlockSize]float32{}
 	m.tmp.R = [BlockSize]float32{}
-
 	return m
 }
 
 func (m *Mixer) Add(in *Input) int {
 	m.Inputs = append(m.Inputs, in)
-
 	return len(m.Inputs) - 1
 }
 
-func (m *Mixer) Clear() {
-	m.Inputs = m.Inputs[:0]
-}
+func (m *Mixer) Clear() { m.Inputs = m.Inputs[:0] }
 
 func (m *Mixer) Process(b *Block) {
-	for i := 0; i < BlockSize; i++ {
+	for i := range m.accL {
 		m.accL[i] = 0
 		m.accR[i] = 0
 	}
 
-	// Sum
 	m.tmp.Cycle = b.Cycle
+
 	for _, in := range m.Inputs {
 		if in == nil || in.Src == nil || in.Mute {
 			continue
 		}
 
-		// Pull param buffers
 		var gainB, panB []float32
 		if in.Gain != nil {
 			gainB = in.Gain.Resolve(b.Cycle)
@@ -71,10 +62,20 @@ func (m *Mixer) Process(b *Block) {
 			panB = in.Pan.Resolve(b.Cycle)
 		}
 
-		// Pull block
 		in.Src.Process(&m.tmp)
 
-		// Sum
+		// Fast path: no gain, no pan
+		if gainB == nil && panB == nil {
+			var tmpL, tmpR [BlockSize]float32
+			vek32.Add_Into(tmpL[:], m.accL[:], m.tmp.L[:])
+			vek32.Add_Into(tmpR[:], m.accR[:], m.tmp.R[:])
+			copy(m.accL[:], tmpL[:])
+			copy(m.accR[:], tmpR[:])
+			continue
+		}
+
+		// Slow path: per-sample gain/pan
+		var gL, gR [BlockSize]float32
 		for i := 0; i < BlockSize; i++ {
 			g := float32(1)
 			if gainB != nil {
@@ -84,29 +85,38 @@ func (m *Mixer) Process(b *Block) {
 			if panB != nil {
 				gl, gr = fastPanGains(panB[i])
 			}
-			m.accL[i] += m.tmp.L[i] * g * gl
-			m.accR[i] += m.tmp.R[i] * g * gr
+			gL[i], gR[i] = g*gl, g*gr
 		}
+
+		var tmpL, tmpR, mixL, mixR [BlockSize]float32
+		vek32.Mul_Into(tmpL[:], m.tmp.L[:], gL[:])
+		vek32.Mul_Into(tmpR[:], m.tmp.R[:], gR[:])
+		vek32.Add_Into(mixL[:], m.accL[:], tmpL[:])
+		vek32.Add_Into(mixR[:], m.accR[:], tmpR[:])
+		copy(m.accL[:], mixL[:])
+		copy(m.accR[:], mixR[:])
 	}
 
-	// Master gain
+	// Apply master gain / soft clip
 	if m.MasterGain != nil {
 		gb := m.MasterGain.Resolve(b.Cycle)
-		for i := 0; i < BlockSize; i++ {
-			yL := m.accL[i] * gb[i]
-			yR := m.accR[i] * gb[i]
-			if m.SoftClip {
-				yL = softClip(yL)
-				yR = softClip(yR)
+		if m.SoftClip {
+			var tmpL, tmpR [BlockSize]float32
+			vek32.Mul_Into(tmpL[:], m.accL[:], gb[:])
+			vek32.Mul_Into(tmpR[:], m.accR[:], gb[:])
+			for i := range b.L {
+				b.L[i] = softClip(tmpL[i])
+				b.R[i] = softClip(tmpR[i])
 			}
-			b.L[i] = yL
-			b.R[i] = yR
+		} else {
+			vek32.Mul_Into(b.L[:], m.accL[:], gb[:])
+			vek32.Mul_Into(b.R[:], m.accR[:], gb[:])
 		}
 		return
 	}
 
 	if m.SoftClip {
-		for i := 0; i < BlockSize; i++ {
+		for i := range b.L {
 			b.L[i] = softClip(m.accL[i])
 			b.R[i] = softClip(m.accR[i])
 		}
