@@ -19,7 +19,7 @@ func main() {
 	const SampleRate = 44100
 
 	// Debug mode
-	if len(os.Args) > 1 && os.Args[1] == "--debugMode" {
+	if len(os.Args) > 1 && os.Args[1] == "--debug" {
 		debugMode = true
 	}
 
