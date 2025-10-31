@@ -22,6 +22,7 @@ func NewControls(midiIn *msg.Queue) *Controls {
 // Update poll inputs then returns forward, backward, scrollDelta
 func (c *Controls) Update() (bool, bool, int) {
 	fw, bw, scr := false, false, 0
+	// todo implement repeat delay
 	if inpututil.IsKeyJustPressed(ebiten.KeyRight) {
 		fw = true
 	}
@@ -29,22 +30,22 @@ func (c *Controls) Update() (bool, bool, int) {
 		bw = true
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
-		scr++
+		scr--
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
-		scr--
+		scr++
 	}
 	c.midiIn.Drain(10, func(m msg.Message) {
 		switch m.Kind {
 		case midi.ControlChangeKind:
 			if m.Key == 112 && m.Val8 != 0 {
 				v := 0.0
-				if m.Val8 > 64 {
+				if m.Val8 < 64 {
 					v += float64(m.Val8 - 64)
 				} else {
 					v -= float64(64 - m.Val8)
 				}
-				sh := math.Pow(v+1, 2) / 3 // make it less sensitive
+				sh := math.Pow(v+1, 2) / 4 // make it less sensitive
 				sh = math.Copysign(sh, v)
 				scr += int(v)
 			}

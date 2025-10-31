@@ -19,11 +19,13 @@ const (
 var ErrMenuEmpty = errors.New("empty menu")
 
 type Menu struct {
-	stdImg         *ebiten.Image
-	stdXSh, stdYSh float64
+	cursorImg            *ebiten.Image
+	cursorXSh, cursorYSh float64
 
-	current  *preset.Node
-	selected int
+	menuWindow []int
+	cursorPos  int
+
+	current *preset.Node
 
 	entries map[*preset.Node]*Entry
 }
@@ -33,14 +35,14 @@ func NewMenu(asts *assets.Loader, menu *preset.Node) (*Menu, error) {
 		return nil, ErrMenuEmpty
 	}
 
-	stdImg, err := asts.GetImage("ui/selected")
+	cursorImg, err := asts.GetImage("ui/selected")
 	if err != nil {
 		return nil, err
 	}
 
 	m := &Menu{
-		current: menu,
-		stdImg:  stdImg,
+		current:   menu,
+		cursorImg: cursorImg,
 	}
 
 	err = m.buildEntries(asts, menu)
@@ -48,41 +50,60 @@ func NewMenu(asts *assets.Loader, menu *preset.Node) (*Menu, error) {
 		return nil, err
 	}
 
-	sbds := m.stdImg.Bounds()
+	sbds := m.cursorImg.Bounds()
 	ebds := m.entries[menu.Children[0]].Bounds() // arbitrary entry
 
-	m.stdXSh = float64(sbds.Dx()-ebds.Dx()) / 2
-	m.stdYSh = float64(sbds.Dy()-ebds.Dy()) / 2
+	m.cursorXSh = float64(sbds.Dx()-ebds.Dx()) / 2
+	m.cursorYSh = float64(sbds.Dy()-ebds.Dy()) / 2
+
+	m.menuWindow = make([]int, MenuItems+2)
+	for i := range m.menuWindow {
+		m.menuWindow[i] = i % len(menu.Children)
+	}
 
 	return m, nil
 }
 
 func (m *Menu) Draw(screen *ebiten.Image) {
+	for i, idx := range m.menuWindow {
+		entry := m.entries[m.current.Children[idx]]
 
-	opts := &ebiten.DrawImageOptions{}
-	opts.GeoM.Translate(MenuStartX, MenuStartY)
-
-	for i := m.selected - 1; i < m.selected+MenuItems-1; i++ {
-		p := (i + len(m.current.Children)) % len(m.current.Children)
-		entry := m.entries[m.current.Children[p]]
-
-		opts.GeoM.Translate(0, MenuEntrySpacing)
+		opts := &ebiten.DrawImageOptions{}
+		opts.GeoM.Translate(MenuStartX, MenuStartY+float64(i)*MenuEntrySpacing)
 		screen.DrawImage(entry.Image, opts)
-
-		if i == m.selected {
-			// Draw stdImg background
+		if i == m.cursorPos+1 {
 			selOpts := &ebiten.DrawImageOptions{}
 			selOpts.GeoM.Concat(opts.GeoM)
-			selOpts.GeoM.Translate(-m.stdXSh, -m.stdYSh)
-			screen.DrawImage(m.stdImg, selOpts)
+			selOpts.GeoM.Translate(-m.cursorXSh, -m.cursorYSh)
+			screen.DrawImage(m.cursorImg, selOpts)
 		}
 	}
 }
 
 func (m *Menu) Scroll(delta int) {
-	m.selected -= delta
-	if m.selected < 0 {
-		m.selected = len(m.current.Children) - 1
+	total := len(m.current.Children)
+	window := len(m.menuWindow)
+
+	if delta < 0 {
+		if m.cursorPos > 0 {
+			m.cursorPos--
+		} else {
+			for i := window - 1; i > 0; i-- {
+				m.menuWindow[i] = m.menuWindow[i-1]
+			}
+			m.menuWindow[0] = (m.menuWindow[0] - 1 + total) % total
+		}
+	}
+
+	if delta > 0 {
+		if m.cursorPos < MenuItems-1 {
+			m.cursorPos++
+		} else {
+			for i := 0; i < window-1; i++ {
+				m.menuWindow[i] = m.menuWindow[i+1]
+			}
+			m.menuWindow[window-1] = (m.menuWindow[window-1] + 1) % total
+		}
 	}
 }
 

@@ -66,11 +66,19 @@ func NewMenu() *Node {
 				},
 			},
 			{
+				Label: "Presets",
+				Children: []*Node{
+					{Label: "Load preset"},
+					{Label: "Save preset"},
+				},
+			},
+			{
 				Label: "Settings",
 				Children: []*Node{
 					{Label: "General"},
 					{Label: "Master gain"},
-					{Label: "MIDI"},
+					{Label: "Controller"},
+					{Label: "Pitch bend"},
 					{Label: "About"},
 				},
 			},
