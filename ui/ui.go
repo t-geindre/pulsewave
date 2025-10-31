@@ -43,7 +43,7 @@ func NewUi(asts *assets.Loader, ctrl *Controls, menu *preset.Node) (*Ui, error) 
 func (u *Ui) Update() error {
 	_, _, s := u.controls.Update()
 	u.menu.Scroll(s)
-
+	u.menu.Update()
 	return nil
 }
 
