@@ -7,16 +7,19 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
+// Todo get it from config
+const (
+	LetterSpacing = 2
+	EntryWidth    = 329.0
+	EntryHeight   = 24.0
+)
+
 type Entry struct {
 	*ebiten.Image
 }
 
 func NewEntry(asts *assets.Loader, str string) (*Entry, error) {
-	const Spacing = 2 // Todo get it from config
-	const Width = 329.0
-	const Height = 24.0
-
-	w, h := Width, Height
+	w, h := EntryWidth, EntryHeight
 	img := ebiten.NewImage(int(w), int(h))
 
 	face, err := asts.GetFace("ui/face")
@@ -31,7 +34,7 @@ func NewEntry(asts *assets.Loader, str string) (*Entry, error) {
 	for _, r := range str {
 		s := string(r)
 		text.Draw(img, s, face, opts)
-		opts.GeoM.Translate(text.Advance(s, face)+Spacing, 0)
+		opts.GeoM.Translate(text.Advance(s, face)+LetterSpacing, 0)
 	}
 
 	arrow, err := asts.GetImage("ui/arrow")
