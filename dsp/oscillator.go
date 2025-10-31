@@ -72,7 +72,7 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 		return s.buf[:]
 	}
 
-	shape := s.shapeRegistry.Get(s.shapeIndex)
+	shape, wavetable := s.shapeRegistry.Get(s.shapeIndex)
 
 	if shape == ShapeNoise {
 		for i := 0; i < BlockSize; i++ {
@@ -102,22 +102,18 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 
 	for i := 0; i < BlockSize; i++ {
 		p := s.phase * invTwoPi
-		p -= math.Floor(p)
 
 		var shift float64
 		if phb != nil {
 			shift = float64(phb[i])
 			p += shift
-			p -= math.Floor(p)
 		}
+
+		p -= math.Floor(p)
 
 		switch shape {
 		case ShapeSine:
-			if shift != 0 {
-				s.buf[i] = float32(math.Sin(s.phase + twoPi*shift))
-			} else {
-				s.buf[i] = float32(math.Sin(s.phase))
-			}
+			s.buf[i] = float32(math.Sin(twoPi * p))
 
 		case ShapeSaw:
 			y := float32(2*p - 1)
@@ -157,6 +153,24 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 			y2 -= polyBLEP(pd, dt)
 
 			s.buf[i] = 0.5 * (y1 - y2)
+
+		case ShapeTableWave:
+			if wavetable != nil && wavetable.Size > 1 {
+				pos := p * float64(wavetable.Size-1)
+				if pos >= float64(wavetable.Size) {
+					pos -= float64(wavetable.Size)
+				}
+
+				idx := int(pos)
+				next := (idx + 1) % wavetable.Size
+				f := float32(pos - float64(idx))
+
+				v1 := wavetable.Table[idx]
+				v2 := wavetable.Table[next]
+				s.buf[i] = v1 + f*(v2-v1)
+			} else {
+				s.buf[i] = 0
+			}
 		}
 
 		s.phase += k * float64(fb[i])
