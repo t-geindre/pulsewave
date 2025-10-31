@@ -62,6 +62,9 @@ func main() {
 	player.SetBufferSize(time.Millisecond * 20)
 	player.Play()
 
+	// Build menu
+	menu := preset.NewMenu()
+
 	// UI
 	asts, err := assets.NewFromJson("assets/assets.json")
 	onError(err, "failed to create assets loader")
@@ -71,11 +74,11 @@ func main() {
 
 	ctrl := ui.NewControls(midiUiOutQ)
 
-	ui, err := ui.NewUi(asts, ctrl)
-	onError(err, "failed to create ui")
+	gui, err := ui.NewUi(asts, ctrl, menu)
+	onError(err, "failed to create gui")
 
-	err = ebiten.RunGame(ui)
-	onError(err, "failed to run ui")
+	err = ebiten.RunGame(gui)
+	onError(err, "failed to run gui")
 }
 
 func onError(err error, msg string) {

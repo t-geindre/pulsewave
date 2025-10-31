@@ -6,6 +6,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Todo queue id maybe useless since we can probably route user pointers to queues directly
 type route struct {
 	in, out int
 	src     Source

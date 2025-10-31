@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"math"
 	"synth/midi"
 	"synth/msg"
 
@@ -10,9 +11,6 @@ import (
 
 type Controls struct {
 	midiIn *msg.Queue
-
-	fw, bw     bool
-	more, less int
 }
 
 func NewControls(midiIn *msg.Queue) *Controls {
@@ -21,45 +19,39 @@ func NewControls(midiIn *msg.Queue) *Controls {
 	}
 }
 
-func (c *Controls) Update() {
+// Update poll inputs then returns forward, backward, scrollDelta
+func (c *Controls) Update() (bool, bool, int) {
+	fw, bw, scr := false, false, 0
 	if inpututil.IsKeyJustPressed(ebiten.KeyRight) {
-		c.fw = true
+		fw = true
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
-		c.bw = true
+		bw = true
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
-		c.more++
+		scr++
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
-		c.less++
+		scr--
 	}
 	c.midiIn.Drain(10, func(m msg.Message) {
 		switch m.Kind {
 		case midi.ControlChangeKind:
 			if m.Key == 112 && m.Val != 0 {
+				v := 0.0
 				if m.Val > 64 {
-					c.more += int(m.Val - 64)
+					v += float64(m.Val - 64)
 				} else {
-					c.less += int(64 - m.Val)
+					v -= float64(64 - m.Val)
 				}
+				sh := math.Pow(v+1, 2) / 3 // make it less sensitive
+				sh = math.Copysign(sh, v)
+				scr += int(v)
 			}
 		default:
 			// ignore
 		}
 	})
-}
 
-func (c *Controls) Consume() (forward, back bool, more, less int) {
-	forward = c.fw
-	back = c.bw
-	more = c.more
-	less = c.less
-
-	c.fw = false
-	c.bw = false
-	c.more = 0
-	c.less = 0
-
-	return
+	return fw, bw, scr
 }
