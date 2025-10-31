@@ -31,15 +31,18 @@ func main() {
 	// Messaging
 	router := msg.NewRouter(logger())
 	midiInQ, midiInId := router.AddInput(1024)
-	midiOutQ, midiOutId := router.AddOutput(1024)
+	midiAudioOutQ, midiAudioOutId := router.AddOutput(1024)
+	midiUiOutQ, miniUiOutId := router.AddOutput(1024)
 
-	router.AddRoute(midiInId, midiOutId, midi.MidiSource, midi.NoteOnKind)
-	router.AddRoute(midiInId, midiOutId, midi.MidiSource, midi.NoteOffKind)
+	router.AddRoute(midiInId, midiAudioOutId, midi.MidiSource, midi.NoteOnKind)
+	router.AddRoute(midiInId, midiAudioOutId, midi.MidiSource, midi.NoteOffKind)
+
+	router.AddRoute(midiInId, miniUiOutId, midi.MidiSource, midi.ControlChangeKind)
 
 	go router.Route()
 
 	// Add midi player to synth
-	midiPlayer := midi.NewPlayer(clean, synth, midiOutQ)
+	midiPlayer := midi.NewPlayer(clean, synth, midiAudioOutQ)
 
 	// Midi setup
 	midi := midi.NewListener(logger())
@@ -66,7 +69,9 @@ func main() {
 	err = asts.Load()
 	onError(err, "failed to load assets")
 
-	ui, err := ui.NewUi(asts)
+	ctrl := ui.NewControls(midiUiOutQ)
+
+	ui, err := ui.NewUi(asts, ctrl)
 	onError(err, "failed to create ui")
 
 	err = ebiten.RunGame(ui)

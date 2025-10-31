@@ -4,7 +4,6 @@ import (
 	"synth/assets"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type Ui struct {
@@ -15,9 +14,10 @@ type Ui struct {
 	selectedXShift float64
 	selectedYShift float64
 	current        int
+	controls       *Controls
 }
 
-func NewUi(asts *assets.Loader) (*Ui, error) {
+func NewUi(asts *assets.Loader, ctrl *Controls) (*Ui, error) {
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
 		return nil, err
@@ -48,6 +48,7 @@ func NewUi(asts *assets.Loader) (*Ui, error) {
 		menu:       entries,
 		selected:   selected,
 		current:    0,
+		controls:   ctrl,
 	}
 
 	sbds := ui.selected.Bounds()
@@ -60,18 +61,10 @@ func NewUi(asts *assets.Loader) (*Ui, error) {
 }
 
 func (u *Ui) Update() error {
-	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
-		u.current--
-		if u.current < 0 {
-			u.current = len(u.menu) - 1
-		}
-	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
-		u.current++
-		if u.current >= len(u.menu) {
-			u.current = 0
-		}
-	}
+	u.controls.Update()
+	_, _, m, l := u.controls.Consume()
+	u.current -= m - l
+	u.current = (u.current + len(u.menu)) % len(u.menu)
 	return nil
 }
 

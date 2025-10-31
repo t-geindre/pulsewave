@@ -51,33 +51,47 @@ func (l *Listener) Listen(device drivers.In, queue *msg.Queue) error {
 
 	var err error
 	l.stop, err = midi.ListenTo(device, func(message midi.Message, _ int32) {
-		var ch, key, vel uint8
+		var ch, key, val uint8
 		switch {
-		case message.GetNoteStart(&ch, &key, &vel):
+		case message.GetNoteStart(&ch, &key, &val):
 			queue.TryWrite(msg.Message{
 				Source: MidiSource,
-				Type:   NoteOnKind,
-				V1:     key,
-				V2:     vel,
+				Kind:   NoteOnKind,
+				Key:    key,
+				Val:    val,
+				Chan:   ch,
 			})
 			l.logger.Debug().
 				Uint8("channel", ch).
 				Uint8("key", key).
-				Uint8("vel", vel).
+				Uint8("val", val).
 				Msg("Note ON")
 
 		case message.GetNoteEnd(&ch, &key):
 			queue.TryWrite(msg.Message{
 				Source: MidiSource,
-				Type:   NoteOffKind,
-				V1:     key,
-				V2:     vel,
+				Kind:   NoteOffKind,
+				Key:    key,
+				Val:    val,
 			})
 			l.logger.Debug().
 				Uint8("channel", ch).
 				Uint8("key", key).
-				Uint8("vel", vel).
+				Uint8("val", val).
 				Msg("Note OFF")
+		case message.GetControlChange(&ch, &key, &val):
+			queue.TryWrite(msg.Message{
+				Source: MidiSource,
+				Kind:   ControlChangeKind,
+				Key:    key,
+				Val:    val,
+				Chan:   ch,
+			})
+			l.logger.Debug().
+				Uint8("channel", ch).
+				Uint8("controller", key).
+				Uint8("value", val).
+				Msg("Control Change")
 		default:
 			l.logger.Debug().Str("msg", message.String()).Msg("message ignored")
 		}

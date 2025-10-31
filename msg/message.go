@@ -4,7 +4,9 @@ type Kind uint8
 type Source uint8
 
 type Message struct {
-	Type       Kind
-	Source     Source
-	V1, V2, V3 uint8
+	Kind   Kind
+	Source Source
+	Key    uint8 // note number, controller number, ...
+	Val    uint8 // velocity, control value, ...
+	Chan   uint8
 }

@@ -79,7 +79,7 @@ func (r *Router) doRoute() bool {
 			if rt.src != msg.Source {
 				continue
 			}
-			if rt.kind != msg.Type {
+			if rt.kind != msg.Kind {
 				continue
 			}
 

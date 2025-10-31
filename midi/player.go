@@ -27,12 +27,12 @@ func NewPlayer(src dsp.Node, inst Instrument, queue *msg.Queue) *Player {
 func (p *Player) Process(block *dsp.Block) {
 	var m msg.Message
 	for p.queue.TryRead(&m) {
-		switch m.Type {
+		switch m.Kind {
 		case NoteOnKind:
 			// Todo handle vel properly with LUT (precalculated curve)
-			p.inst.NoteOn(int(m.V1), float32(m.V2)/127)
+			p.inst.NoteOn(int(m.Key), float32(m.Val)/127)
 		case NoteOffKind:
-			p.inst.NoteOff(int(m.V1))
+			p.inst.NoteOff(int(m.Key))
 		}
 	}
 

@@ -1,6 +1,5 @@
 package dsp
 
-// todo use polyVoice and allow to steal a voice
 type polyVoice struct {
 	key   int
 	voice *Voice
