@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-// Simple const param
+// Simple const param, avoid overhead
 type ConstParam float64
 
 func (c ConstParam) Resolve(cycle uint64) []float32 {
@@ -44,17 +44,17 @@ func BenchmarkOscillator_Resolve(b *testing.B) {
 		{
 			name:  "WT 256",
 			shape: ShapeTableWave,
-			table: NewSineWavetable(512),
+			table: NewSineWavetable(256),
 		},
 		{
 			name:  "WT 128",
 			shape: ShapeTableWave,
-			table: NewSineWavetable(512),
+			table: NewSineWavetable(128),
 		},
 		{
 			name:  "WT 64",
 			shape: ShapeTableWave,
-			table: NewSineWavetable(512),
+			table: NewSineWavetable(64),
 		},
 		{
 			name:  "Square",
@@ -75,8 +75,8 @@ func BenchmarkOscillator_Resolve(b *testing.B) {
 	} {
 		b.Run(test.name, func(b *testing.B) {
 			reg := NewShapeRegistry()
-			reg.Set(0, test.shape, test.table)
-			osc := NewRegOscillator(sr, reg, 0, ConstParam(440), nil, nil)
+			sid := reg.Add(test.shape, test.table)
+			osc := NewRegOscillator(sr, reg, sid, ConstParam(440), nil, nil)
 
 			s, m := uint64(0), uint64(b.N) // avoid cast in loop
 
@@ -87,5 +87,4 @@ func BenchmarkOscillator_Resolve(b *testing.B) {
 			}
 		})
 	}
-
 }

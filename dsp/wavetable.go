@@ -18,6 +18,12 @@ func NewWavetable(size int, generator func(phase float64) float64) *Wavetable {
 	return &Wavetable{Table: table, Size: size}
 }
 
+func NewZeroWavetable(size int) *Wavetable {
+	return NewWavetable(size, func(phase float64) float64 {
+		return 0
+	})
+}
+
 func NewSineWavetable(size int) *Wavetable {
 	return NewWavetable(size, func(phase float64) float64 {
 		return math.Sin(2 * math.Pi * phase)

@@ -17,9 +17,9 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 
 	// Shape registry (uniq for all voices)
 	reg := dsp.NewShapeRegistry()
-	reg.Set(0, dsp.ShapeSaw)
-	reg.Set(1, dsp.ShapeTriangle)
-	reg.Set(2, dsp.ShapeTableWave, dsp.NewSineWavetable(1024))
+	osc0Shp := reg.Add(dsp.ShapeSaw)
+	osc1Shp := reg.Add(dsp.ShapeTriangle)
+	osc2Shp := reg.Add(dsp.ShapeTableWave, dsp.NewSineWavetable(1024))
 
 	// Voice factory
 	voiceFact := func() *dsp.Voice {
@@ -35,21 +35,21 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 
 			// 0
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, 0, ft, ph, nil),
+				dsp.NewRegOscillator(SampleRate, reg, osc0Shp, ft, ph, nil),
 				dsp.NewParam(.33),
 				dsp.NewParam(0),
 			))
 
 			// 1
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, 1, dsp.NewTunerParam(ft, dsp.NewParam(-12)), ph, nil),
+				dsp.NewRegOscillator(SampleRate, reg, osc1Shp, dsp.NewTunerParam(ft, dsp.NewParam(-12)), ph, nil),
 				dsp.NewParam(.33),
 				dsp.NewParam(0),
 			))
 
 			// 2
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, 2, dsp.NewTunerParam(ft, dsp.NewParam(+24)), ph, nil),
+				dsp.NewRegOscillator(SampleRate, reg, osc2Shp, dsp.NewTunerParam(ft, dsp.NewParam(+24)), ph, nil),
 				dsp.NewParam(0.15),
 				dsp.NewParam(0),
 			))

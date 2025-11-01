@@ -29,8 +29,8 @@ func NewOscillator(
 	sqrWidth Param,
 ) *Oscillator {
 	reg := NewShapeRegistry()
-	reg.Set(0, shape)
-	return NewRegOscillator(sampleRate, reg, 0, freq, phaseShift, sqrWidth)
+	sid := reg.Add(shape)
+	return NewRegOscillator(sampleRate, reg, sid, freq, phaseShift, sqrWidth)
 }
 
 // NewRegOscillator creates a new Oscillator instance.
@@ -155,22 +155,18 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 			s.buf[i] = 0.5 * (y1 - y2)
 
 		case ShapeTableWave:
-			if wavetable != nil && wavetable.Size > 1 {
-				pos := p * float64(wavetable.Size-1)
-				if pos >= float64(wavetable.Size) {
-					pos -= float64(wavetable.Size)
-				}
-
-				idx := int(pos)
-				next := (idx + 1) % wavetable.Size
-				f := float32(pos - float64(idx))
-
-				v1 := wavetable.Table[idx]
-				v2 := wavetable.Table[next]
-				s.buf[i] = v1 + f*(v2-v1)
-			} else {
-				s.buf[i] = 0
+			pos := p * float64(wavetable.Size-1)
+			if pos >= float64(wavetable.Size) {
+				pos -= float64(wavetable.Size)
 			}
+
+			idx := int(pos)
+			next := (idx + 1) % wavetable.Size
+			f := float32(pos - float64(idx))
+
+			v1 := wavetable.Table[idx]
+			v2 := wavetable.Table[next]
+			s.buf[i] = v1 + f*(v2-v1)
 		}
 
 		s.phase += k * float64(fb[i])
