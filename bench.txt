@@ -1,0 +1,116 @@
+FAIL	synth [setup failed]
+FAIL	synth/sequencer [setup failed]
+FAIL	synth/song [setup failed]
+?   	synth/assets	[no test files]
+?   	synth/cmd/pulsewave	[no test files]
+goos: linux
+goarch: amd64
+pkg: synth/dsp
+cpu: 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
+BenchmarkOscillator_Resolve/Sine_math.sin-8         	  334694	      3377 ns/op
+BenchmarkOscillator_Resolve/Sine_math.sin-8         	  315342	      3349 ns/op
+BenchmarkOscillator_Resolve/Sine_math.sin-8         	  351658	      3421 ns/op
+BenchmarkOscillator_Resolve/Sine_math.sin-8         	  303402	      3455 ns/op
+BenchmarkOscillator_Resolve/Sine_math.sin-8         	  340212	      3630 ns/op
+BenchmarkOscillator_Resolve/Sine_math.sin-8         	  319022	      3351 ns/op
+BenchmarkOscillator_Resolve/Sine_math.sin-8         	  343784	      3467 ns/op
+BenchmarkOscillator_Resolve/Sine_math.sin-8         	  332607	      3525 ns/op
+BenchmarkOscillator_Resolve/Sine_math.sin-8         	  312031	      3352 ns/op
+BenchmarkOscillator_Resolve/Sine_math.sin-8         	  355249	      3343 ns/op
+BenchmarkOscillator_Resolve/WT_1024-8               	  750902	      1634 ns/op
+BenchmarkOscillator_Resolve/WT_1024-8               	  703957	      1730 ns/op
+BenchmarkOscillator_Resolve/WT_1024-8               	  724368	      1564 ns/op
+BenchmarkOscillator_Resolve/WT_1024-8               	  705674	      1714 ns/op
+BenchmarkOscillator_Resolve/WT_1024-8               	  719858	      1659 ns/op
+BenchmarkOscillator_Resolve/WT_1024-8               	  667486	      1636 ns/op
+BenchmarkOscillator_Resolve/WT_1024-8               	  714698	      1598 ns/op
+BenchmarkOscillator_Resolve/WT_1024-8               	  763330	      1642 ns/op
+BenchmarkOscillator_Resolve/WT_1024-8               	  693045	      1765 ns/op
+BenchmarkOscillator_Resolve/WT_1024-8               	  664003	      1618 ns/op
+BenchmarkOscillator_Resolve/WT_512-8                	  668382	      1692 ns/op
+BenchmarkOscillator_Resolve/WT_512-8                	  708951	      1646 ns/op
+BenchmarkOscillator_Resolve/WT_512-8                	  745262	      1649 ns/op
+BenchmarkOscillator_Resolve/WT_512-8                	  749569	      1679 ns/op
+BenchmarkOscillator_Resolve/WT_512-8                	  705884	      1797 ns/op
+BenchmarkOscillator_Resolve/WT_512-8                	  734922	      1642 ns/op
+BenchmarkOscillator_Resolve/WT_512-8                	  535020	      1888 ns/op
+BenchmarkOscillator_Resolve/WT_512-8                	  705385	      1625 ns/op
+BenchmarkOscillator_Resolve/WT_512-8                	  670390	      1761 ns/op
+BenchmarkOscillator_Resolve/WT_512-8                	  734323	      1596 ns/op
+BenchmarkOscillator_Resolve/WT_256-8                	  699904	      1657 ns/op
+BenchmarkOscillator_Resolve/WT_256-8                	  709855	      1634 ns/op
+BenchmarkOscillator_Resolve/WT_256-8                	  723189	      1640 ns/op
+BenchmarkOscillator_Resolve/WT_256-8                	  715574	      1599 ns/op
+BenchmarkOscillator_Resolve/WT_256-8                	  679657	      1808 ns/op
+BenchmarkOscillator_Resolve/WT_256-8                	  735404	      1635 ns/op
+BenchmarkOscillator_Resolve/WT_256-8                	  679646	      1605 ns/op
+BenchmarkOscillator_Resolve/WT_256-8                	  695252	      1661 ns/op
+BenchmarkOscillator_Resolve/WT_256-8                	  760467	      1694 ns/op
+BenchmarkOscillator_Resolve/WT_256-8                	  663778	      1694 ns/op
+BenchmarkOscillator_Resolve/WT_128-8                	  625658	      1638 ns/op
+BenchmarkOscillator_Resolve/WT_128-8                	  678560	      1642 ns/op
+BenchmarkOscillator_Resolve/WT_128-8                	  706098	      1703 ns/op
+BenchmarkOscillator_Resolve/WT_128-8                	  729012	      1697 ns/op
+BenchmarkOscillator_Resolve/WT_128-8                	  649173	      1672 ns/op
+BenchmarkOscillator_Resolve/WT_128-8                	  619526	      1732 ns/op
+BenchmarkOscillator_Resolve/WT_128-8                	  669265	      1725 ns/op
+BenchmarkOscillator_Resolve/WT_128-8                	  675237	      1740 ns/op
+BenchmarkOscillator_Resolve/WT_128-8                	  683568	      1691 ns/op
+BenchmarkOscillator_Resolve/WT_128-8                	  659293	      1711 ns/op
+BenchmarkOscillator_Resolve/WT_64-8                 	  650180	      1694 ns/op
+BenchmarkOscillator_Resolve/WT_64-8                 	  735122	      1656 ns/op
+BenchmarkOscillator_Resolve/WT_64-8                 	  692595	      1692 ns/op
+BenchmarkOscillator_Resolve/WT_64-8                 	  751455	      1686 ns/op
+BenchmarkOscillator_Resolve/WT_64-8                 	  706681	      1615 ns/op
+BenchmarkOscillator_Resolve/WT_64-8                 	  729069	      1775 ns/op
+BenchmarkOscillator_Resolve/WT_64-8                 	  586528	      1796 ns/op
+BenchmarkOscillator_Resolve/WT_64-8                 	  707827	      1623 ns/op
+BenchmarkOscillator_Resolve/WT_64-8                 	  724814	      1699 ns/op
+BenchmarkOscillator_Resolve/WT_64-8                 	  726600	      1650 ns/op
+BenchmarkOscillator_Resolve/Square-8                	  594946	      2001 ns/op
+BenchmarkOscillator_Resolve/Square-8                	  495934	      2056 ns/op
+BenchmarkOscillator_Resolve/Square-8                	  524816	      1933 ns/op
+BenchmarkOscillator_Resolve/Square-8                	  574242	      1864 ns/op
+BenchmarkOscillator_Resolve/Square-8                	  519594	      2081 ns/op
+BenchmarkOscillator_Resolve/Square-8                	  613113	      1917 ns/op
+BenchmarkOscillator_Resolve/Square-8                	  559692	      1950 ns/op
+BenchmarkOscillator_Resolve/Square-8                	  623946	      1896 ns/op
+BenchmarkOscillator_Resolve/Square-8                	  569264	      1897 ns/op
+BenchmarkOscillator_Resolve/Square-8                	  589616	      2021 ns/op
+BenchmarkOscillator_Resolve/Triangle-8              	 1223319	      1122 ns/op
+BenchmarkOscillator_Resolve/Triangle-8              	  977504	      1117 ns/op
+BenchmarkOscillator_Resolve/Triangle-8              	 1097778	      1057 ns/op
+BenchmarkOscillator_Resolve/Triangle-8              	 1000000	      1069 ns/op
+BenchmarkOscillator_Resolve/Triangle-8              	 1000000	      1034 ns/op
+BenchmarkOscillator_Resolve/Triangle-8              	 1000000	      1115 ns/op
+BenchmarkOscillator_Resolve/Triangle-8              	 1259925	       981.0 ns/op
+BenchmarkOscillator_Resolve/Triangle-8              	 1219659	      1065 ns/op
+BenchmarkOscillator_Resolve/Triangle-8              	 1102011	      1036 ns/op
+BenchmarkOscillator_Resolve/Triangle-8              	  978669	      1093 ns/op
+BenchmarkOscillator_Resolve/Noise-8                 	 2590467	       461.6 ns/op
+BenchmarkOscillator_Resolve/Noise-8                 	 2587503	       481.0 ns/op
+BenchmarkOscillator_Resolve/Noise-8                 	 2586573	       480.3 ns/op
+BenchmarkOscillator_Resolve/Noise-8                 	 2595472	       474.7 ns/op
+BenchmarkOscillator_Resolve/Noise-8                 	 2587056	       476.1 ns/op
+BenchmarkOscillator_Resolve/Noise-8                 	 2546571	       477.0 ns/op
+BenchmarkOscillator_Resolve/Noise-8                 	 2577512	       461.8 ns/op
+BenchmarkOscillator_Resolve/Noise-8                 	 2580309	       483.5 ns/op
+BenchmarkOscillator_Resolve/Noise-8                 	 2473845	       488.4 ns/op
+BenchmarkOscillator_Resolve/Noise-8                 	 2485030	       482.5 ns/op
+BenchmarkOscillator_Resolve/Saw-8                   	  948187	      1391 ns/op
+BenchmarkOscillator_Resolve/Saw-8                   	  791302	      1389 ns/op
+BenchmarkOscillator_Resolve/Saw-8                   	  939120	      1297 ns/op
+BenchmarkOscillator_Resolve/Saw-8                   	  852087	      1284 ns/op
+BenchmarkOscillator_Resolve/Saw-8                   	  899956	      1262 ns/op
+BenchmarkOscillator_Resolve/Saw-8                   	  853932	      1391 ns/op
+BenchmarkOscillator_Resolve/Saw-8                   	  851696	      1303 ns/op
+BenchmarkOscillator_Resolve/Saw-8                   	  918135	      1298 ns/op
+BenchmarkOscillator_Resolve/Saw-8                   	  893144	      1355 ns/op
+BenchmarkOscillator_Resolve/Saw-8                   	  841672	      1393 ns/op
+PASS
+ok  	synth/dsp	138.913s
+?   	synth/midi	[no test files]
+?   	synth/msg	[no test files]
+?   	synth/preset	[no test files]
+?   	synth/ui	[no test files]
+FAIL

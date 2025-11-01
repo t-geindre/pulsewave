@@ -18,28 +18,74 @@ func (c ConstParam) Resolve(cycle uint64) []float32 {
 func (c ConstParam) SetBase(float32)             {}
 func (c ConstParam) ModInputs() *[]ParamModInput { return nil }
 
-// SINE
-func BenchmarkOscillator_Sine(b *testing.B) {
-	const sr = 44100.0
-	osc := NewOscillator(sr, ShapeSine, ConstParam(440), nil, nil)
-
-	b.ResetTimer()
-
-	for n := 0; n < b.N; n++ {
-		osc.Resolve(uint64(n))
-	}
-}
-
 // SINE WAVETABLE
-func BenchmarkOscillator_SineWaveTable(b *testing.B) {
+func BenchmarkOscillator_Resolve(b *testing.B) {
 	const sr = 44100.0
-	reg := NewShapeRegistry()
-	reg.Set(0, ShapeTableWave, NewSineWavetable(1024))
-	osc := NewRegOscillator(sr, reg, 0, ConstParam(440), nil, nil)
 
-	b.ResetTimer()
+	for _, test := range []struct {
+		name  string
+		shape OscShape
+		table *Wavetable
+	}{
+		{
+			name:  "Sine math.sin",
+			shape: ShapeSine,
+		},
+		{
+			name:  "WT 1024",
+			shape: ShapeTableWave,
+			table: NewSineWavetable(1024),
+		},
+		{
+			name:  "WT 512",
+			shape: ShapeTableWave,
+			table: NewSineWavetable(512),
+		},
+		{
+			name:  "WT 256",
+			shape: ShapeTableWave,
+			table: NewSineWavetable(512),
+		},
+		{
+			name:  "WT 128",
+			shape: ShapeTableWave,
+			table: NewSineWavetable(512),
+		},
+		{
+			name:  "WT 64",
+			shape: ShapeTableWave,
+			table: NewSineWavetable(512),
+		},
+		{
+			name:  "Square",
+			shape: ShapeSquare,
+		},
+		{
+			name:  "Triangle",
+			shape: ShapeTriangle,
+		},
+		{
+			name:  "Noise",
+			shape: ShapeNoise,
+		},
+		{
+			name:  "Saw",
+			shape: ShapeSaw,
+		},
+	} {
+		b.Run(test.name, func(b *testing.B) {
+			reg := NewShapeRegistry()
+			reg.Set(0, test.shape, test.table)
+			osc := NewRegOscillator(sr, reg, 0, ConstParam(440), nil, nil)
 
-	for n := 0; n < b.N; n++ {
-		osc.Resolve(uint64(n))
+			s, m := uint64(0), uint64(b.N) // avoid cast in loop
+
+			b.ResetTimer()
+
+			for n := s; n < m; n++ {
+				osc.Resolve(n)
+			}
+		})
 	}
+
 }
