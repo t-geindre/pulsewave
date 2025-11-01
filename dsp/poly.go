@@ -16,14 +16,13 @@ type PolyVoice struct {
 func NewPolyVoice(voices int, factory func() *Voice) *PolyVoice {
 	p := &PolyVoice{
 		voices: make([]*polyVoice, voices),
-		Mixer:  NewMixer(NewParam(1), false),
+		Mixer:  NewMixer(nil, false),
 	}
 
-	gp, pp := NewParam(1), NewParam(0)
 	for i := 0; i < voices; i++ {
 		vc := &polyVoice{}
 		vc.voice = factory()
-		vc.input = NewInput(vc.voice, gp, pp)
+		vc.input = NewInput(vc.voice, nil, nil) // no pan/gain, mixer fast path
 		vc.input.Mute = true
 		p.Mixer.Add(vc.input)
 		p.voices[i] = vc

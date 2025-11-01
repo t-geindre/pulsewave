@@ -1,4 +1,3 @@
-// unison.go
 package dsp
 
 import (
@@ -8,12 +7,12 @@ import (
 type UnisonFactory func(phase Param, detuneSemi Param) Node
 
 type uniSlot struct {
-	voice  Node           // sous-graphe audio de la voix (ex: mixer d'osc)
-	input  *Input         // entrée correspondante dans le Mixer interne (pour MAJ Pan/Gain)
-	phase  *SmoothedParam // décalage de phase (0..1 tours), modulable à chaud
-	detune *SmoothedParam // décalage en demi-tons, modulable à chaud
-	gain   float32        // normalisation per-voice (ex: 1/sqrt(N))
-	xPos   float64        // position spatiale abstraite [-1..1]
+	voice  Node
+	input  *Input
+	phase  *SmoothedParam
+	detune *SmoothedParam
+	gain   float32
+	xPos   float64
 }
 
 type Unison struct {
@@ -21,34 +20,32 @@ type Unison struct {
 
 	voices []*uniSlot
 
-	PanSpread    Param // 0..1 (écartement stéréo)
-	PhaseSpread  Param // 0..1 (tours 0..1)
-	DetuneSpread Param // en cents (±), converti en demi-tons ( /100 )
-	CurveGamma   Param // >0 ; 1 = linéaire ; >1 = plus de densité au centre
+	PanSpread    Param // 0..1
+	PhaseSpread  Param // 0..1 (cycles)
+	DetuneSpread Param // cents
+	CurveGamma   Param // >0 ; 1 = linear ; >1 = more center ; <1 = more edges
 
 	factory UnisonFactory
 
 	lastCycle     uint64
-	pendingVoices int // >0 => rebuild au prochain Reset/NoteOn
+	pendingVoices int // >0 => rebuild next noteOn
 	sr            float64
 }
 
-// UnisonOpts pour créer l'unison
 type UnisonOpts struct {
 	SampleRate float64
 	NumVoices  int
 	Factory    UnisonFactory
 
-	// spreads & shape
 	PanSpread    Param // 0..1
-	PhaseSpread  Param // 0..1 (tours)
-	DetuneSpread Param // en cents
-	CurveGamma   Param // >0 (ex: Const(2.0))
+	PhaseSpread  Param // 0..1 (cycles)
+	DetuneSpread Param // cents
+	CurveGamma   Param // >0 ; 1 = linear ; >1 = more center ; <1 = more edges
 }
 
 func NewUnison(o UnisonOpts) *Unison {
 	u := &Unison{
-		Mixer:        NewMixer(NewParam(1.0), false), // master gain = 1, pas de soft-clip
+		Mixer:        NewMixer(nil, false),
 		PanSpread:    o.PanSpread,
 		PhaseSpread:  o.PhaseSpread,
 		DetuneSpread: o.DetuneSpread,
@@ -60,12 +57,10 @@ func NewUnison(o UnisonOpts) *Unison {
 	return u
 }
 
-// SetVoices demande un nouveau nombre de voix (appliqué au prochain Reset/NoteOn).
 func (u *Unison) SetVoices(n int) {
 	u.pendingVoices = n
 }
 
-// Reset applique les changements en attente (rebuild) et reset le Mixer.
 func (u *Unison) Reset() {
 	if u.pendingVoices > 0 {
 		u.rebuild(u.pendingVoices)

@@ -11,6 +11,10 @@ type Input struct {
 	Mute bool
 }
 
+// NewInput creates a new Input node.
+// src: source Node to mix.
+// gain: per-sample gain (can be nil and SHOULD BE if not required for better performance).
+// pan: per-sample pan (-1..+1, can be nil and SHOULD BE if not required for better performance).
 func NewInput(src Node, gain, pan Param) *Input {
 	return &Input{Src: src, Gain: gain, Pan: pan}
 }
@@ -27,6 +31,9 @@ type Mixer struct {
 	tmp Block
 }
 
+// NewMixer creates a new Mixer.
+// masterGain: overall gain applied after mixing all inputs (can be nil).
+// softClip: if true, applies soft clipping to the output.
 func NewMixer(masterGain Param, softClip bool) *Mixer {
 	m := &Mixer{MasterGain: masterGain, SoftClip: softClip}
 	m.tmp.L = [BlockSize]float32{}

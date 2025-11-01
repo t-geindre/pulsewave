@@ -48,3 +48,19 @@ func (s *ParamSimple) Resolve(cycle uint64) []float32 {
 
 	return s.buf[:]
 }
+
+type ConstParam struct {
+	buff [BlockSize]float32
+}
+
+func NewConstParam(v float32) *ConstParam {
+	cp := &ConstParam{}
+	for i := range cp.buff {
+		cp.buff[i] = v
+	}
+	return cp
+}
+
+func (c ConstParam) Resolve(cycle uint64) []float32 { return c.buff[:] }
+func (c ConstParam) SetBase(float32)                { panic("not implemented") } // const never changes
+func (c ConstParam) ModInputs() *[]ParamModInput    { panic("not implemented") } // const never changes

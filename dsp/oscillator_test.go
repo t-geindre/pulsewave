@@ -4,21 +4,6 @@ import (
 	"testing"
 )
 
-// Simple const param, avoid overhead
-type ConstParam float64
-
-func (c ConstParam) Resolve(cycle uint64) []float32 {
-	buf := make([]float32, BlockSize)
-	for i := range buf {
-		buf[i] = float32(c)
-	}
-	return buf
-}
-
-func (c ConstParam) SetBase(float32)             {}
-func (c ConstParam) ModInputs() *[]ParamModInput { return nil }
-
-// SINE WAVETABLE
 func BenchmarkOscillator_Resolve(b *testing.B) {
 	const sr = 44100.0
 
@@ -76,7 +61,7 @@ func BenchmarkOscillator_Resolve(b *testing.B) {
 		b.Run(test.name, func(b *testing.B) {
 			reg := NewShapeRegistry()
 			sid := reg.Add(test.shape, test.table)
-			osc := NewRegOscillator(sr, reg, sid, ConstParam(440), nil, nil)
+			osc := NewRegOscillator(sr, reg, sid, NewConstParam(440), nil, nil)
 
 			s, m := uint64(0), uint64(b.N) // avoid cast in loop
 
