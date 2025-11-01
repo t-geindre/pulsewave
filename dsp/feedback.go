@@ -20,6 +20,8 @@ type FeedbackDelay struct {
 
 	// LPF state
 	lpfL, lpfR float32
+
+	tmp Block
 }
 
 func NewFeedbackDelay(sr float64, maxDelaySeconds float64, src Source,
@@ -65,9 +67,8 @@ func readInterp(buf []float32, idx float64) float32 {
 }
 
 func (d *FeedbackDelay) Process(b *Block) {
-	var in Block
-	in.Cycle = b.Cycle
-	d.Src.Process(&in)
+	d.tmp.Cycle = b.Cycle
+	d.Src.Process(&d.tmp)
 
 	tb := d.safeResolve(d.Time, b.Cycle)
 	fb := d.safeResolve(d.Feedback, b.Cycle)
@@ -85,8 +86,8 @@ func (d *FeedbackDelay) Process(b *Block) {
 	w := float64(d.wpos)
 
 	for i := 0; i < BlockSize; i++ {
-		xL := in.L[i]
-		xR := in.R[i]
+		xL := d.tmp.L[i]
+		xR := d.tmp.R[i]
 
 		delayS := float64(tb[i]) * d.sr
 		if delayS < 1 {
