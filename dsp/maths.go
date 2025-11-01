@@ -71,21 +71,12 @@ func centeredPower(x, gamma float64) float64 {
 }
 
 // fastPanGains computes left and right gain factors for a given pan
-// value p in [-1, +1] using equal-power panning
-// uses a LUT + interpolation for performances
+// value p in [-1, +1] using linear panning (better performances)
 func fastPanGains(p float32) (gl, gr float32) {
-	if p <= -1 {
-		return panLUT[0][0], panLUT[0][1]
-	}
-	if p >= 1 {
-		return panLUT[1024][0], panLUT[1024][1]
-	}
-	x := (p + 1) * 512 // 0..1024
-	i := int(x)
-	f := x - float32(i)
-	a := panLUT[i]
-	b := panLUT[i+1]
-	return a[0] + f*(b[0]-a[0]), a[1] + f*(b[1]-a[1])
+	// p ∈ [-1, 1]
+	gl = 1 - 0.5*(p+1) // 1 → 0
+	gr = 0.5 * (p + 1) // 0 → 1
+	return gl, gr
 }
 
 // fastExpSemi computes 2^(semi/12) using a LUT for cents and ldexp for octaves
@@ -125,8 +116,6 @@ func fastExpSemi(semi float32) float32 {
 	return float32(math.Ldexp(float64(rFrac), oct))
 }
 
-var panLUT [1025][2]float32 // [gl,gr]
-
 const expNegXMax = math.Pi // ~2π*fc/sr at fc≈sr/2
 var expNegLUT [4097]float32
 
@@ -138,15 +127,6 @@ const (
 var centLUT [centsMax + 1]float32
 
 func init() {
-	// LUT pan
-	for i := 0; i <= 1024; i++ {
-		p := -1 + 2*float64(i)/1024
-		gl := math.Sqrt(0.5 * (1 - p))
-		gr := math.Sqrt(0.5 * (1 + p))
-		panLUT[i][0] = float32(gl)
-		panLUT[i][1] = float32(gr)
-	}
-
 	// LUT expNeg
 	for i := 0; i <= 4096; i++ {
 		x := float64(i) * expNegXMax / 4096.0
