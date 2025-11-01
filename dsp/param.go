@@ -61,6 +61,6 @@ func NewConstParam(v float32) *ConstParam {
 	return cp
 }
 
-func (c ConstParam) Resolve(cycle uint64) []float32 { return c.buff[:] }
-func (c ConstParam) SetBase(float32)                { panic("not implemented") } // const never changes
-func (c ConstParam) ModInputs() *[]ParamModInput    { panic("not implemented") } // const never changes
+func (c *ConstParam) Resolve(cycle uint64) []float32 { return c.buff[:] }
+func (c *ConstParam) SetBase(float32)                { panic("not implemented") } // const never changes
+func (c *ConstParam) ModInputs() *[]ParamModInput    { panic("not implemented") } // const never changes

@@ -5,7 +5,8 @@
    - [X] SPSC queues
    - [X] Noise local rng (no lock on global rng src)
  - [X] Zero alloc hotpath
-   - [ ] Add tests to verify
+   - [X] Polyphonic voice management, mixer and oscillator hotpaths are tested with no allocations
+   - [ ] Add more tests
  - [X] LUT caching
  - [/] Wave tables (sine wave only)
    - [ ] Add more waveforms
