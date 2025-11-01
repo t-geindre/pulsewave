@@ -13,6 +13,8 @@ type LowPassSVF struct {
 	// Canal states
 	ic1L, ic2L float64
 	ic1R, ic2R float64
+
+	tmp Block
 }
 
 func NewLowPassSVF(sr float64, src Node, cutoff Param, q Param) *LowPassSVF {
@@ -25,9 +27,8 @@ func NewLowPassSVF(sr float64, src Node, cutoff Param, q Param) *LowPassSVF {
 }
 
 func (f *LowPassSVF) Process(b *Block) {
-	var in Block
-	in.Cycle = b.Cycle
-	f.Src.Process(&in)
+	f.tmp.Cycle = b.Cycle
+	f.Src.Process(&f.tmp)
 
 	cb := f.Cutoff.Resolve(b.Cycle)
 	qb := f.ResonQ.Resolve(b.Cycle)
@@ -37,7 +38,7 @@ func (f *LowPassSVF) Process(b *Block) {
 	maxFc := 0.49 * nyq
 
 	for i := 0; i < BlockSize; i++ {
-		x := float64(in.L[i])
+		x := float64(f.tmp.L[i])
 
 		fc := float64(cb[i])
 		if fc < minFc {
@@ -68,7 +69,7 @@ func (f *LowPassSVF) Process(b *Block) {
 
 		b.L[i] = float32(lp)
 
-		xr := float64(in.R[i])
+		xr := float64(f.tmp.R[i])
 
 		hp = (xr - R*f.ic1R - f.ic2R) * h
 		bp = g*hp + f.ic1R
