@@ -109,7 +109,6 @@ func (l *List) Update() {
 }
 
 func (l *List) Draw(screen *ebiten.Image) {
-
 	// Entries
 	for i, idx := range l.listWindow {
 		entry := l.entries[l.node.Children[idx]]

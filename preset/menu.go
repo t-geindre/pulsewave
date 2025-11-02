@@ -58,6 +58,14 @@ func NewMenu() *Node {
 				Children: []*Node{
 					{Label: "Feedback delay"},
 					{Label: "Low pass filter"},
+					{
+						Label: "Unison",
+						Children: []*Node{
+							{Label: "Voices"},
+							{Label: "Pan spread"},
+							{Label: "Phase spread"},
+						},
+					},
 				},
 			},
 			{

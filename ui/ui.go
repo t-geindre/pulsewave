@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"synth/assets"
 	"synth/preset"
 
@@ -14,6 +13,7 @@ const (
 	BodyWidth  = 376
 	BodyStartX = 51
 	BodyStartY = 70
+	SlideSpeed = .08
 )
 
 type Ui struct {
@@ -23,7 +23,12 @@ type Ui struct {
 
 	components map[*preset.Node]Component
 	current    *preset.Node
+	next       *preset.Node
+	nextTrans  float64
+	transDir   float64
 
+	transLeft    *ebiten.Image
+	transRight   *ebiten.Image
 	bodyClipMask *ebiten.Image
 }
 
@@ -44,6 +49,8 @@ func NewUi(asts *assets.Loader, ctrl *Controls, root *preset.Node) (*Ui, error) 
 		current:      root,
 		controls:     ctrl,
 		bodyClipMask: ebiten.NewImage(BodyWidth, BodyHeight),
+		transLeft:    ebiten.NewImage(BodyWidth, BodyHeight),
+		transRight:   ebiten.NewImage(BodyWidth, BodyHeight),
 	}
 
 	err = ui.buildComponents(asts, root)
@@ -55,19 +62,36 @@ func NewUi(asts *assets.Loader, ctrl *Controls, root *preset.Node) (*Ui, error) 
 }
 
 func (u *Ui) Update() error {
+	if u.next != nil {
+		u.nextTrans += SlideSpeed
+		if u.nextTrans > 1 {
+			u.current = u.next
+			u.next = nil
+			u.nextTrans = 0
+		}
+		return nil
+	}
+
 	fw, bw, s := u.controls.Update()
+
 	if fw {
 		tr := u.components[u.current].CurrentTarget()
-		fmt.Println(tr.Label)
 		if len(tr.Children) > 0 {
-			u.current = tr
+			u.next = tr
+			u.transDir = 1
 		}
+		return nil
+
 	}
 	if bw && u.current.Parent != nil {
-		u.current = u.current.Parent
+		u.next = u.current.Parent
+		u.transDir = -1
+		return nil
 	}
+
 	u.components[u.current].Scroll(s)
 	u.components[u.current].Update()
+
 	return nil
 }
 
@@ -75,7 +99,34 @@ func (u *Ui) Draw(screen *ebiten.Image) {
 	screen.DrawImage(u.background, nil)
 
 	u.bodyClipMask.Clear()
-	u.components[u.current].Draw(u.bodyClipMask)
+	if u.next != nil {
+		ease := easeOutCubic(u.nextTrans)
+		if u.transDir == -1 {
+			ease = 1 - ease
+		}
+
+		u.transLeft.Clear()
+		u.components[u.current].Draw(u.transLeft)
+
+		u.transRight.Clear()
+		u.components[u.next].Draw(u.transRight)
+
+		lOpts := ebiten.DrawImageOptions{}
+		lOpts.GeoM.Translate(-ease*BodyWidth, 0)
+
+		rOpts := ebiten.DrawImageOptions{}
+		rOpts.GeoM.Translate(BodyWidth-ease*BodyWidth, 0)
+
+		if u.transDir == 1 {
+			u.bodyClipMask.DrawImage(u.transLeft, &lOpts)
+			u.bodyClipMask.DrawImage(u.transRight, &rOpts)
+		} else {
+			u.bodyClipMask.DrawImage(u.transLeft, &rOpts)
+			u.bodyClipMask.DrawImage(u.transRight, &lOpts)
+		}
+	} else {
+		u.components[u.current].Draw(u.bodyClipMask)
+	}
 
 	ops := &ebiten.DrawImageOptions{}
 	ops.GeoM.Translate(BodyStartX, BodyStartY)
