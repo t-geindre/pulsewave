@@ -10,11 +10,6 @@ import (
 
 // Todo get it from config
 const (
-	MenuHeight = 211
-	MenuWidth  = 376
-	MenuStartX = 51
-	MenuStartY = 70
-
 	ListVisibleItems = 4
 	ListPaddingTop   = 20
 	ListPaddingLeft  = 25
@@ -32,7 +27,6 @@ type List struct {
 
 	cursorImg            *ebiten.Image
 	cursorXSh, cursorYSh float64
-	clippingMask         *ebiten.Image
 
 	cursorY         float64
 	targetCursorY   float64
@@ -55,10 +49,9 @@ func NewList(asts *assets.Loader, node *preset.Node) (*List, error) {
 	}
 
 	l := &List{
-		node:         node,
-		cursorImg:    cursorImg,
-		entries:      make(map[*preset.Node]*ListEntry),
-		clippingMask: ebiten.NewImage(MenuWidth, MenuHeight),
+		node:      node,
+		cursorImg: cursorImg,
+		entries:   make(map[*preset.Node]*ListEntry),
 	}
 
 	if err = l.buildEntries(asts, node); err != nil {
@@ -68,7 +61,7 @@ func NewList(asts *assets.Loader, node *preset.Node) (*List, error) {
 	// Cursor alignment
 	sbds := l.cursorImg.Bounds()
 	ebds := l.entries[node.Children[0]].Bounds() // arbitrary entry
-	l.cursorXSh = float64(sbds.Dx()-ebds.Dx()) / 2
+	l.cursorXSh = -float64(sbds.Dx()-ebds.Dx()) / 2
 	l.cursorYSh = float64(sbds.Dy()-ebds.Dy()) / 2
 
 	// List window
@@ -100,7 +93,6 @@ func (l *List) Update() {
 }
 
 func (l *List) Draw(screen *ebiten.Image) {
-	l.clippingMask.Clear()
 
 	// Entries
 	for i, idx := range l.listWindow {
@@ -109,18 +101,13 @@ func (l *List) Draw(screen *ebiten.Image) {
 
 		opts := &ebiten.DrawImageOptions{}
 		opts.GeoM.Translate(ListPaddingLeft, y)
-		l.clippingMask.DrawImage(entry.Image, opts)
+		screen.DrawImage(entry.Image, opts)
 	}
-
-	// Clip mask rendering
-	menuOpts := &ebiten.DrawImageOptions{}
-	menuOpts.GeoM.Translate(MenuStartX, MenuStartY)
-	screen.DrawImage(l.clippingMask, menuOpts)
 
 	// Cursor
 	selOpts := &ebiten.DrawImageOptions{}
-	selY := MenuStartY + l.cursorY - l.cursorYSh
-	selOpts.GeoM.Translate(MenuStartX-l.cursorXSh+ListPaddingLeft, selY)
+	selY := l.cursorY - l.cursorYSh
+	selOpts.GeoM.Translate(l.cursorXSh+ListPaddingLeft, selY)
 	screen.DrawImage(l.cursorImg, selOpts)
 }
 
