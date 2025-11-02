@@ -190,11 +190,6 @@ func (m *Menu) buildEntries(asts *assets.Loader, node *preset.Node) error {
 		}
 		m.entries[ch] = entry
 
-		if len(ch.Children) > 0 {
-			if err = m.buildEntries(asts, ch); err != nil {
-				return err
-			}
-		}
 	}
 	return nil
 }

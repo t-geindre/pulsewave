@@ -66,10 +66,19 @@ func NewMenu() *Node {
 				},
 			},
 			{
+				Label: "Visualizer",
+				Children: []*Node{
+					{Label: "Spectrum"},
+					{Label: "Oscilloscope"},
+				},
+			},
+			{
 				Label: "Presets",
 				Children: []*Node{
 					{Label: "Load preset"},
 					{Label: "Save preset"},
+					// Todo ON/OFF, we should have a dedicated entry for toggles with smth like a checkbox
+					{Label: "Auto save"},
 				},
 			},
 			{

@@ -50,10 +50,13 @@ func main() {
 	defer midi.Close()
 
 	device, err := midi.FindDevice()
-	onError(err, "failed to find device")
-
-	err = midi.Listen(device, midiInQ)
-	onError(err, "failed to listen to device")
+	if err != nil {
+		l := logger()
+		l.Warn().Err(err).Msg("failed to find midi device")
+	} else {
+		err = midi.Listen(device, midiInQ)
+		onError(err, "failed to listen to device")
+	}
 
 	// Player
 	ctx := audio.NewContext(SampleRate)
