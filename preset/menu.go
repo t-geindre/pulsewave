@@ -56,13 +56,8 @@ func NewMenu() *Node {
 			{
 				Label: "Effects",
 				Children: []*Node{
-					{Label: "FB Delay"},
-				},
-			},
-			{
-				Label: "Filters",
-				Children: []*Node{
-					{Label: "Cutoff"},
+					{Label: "Feedback delay"},
+					{Label: "Low pass filter"},
 				},
 			},
 			{
@@ -86,7 +81,7 @@ func NewMenu() *Node {
 				Children: []*Node{
 					{Label: "General"},
 					{Label: "Master gain"},
-					{Label: "Controller"},
+					{Label: "MIDI controller"},
 					{Label: "Pitch bend"},
 					{Label: "About"},
 				},

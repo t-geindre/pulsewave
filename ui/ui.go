@@ -17,14 +17,17 @@ const (
 )
 
 type Ui struct {
-	background   *ebiten.Image
-	w, h         int
-	controls     *Controls
-	component    Component
+	background *ebiten.Image
+	w, h       int
+	controls   *Controls
+
+	components map[*preset.Node]Component
+	current    *preset.Node
+
 	bodyClipMask *ebiten.Image
 }
 
-func NewUi(asts *assets.Loader, ctrl *Controls, menu *preset.Node) (*Ui, error) {
+func NewUi(asts *assets.Loader, ctrl *Controls, root *preset.Node) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
@@ -33,31 +36,38 @@ func NewUi(asts *assets.Loader, ctrl *Controls, menu *preset.Node) (*Ui, error) 
 	bds := bg.Bounds()
 	ebiten.SetWindowSize(bds.Dx(), bds.Dy())
 
-	// Main component
-	mu, err := NewList(asts, menu)
-	if err != nil {
-		return nil, err
-	}
-
 	ui := &Ui{
 		background:   bg,
 		w:            bds.Dx(),
 		h:            bds.Dy(),
-		component:    mu,
+		components:   make(map[*preset.Node]Component),
+		current:      root,
 		controls:     ctrl,
 		bodyClipMask: ebiten.NewImage(BodyWidth, BodyHeight),
+	}
+
+	err = ui.buildComponents(asts, root)
+	if err != nil {
+		return nil, err
 	}
 
 	return ui, nil
 }
 
 func (u *Ui) Update() error {
-	fw, _, s := u.controls.Update()
+	fw, bw, s := u.controls.Update()
 	if fw {
-		fmt.Println(u.component.CurrentTarget().Label)
+		tr := u.components[u.current].CurrentTarget()
+		fmt.Println(tr.Label)
+		if len(tr.Children) > 0 {
+			u.current = tr
+		}
 	}
-	u.component.Scroll(s)
-	u.component.Update()
+	if bw && u.current.Parent != nil {
+		u.current = u.current.Parent
+	}
+	u.components[u.current].Scroll(s)
+	u.components[u.current].Update()
 	return nil
 }
 
@@ -65,7 +75,7 @@ func (u *Ui) Draw(screen *ebiten.Image) {
 	screen.DrawImage(u.background, nil)
 
 	u.bodyClipMask.Clear()
-	u.component.Draw(u.bodyClipMask)
+	u.components[u.current].Draw(u.bodyClipMask)
 
 	ops := &ebiten.DrawImageOptions{}
 	ops.GeoM.Translate(BodyStartX, BodyStartY)
@@ -74,4 +84,22 @@ func (u *Ui) Draw(screen *ebiten.Image) {
 
 func (u *Ui) Layout(_, _ int) (int, int) {
 	return u.w, u.h
+}
+
+func (u *Ui) buildComponents(asts *assets.Loader, node *preset.Node) error {
+	if len(node.Children) > 0 {
+		list, err := NewList(asts, node)
+		if err != nil {
+			return err
+		}
+		u.components[node] = list
+		for _, child := range node.Children {
+			err := u.buildComponents(asts, child)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

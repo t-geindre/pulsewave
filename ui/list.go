@@ -28,6 +28,8 @@ type List struct {
 	cursorImg            *ebiten.Image
 	cursorXSh, cursorYSh float64
 
+	loop bool
+
 	cursorY         float64
 	targetCursorY   float64
 	windowOffset    float64
@@ -61,13 +63,27 @@ func NewList(asts *assets.Loader, node *preset.Node) (*List, error) {
 	// Cursor alignment
 	sbds := l.cursorImg.Bounds()
 	ebds := l.entries[node.Children[0]].Bounds() // arbitrary entry
+
 	l.cursorXSh = -float64(sbds.Dx()-ebds.Dx()) / 2
 	l.cursorYSh = float64(sbds.Dy()-ebds.Dy()) / 2
 
-	// List window
-	l.listWindow = make([]int, ListVisibleItems+2)
+	// List window + Loop mode
+	l.loop = true
+	ws := ListVisibleItems + 2
+	if len(node.Children) <= ListVisibleItems {
+		ws = len(node.Children)
+		l.loop = false
+	}
+	l.listWindow = make([]int, ws)
 	for i := range l.listWindow {
-		l.listWindow[i] = i % len(node.Children)
+		s := i
+		if l.loop {
+			s--
+			if s < 0 {
+				s = len(l.listWindow) - 1
+			}
+		}
+		l.listWindow[i] = s % len(node.Children)
 	}
 
 	// Init pos
@@ -97,7 +113,11 @@ func (l *List) Draw(screen *ebiten.Image) {
 	// Entries
 	for i, idx := range l.listWindow {
 		entry := l.entries[l.node.Children[idx]]
-		y := float64(i-1)*ListEntrySpacing + l.windowOffset + ListPaddingTop
+		startIndex := 0
+		if l.loop {
+			startIndex = -1
+		}
+		y := float64(i+startIndex)*ListEntrySpacing + l.windowOffset + ListPaddingTop
 
 		opts := &ebiten.DrawImageOptions{}
 		opts.GeoM.Translate(ListPaddingLeft, y)
@@ -113,6 +133,20 @@ func (l *List) Draw(screen *ebiten.Image) {
 
 func (l *List) Scroll(delta int) {
 	if l.animatingWin || delta == 0 {
+		return
+	}
+
+	if !l.loop {
+		switch {
+		case delta < 0:
+			if l.cursorPos > 0 {
+				l.moveCursor(-1)
+			}
+		default:
+			if l.cursorPos < len(l.listWindow)-1 {
+				l.moveCursor(1)
+			}
+		}
 		return
 	}
 
@@ -137,7 +171,11 @@ func (l *List) Scroll(delta int) {
 }
 
 func (l *List) CurrentTarget() *preset.Node {
-	return l.node.Children[l.listWindow[l.cursorPos+1]]
+	pos := l.cursorPos
+	if l.loop {
+		pos++
+	}
+	return l.node.Children[l.listWindow[pos]]
 }
 
 func (l *List) moveCursor(dir int) {

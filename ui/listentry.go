@@ -9,7 +9,7 @@ import (
 
 // Todo get it from config
 const (
-	LetterSpacing   = 2
+	LetterSpacing   = 1
 	ListEntryWidth  = 329.0
 	ListEntryHeight = 24.0
 )
