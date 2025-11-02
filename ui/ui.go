@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"synth/assets"
 	"synth/preset"
 
@@ -11,7 +12,7 @@ type Ui struct {
 	background *ebiten.Image
 	w, h       int
 	controls   *Controls
-	menu       *Menu
+	component  Component
 }
 
 func NewUi(asts *assets.Loader, ctrl *Controls, menu *preset.Node) (*Ui, error) {
@@ -23,8 +24,8 @@ func NewUi(asts *assets.Loader, ctrl *Controls, menu *preset.Node) (*Ui, error) 
 	bds := bg.Bounds()
 	ebiten.SetWindowSize(bds.Dx(), bds.Dy())
 
-	// Main menu
-	mu, err := NewMenu(asts, menu)
+	// Main component
+	mu, err := NewList(asts, menu)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func NewUi(asts *assets.Loader, ctrl *Controls, menu *preset.Node) (*Ui, error) 
 		background: bg,
 		w:          bds.Dx(),
 		h:          bds.Dy(),
-		menu:       mu,
+		component:  mu,
 		controls:   ctrl,
 	}
 
@@ -41,15 +42,18 @@ func NewUi(asts *assets.Loader, ctrl *Controls, menu *preset.Node) (*Ui, error) 
 }
 
 func (u *Ui) Update() error {
-	_, _, s := u.controls.Update()
-	u.menu.Scroll(s)
-	u.menu.Update()
+	fw, _, s := u.controls.Update()
+	if fw {
+		fmt.Println(u.component.CurrentTarget().Label)
+	}
+	u.component.Scroll(s)
+	u.component.Update()
 	return nil
 }
 
 func (u *Ui) Draw(screen *ebiten.Image) {
 	screen.DrawImage(u.background, nil)
-	u.menu.Draw(screen)
+	u.component.Draw(screen)
 }
 
 func (u *Ui) Layout(_, _ int) (int, int) {

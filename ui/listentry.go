@@ -9,17 +9,17 @@ import (
 
 // Todo get it from config
 const (
-	LetterSpacing = 2
-	EntryWidth    = 329.0
-	EntryHeight   = 24.0
+	LetterSpacing   = 2
+	ListEntryWidth  = 329.0
+	ListEntryHeight = 24.0
 )
 
-type Entry struct {
+type ListEntry struct {
 	*ebiten.Image
 }
 
-func NewEntry(asts *assets.Loader, str string) (*Entry, error) {
-	w, h := EntryWidth, EntryHeight
+func NewListEntry(asts *assets.Loader, str string) (*ListEntry, error) {
+	w, h := ListEntryWidth, ListEntryHeight
 	img := ebiten.NewImage(int(w), int(h))
 
 	face, err := asts.GetFace("ui/face")
@@ -49,7 +49,7 @@ func NewEntry(asts *assets.Loader, str string) (*Entry, error) {
 
 	img.DrawImage(arrow, arrOpts)
 
-	return &Entry{
+	return &ListEntry{
 		Image: img,
 	}, nil
 }
