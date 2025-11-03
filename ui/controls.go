@@ -4,18 +4,22 @@ import (
 	"math"
 	"synth/midi"
 	"synth/msg"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type Controls struct {
-	midiIn *msg.Queue
+	midiIn             *msg.Queue
+	upSince, downSince time.Time
 }
 
 func NewControls(midiIn *msg.Queue) *Controls {
 	return &Controls{
-		midiIn: midiIn,
+		midiIn:    midiIn,
+		upSince:   time.Time{},
+		downSince: time.Time{},
 	}
 }
 
@@ -29,15 +33,39 @@ func (c *Controls) Update() (bool, bool, int) {
 	if inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
 		bw = true
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
-		scr--
+	if ebiten.IsKeyPressed(ebiten.KeyUp) {
+		if c.upSince.IsZero() {
+			c.upSince = time.Now()
+			scr--
+		} else {
+			if time.Since(c.upSince) > 200*time.Millisecond {
+				scr--
+			}
+			if time.Since(c.upSince) > 1000*time.Millisecond {
+				scr--
+			}
+		}
+	} else {
+		c.upSince = time.Time{}
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
-		scr++
+	if ebiten.IsKeyPressed(ebiten.KeyDown) {
+		if c.downSince.IsZero() {
+			c.downSince = time.Now()
+			scr++
+		} else {
+			if time.Since(c.downSince) > 200*time.Millisecond {
+				scr++
+			}
+			if time.Since(c.downSince) > 1000*time.Millisecond {
+				scr++
+			}
+		}
+	} else {
+		c.downSince = time.Time{}
 	}
 	c.midiIn.Drain(10, func(m msg.Message) {
 		switch m.Kind {
-		case midi.ControlChangeKind:
+		case midi.ControlChangeKind: // Todo controller config
 			if m.Key == 112 && m.Val8 != 0 {
 				v := 0.0
 				if m.Val8 < 64 {
