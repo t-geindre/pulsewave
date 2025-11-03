@@ -26,6 +26,7 @@ func NewSmoothedParam(sr float64, base float32, tc float64) *SmoothedParam {
 }
 
 func (s *SmoothedParam) SetBase(v float32)           { s.base = v }
+func (s *SmoothedParam) GetBase() float32            { return s.base }
 func (s *SmoothedParam) ModInputs() *[]ParamModInput { return &s.inputs }
 
 func (s *SmoothedParam) Resolve(cycle uint64) []float32 {

@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-// polyBLEP Polynomial Band-Limited Step
+// polyBLEP Polynomial Band-Limited step
 func polyBLEP(t, dt float64) float32 {
 	if dt <= 0 {
 		return 0

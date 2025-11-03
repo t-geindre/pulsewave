@@ -25,13 +25,14 @@ type Ui struct {
 	next       Node
 	nextTrans  float64
 	transDir   float64
+	tree       *Tree
 
 	transLeft    *ebiten.Image
 	transRight   *ebiten.Image
 	bodyClipMask *ebiten.Image
 }
 
-func NewUi(asts *assets.Loader, ctrl *Controls) (*Ui, error) {
+func NewUi(asts *assets.Loader, ctrl *Controls, tree *Tree) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
@@ -47,7 +48,8 @@ func NewUi(asts *assets.Loader, ctrl *Controls) (*Ui, error) {
 		w:            bds.Dx(),
 		h:            bds.Dy(),
 		components:   make(map[Node]Component),
-		current:      NewTree(),
+		current:      tree.Node,
+		tree:         tree,
 		controls:     ctrl,
 		bodyClipMask: ebiten.NewImage(BodyWidth, BodyHeight),
 		transLeft:    ebiten.NewImage(BodyWidth, BodyHeight),
@@ -63,6 +65,8 @@ func NewUi(asts *assets.Loader, ctrl *Controls) (*Ui, error) {
 }
 
 func (u *Ui) Update() error {
+	u.tree.Update()
+
 	if u.next != nil {
 		u.nextTrans += SlideSpeed
 		if u.nextTrans > 1 {
@@ -84,7 +88,7 @@ func (u *Ui) Update() error {
 		return nil
 
 	}
-	if bw && u.current.Parent != nil {
+	if bw && u.current.Parent() != nil {
 		u.next = u.current.Parent()
 		u.transDir = -1
 		return nil
@@ -140,7 +144,7 @@ func (u *Ui) Layout(_, _ int) (int, int) {
 
 func (u *Ui) buildComponents(asts *assets.Loader, n Node) error {
 	switch node := n.(type) {
-	case *SliderNode:
+	case *ParameterNode:
 		comp, err := NewSlider(asts, node)
 		if err != nil {
 			return err

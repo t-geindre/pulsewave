@@ -2,6 +2,7 @@ package dsp
 
 type Param interface {
 	SetBase(value float32)
+	GetBase() float32
 	Resolve(cycle uint64) []float32
 	ModInputs() *[]ParamModInput
 }
@@ -20,6 +21,7 @@ func NewParam(base float32) *ParamSimple {
 }
 
 func (s *ParamSimple) SetBase(v float32)           { s.base = v }
+func (s *ParamSimple) GetBase() float32            { return s.base }
 func (s *ParamSimple) ModInputs() *[]ParamModInput { return &s.inputs }
 
 func (s *ParamSimple) Resolve(cycle uint64) []float32 {
@@ -63,4 +65,5 @@ func NewConstParam(v float32) *ConstParam {
 
 func (c *ConstParam) Resolve(cycle uint64) []float32 { return c.buff[:] }
 func (c *ConstParam) SetBase(float32)                { panic("not implemented") } // const never changes
+func (c *ConstParam) GetBase() float32               { panic("not implemented") } // const is not retrievable
 func (c *ConstParam) ModInputs() *[]ParamModInput    { panic("not implemented") } // const never changes

@@ -19,16 +19,11 @@ func main() {
 	const SampleRate = 44100
 
 	// Debug mode
-	if len(os.Args) > 1 && os.Args[1] == "--debug" {
+	if len(os.Args) > 1 && os.Args[1] == "--debug" { // Todo implement flag parsing + buffer size option
 		debugMode = true
 	}
 
-	// Signal Chain
-	synth := preset.NewPolysynth(SampleRate)
-	headroom := dsp.NewVca(synth, dsp.NewParam(0.8))
-	clean := dsp.NewLowPassSVF(SampleRate, headroom, dsp.NewParam(18000), dsp.NewParam(0.5))
-
-	// Messaging
+	// Messaging : Midi
 	router := msg.NewRouter(logger())
 	midiInQ, midiInId := router.AddInput(1024)
 	midiAudioOutQ, midiAudioOutId := router.AddOutput(1024)
@@ -40,9 +35,16 @@ func main() {
 
 	router.AddRoute(midiInId, miniUiOutId, midi.MidiSource, midi.ControlChangeKind)
 
+	// Messaging : UI/Audio Parameters - One way, no routing
+	audioParamOut := msg.NewQueue(1024)
+	uiParamOut := msg.NewQueue(1024)
+
 	go router.Route()
 
-	// Add midi player to synth
+	// Signal Chain
+	synth := preset.NewPolysynth(SampleRate, uiParamOut, audioParamOut)
+	headroom := dsp.NewVca(synth, dsp.NewParam(0.8))
+	clean := dsp.NewLowPassSVF(SampleRate, headroom, dsp.NewParam(18000), dsp.NewParam(0.5))
 	midiPlayer := midi.NewPlayer(clean, synth, midiAudioOutQ)
 
 	// Midi setup
@@ -74,8 +76,9 @@ func main() {
 	onError(err, "failed to load assets")
 
 	ctrl := ui.NewControls(midiUiOutQ)
+	tree := ui.NewTree(audioParamOut, uiParamOut)
 
-	gui, err := ui.NewUi(asts, ctrl)
+	gui, err := ui.NewUi(asts, ctrl, tree)
 	onError(err, "failed to create gui")
 
 	err = ebiten.RunGame(gui)

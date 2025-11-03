@@ -5,6 +5,7 @@ import "synth/msg"
 const AudioSource msg.Source = 10
 
 const ParamUpdateKind msg.Kind = 1
+const ParamPullAllKind msg.Kind = 2
 
 const FBDelayParam = iota
 
@@ -12,7 +13,7 @@ const FBDelayParam = iota
 Message
 	Source Source AudioSource
 	Kind   Kind   ParamUpdateKind
-	Key    uint8  0-255 parameter ID
-	Val16  int16  0-65535
+	key    uint8  0-255 parameter ID
+	ValF  float32
 }
 */

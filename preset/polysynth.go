@@ -2,16 +2,22 @@ package preset
 
 import (
 	"synth/dsp"
+	"synth/msg"
 	"time"
 )
 
 type Polysynth struct {
 	dsp.Node
-	voice *dsp.PolyVoice
-	pitch dsp.Param
+	voice               *dsp.PolyVoice
+	pitch               dsp.Param
+	pOutQueue, pInQueue *msg.Queue
+	parameters          map[uint8]dsp.Param
 }
 
-func NewPolysynth(SampleRate float64) *Polysynth {
+func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth {
+	// Parameters map
+	parameters := make(map[uint8]dsp.Param)
+
 	// Main pitch bend param
 	pitchBend := dsp.NewParam(0)
 
@@ -89,20 +95,24 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	poly := dsp.NewPolyVoice(8, voiceFact)
 
 	// Delay
+	parameters[FBDelayParam] = dsp.NewParam(0.35)
 	delay := dsp.NewFeedbackDelay(
 		SampleRate,
 		2.0,
 		poly,
-		dsp.NewParam(0.35), // delay time in seconds
-		dsp.NewParam(0.3),  // feedback amount (0-1)
-		dsp.NewParam(0.2),  // mix
-		dsp.NewParam(2000), // mix amount (0-1)
+		parameters[FBDelayParam], // delay time in seconds
+		dsp.NewParam(0.3),        // feedback amount (0-1)
+		dsp.NewParam(0.2),        // mix
+		dsp.NewParam(2000),       // mix amount (0-1)
 	)
 
 	return &Polysynth{
-		Node:  delay,
-		voice: poly,
-		pitch: pitchBend,
+		Node:       delay,
+		voice:      poly,
+		pitch:      pitchBend,
+		pInQueue:   pInQueue,
+		pOutQueue:  pOutQueue,
+		parameters: parameters,
 	}
 }
 
@@ -116,4 +126,31 @@ func (p *Polysynth) NoteOff(key int) {
 
 func (p *Polysynth) SetPitchBend(semiTones float32) {
 	p.pitch.SetBase(semiTones)
+}
+
+func (p *Polysynth) Process(b *dsp.Block) {
+	p.pInQueue.Drain(10, p.HandleMessage)
+	p.Node.Process(b)
+}
+
+func (p *Polysynth) PublishParameters() {
+	for key, param := range p.parameters {
+		p.pOutQueue.TryWrite(msg.Message{
+			Source: AudioSource,
+			Kind:   ParamUpdateKind,
+			Key:    key,
+			ValF:   param.GetBase(),
+		})
+	}
+}
+
+func (p *Polysynth) HandleMessage(m msg.Message) {
+	switch m.Kind {
+	case ParamPullAllKind:
+		p.PublishParameters()
+	case ParamUpdateKind:
+		if param, ok := p.parameters[m.Key]; ok {
+			param.SetBase(m.ValF)
+		}
+	}
 }
