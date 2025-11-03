@@ -15,6 +15,7 @@ type Player struct {
 	dsp.Node
 	inst  Instrument
 	queue *msg.Queue
+	msg   msg.Message
 }
 
 func NewPlayer(src dsp.Node, inst Instrument, queue *msg.Queue) *Player {
@@ -26,21 +27,8 @@ func NewPlayer(src dsp.Node, inst Instrument, queue *msg.Queue) *Player {
 }
 
 func (p *Player) Process(block *dsp.Block) {
-	var m msg.Message
-	for p.queue.TryRead(&m) {
-		switch m.Kind {
-		case NoteOnKind:
-			// Todo handle vel properly with LUT (precalculated curve)
-			p.inst.NoteOn(int(m.Key), float32(m.Val8)/127)
-		case NoteOffKind:
-			p.inst.NoteOff(int(m.Key))
-		case PitchBendKind:
-			rel := float32(0)
-			if m.Val16 >= 128 || m.Val16 <= -128 {
-				rel = float32(m.Val16) / 8192.0 * 2.0 // 2 semitones range
-			}
-			p.inst.SetPitchBend(rel)
-		}
+	for p.queue.TryRead(&p.msg) {
+		p.processMessage(p.msg)
 	}
 
 	p.Node.Process(block)
@@ -48,4 +36,20 @@ func (p *Player) Process(block *dsp.Block) {
 
 func (p *Player) Reset() {
 	p.Node.Reset()
+}
+
+func (p *Player) processMessage(m msg.Message) {
+	switch m.Kind {
+	case NoteOnKind:
+		// Todo handle vel properly with LUT (precalculated curve)
+		p.inst.NoteOn(int(m.Key), float32(m.Val8)/127)
+	case NoteOffKind:
+		p.inst.NoteOff(int(m.Key))
+	case PitchBendKind:
+		rel := float32(0)
+		if m.Val16 >= 128 || m.Val16 <= -128 {
+			rel = float32(m.Val16) / 8192.0 * 2.0 // 2 semitones range
+		}
+		p.inst.SetPitchBend(rel)
+	}
 }

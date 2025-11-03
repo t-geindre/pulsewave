@@ -2,7 +2,7 @@ package midi
 
 import "synth/msg"
 
-const MidiSource msg.Source = 2
+const MidiSource msg.Source = 0
 
 const NoteOnKind msg.Kind = 1
 const NoteOffKind msg.Kind = 2

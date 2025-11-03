@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="run+race" type="GoApplicationRunConfiguration" factoryName="Go Application">
-    <module name="br-gaming-academy" />
+    <module name="br-academy" />
     <working_directory value="$PROJECT_DIR$/synth" />
     <go_parameters value="-race" />
     <kind value="PACKAGE" />

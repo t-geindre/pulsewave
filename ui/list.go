@@ -3,7 +3,6 @@ package ui
 import (
 	"errors"
 	"synth/assets"
-	"synth/preset"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -16,11 +15,11 @@ const (
 	ListEntrySpacing = 50
 )
 
-var ErrEmptyList = errors.New("empty component")
+var ErrEmptyList = errors.New("empty list")
 
 type List struct {
-	node    *preset.Node
-	entries map[*preset.Node]*ListEntry
+	node    Node
+	entries map[Node]*ListEntry
 
 	listWindow []int
 	cursorPos  int
@@ -40,12 +39,12 @@ type List struct {
 	scrollingDown   bool
 }
 
-func NewList(asts *assets.Loader, node *preset.Node) (*List, error) {
-	if len(node.Children) == 0 {
+func NewList(asts *assets.Loader, node Node) (*List, error) {
+	if len(node.Children()) == 0 {
 		return nil, ErrEmptyList
 	}
 
-	cursorImg, err := asts.GetImage("ui/selected")
+	cursorImg, err := asts.GetImage("ui/list/selected")
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +52,7 @@ func NewList(asts *assets.Loader, node *preset.Node) (*List, error) {
 	l := &List{
 		node:      node,
 		cursorImg: cursorImg,
-		entries:   make(map[*preset.Node]*ListEntry),
+		entries:   make(map[Node]*ListEntry),
 	}
 
 	if err = l.buildEntries(asts, node); err != nil {
@@ -62,7 +61,7 @@ func NewList(asts *assets.Loader, node *preset.Node) (*List, error) {
 
 	// Cursor alignment
 	sbds := l.cursorImg.Bounds()
-	ebds := l.entries[node.Children[0]].Bounds() // arbitrary entry
+	ebds := l.entries[node.Children()[0]].Bounds() // arbitrary entry
 
 	l.cursorXSh = -float64(sbds.Dx()-ebds.Dx()) / 2
 	l.cursorYSh = float64(sbds.Dy()-ebds.Dy()) / 2
@@ -70,8 +69,8 @@ func NewList(asts *assets.Loader, node *preset.Node) (*List, error) {
 	// List window + Loop mode
 	l.loop = true
 	ws := ListVisibleItems + 2
-	if len(node.Children) <= ListVisibleItems {
-		ws = len(node.Children)
+	if len(node.Children()) <= ListVisibleItems {
+		ws = len(node.Children())
 		l.loop = false
 	}
 	l.listWindow = make([]int, ws)
@@ -83,7 +82,7 @@ func NewList(asts *assets.Loader, node *preset.Node) (*List, error) {
 				s = len(l.listWindow) - 1
 			}
 		}
-		l.listWindow[i] = s % len(node.Children)
+		l.listWindow[i] = s % len(node.Children())
 	}
 
 	// Init pos
@@ -111,7 +110,7 @@ func (l *List) Update() {
 func (l *List) Draw(screen *ebiten.Image) {
 	// Entries
 	for i, idx := range l.listWindow {
-		entry := l.entries[l.node.Children[idx]]
+		entry := l.entries[l.node.Children()[idx]]
 		startIndex := 0
 		if l.loop {
 			startIndex = -1
@@ -149,7 +148,7 @@ func (l *List) Scroll(delta int) {
 		return
 	}
 
-	total := len(l.node.Children)
+	total := len(l.node.Children())
 
 	switch {
 	case delta < 0:
@@ -169,12 +168,12 @@ func (l *List) Scroll(delta int) {
 	l.cursorPos = (l.cursorPos + total) % total
 }
 
-func (l *List) CurrentTarget() *preset.Node {
+func (l *List) CurrentTarget() Node {
 	pos := l.cursorPos
 	if l.loop {
 		pos++
 	}
-	return l.node.Children[l.listWindow[pos]]
+	return l.node.Children()[l.listWindow[pos]]
 }
 
 func (l *List) moveCursor(dir int) {
@@ -193,7 +192,7 @@ func (l *List) startScroll(offset float64, up bool) {
 func (l *List) finishScroll() {
 	l.windowOffset, l.animT, l.animatingWin = 0, 0, false
 
-	total := len(l.node.Children)
+	total := len(l.node.Children())
 	window := len(l.listWindow)
 
 	if l.scrollingDown {
@@ -211,9 +210,9 @@ func (l *List) finishScroll() {
 		l.scrollingUp = false
 	}
 }
-func (l *List) buildEntries(asts *assets.Loader, node *preset.Node) error {
-	for _, ch := range node.Children {
-		entry, err := NewListEntry(asts, ch.Label)
+func (l *List) buildEntries(asts *assets.Loader, node Node) error {
+	for _, ch := range node.Children() {
+		entry, err := NewListEntry(asts, ch.Label())
 		if err != nil {
 			return err
 		}

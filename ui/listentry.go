@@ -37,7 +37,7 @@ func NewListEntry(asts *assets.Loader, str string) (*ListEntry, error) {
 		opts.GeoM.Translate(text.Advance(s, face)+LetterSpacing, 0)
 	}
 
-	arrow, err := asts.GetImage("ui/arrow")
+	arrow, err := asts.GetImage("ui/list/arrow")
 	if err != nil {
 		return nil, err
 	}

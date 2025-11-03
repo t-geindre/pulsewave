@@ -63,11 +63,8 @@ func main() {
 	player, err := ctx.NewPlayerF32(dsp.NewStream(midiPlayer))
 	onError(err, "failed to create player")
 
-	player.SetBufferSize(time.Millisecond * 20)
+	player.SetBufferSize(time.Millisecond * 25)
 	player.Play()
-
-	// Build menu
-	menu := preset.NewMenu()
 
 	// UI
 	asts, err := assets.NewFromJson("assets/assets.json")
@@ -78,7 +75,7 @@ func main() {
 
 	ctrl := ui.NewControls(midiUiOutQ)
 
-	gui, err := ui.NewUi(asts, ctrl, menu)
+	gui, err := ui.NewUi(asts, ctrl)
 	onError(err, "failed to create gui")
 
 	err = ebiten.RunGame(gui)

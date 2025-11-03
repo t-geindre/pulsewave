@@ -2,7 +2,6 @@ package ui
 
 import (
 	"synth/assets"
-	"synth/preset"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -21,9 +20,9 @@ type Ui struct {
 	w, h       int
 	controls   *Controls
 
-	components map[*preset.Node]Component
-	current    *preset.Node
-	next       *preset.Node
+	components map[Node]Component
+	current    Node
+	next       Node
 	nextTrans  float64
 	transDir   float64
 
@@ -32,28 +31,30 @@ type Ui struct {
 	bodyClipMask *ebiten.Image
 }
 
-func NewUi(asts *assets.Loader, ctrl *Controls, root *preset.Node) (*Ui, error) {
+func NewUi(asts *assets.Loader, ctrl *Controls) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
 		return nil, err
 	}
 	bds := bg.Bounds()
+
 	ebiten.SetWindowSize(bds.Dx(), bds.Dy())
+	ebiten.SetWindowTitle("Pulsewave")
 
 	ui := &Ui{
 		background:   bg,
 		w:            bds.Dx(),
 		h:            bds.Dy(),
-		components:   make(map[*preset.Node]Component),
-		current:      root,
+		components:   make(map[Node]Component),
+		current:      NewTree(),
 		controls:     ctrl,
 		bodyClipMask: ebiten.NewImage(BodyWidth, BodyHeight),
 		transLeft:    ebiten.NewImage(BodyWidth, BodyHeight),
 		transRight:   ebiten.NewImage(BodyWidth, BodyHeight),
 	}
 
-	err = ui.buildComponents(asts, root)
+	err = ui.buildComponents(asts, ui.current)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +77,7 @@ func (u *Ui) Update() error {
 
 	if fw {
 		tr := u.components[u.current].CurrentTarget()
-		if len(tr.Children) > 0 {
+		if tr != nil {
 			u.next = tr
 			u.transDir = 1
 		}
@@ -84,7 +85,7 @@ func (u *Ui) Update() error {
 
 	}
 	if bw && u.current.Parent != nil {
-		u.next = u.current.Parent
+		u.next = u.current.Parent()
 		u.transDir = -1
 		return nil
 	}
@@ -137,18 +138,28 @@ func (u *Ui) Layout(_, _ int) (int, int) {
 	return u.w, u.h
 }
 
-func (u *Ui) buildComponents(asts *assets.Loader, node *preset.Node) error {
-	if len(node.Children) > 0 {
-		list, err := NewList(asts, node)
+func (u *Ui) buildComponents(asts *assets.Loader, n Node) error {
+	switch node := n.(type) {
+	case *SliderNode:
+		comp, err := NewSlider(asts, node)
 		if err != nil {
 			return err
 		}
-		u.components[node] = list
-		for _, child := range node.Children {
-			err := u.buildComponents(asts, child)
+		u.components[node] = comp
+	case *ListNode:
+		if len(node.Children()) > 0 {
+			comp, err := NewList(asts, node)
 			if err != nil {
 				return err
 			}
+			u.components[node] = comp
+		}
+	}
+
+	for _, child := range n.Children() {
+		err := u.buildComponents(asts, child)
+		if err != nil {
+			return err
 		}
 	}
 

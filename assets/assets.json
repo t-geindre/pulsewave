@@ -1,8 +1,9 @@
 {
   	"images": [
       {"name": "ui/background", "path": "assets/imgs/background.png"},
-      {"name": "ui/arrow", "path": "assets/imgs/arrow.png"},
-      {"name": "ui/selected", "path": "assets/imgs/selected.png"}
+      {"name": "ui/list/arrow", "path": "assets/imgs/arrow.png"},
+      {"name": "ui/list/selected", "path": "assets/imgs/selected.png"},
+      {"name": "ui/slider/bg", "path": "assets/imgs/slider_bg.png"}
     ],
     "fonts": [
       {"name": "ui/font", "path": "assets/fonts/Roboto-Medium.ttf"}
