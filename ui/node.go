@@ -1,5 +1,7 @@
 package ui
 
+import "fmt"
+
 type Node interface {
 	Label() string
 	Children() []Node
@@ -108,6 +110,9 @@ func (n *ParameterNode) SetVal(v float32) {
 }
 
 func (n *ParameterNode) Display() string {
+	if n.format == nil {
+		return fmt.Sprintf("%.2f", n.val)
+	}
 	return n.format(n.val)
 }
 

@@ -62,7 +62,7 @@ func (t *Tree) AttachNodes(n Node) {
 		t.parameters[pn.key] = pn
 		pn.Attach(t.PublishUpdate)
 	}
-	
+
 	for _, c := range n.Children() {
 		t.AttachNodes(c)
 	}
@@ -104,12 +104,23 @@ func buildTree() Node {
 				NewParameterNode("Delay", preset.FBDelayParam, 0, 2, .001, func(v float32) string {
 					return fmt.Sprintf("%.0f ms", v*1000)
 				}),
+				NewParameterNode("Feedback", preset.FBFeedBack, 0, 0.95, .01, nil),
+				NewParameterNode("Mix", preset.FBMix, 0, 1, .01, nil),
+				NewParameterNode("Tone", preset.FBTone, 200, 8000, 1, func(v float32) string {
+					return fmt.Sprintf("%.0f Hz", v)
+				}),
 			),
 			NewListNode("Low pass filter"),
 			NewListNode("Unison",
-				NewListNode("Voices"),
-				NewListNode("Pan spread"),
-				NewListNode("Phase spread"),
+				NewParameterNode("Voices", preset.UnisonVoices, 1, 16, 1, nil),
+				NewParameterNode("Pan spread", preset.UnisonPanSpread, 0, 1, .01, nil),
+				NewParameterNode("Phase spread", preset.UnisonPhaseSpread, 0, 1, .01, func(v float32) string {
+					return fmt.Sprintf("%.2f%% cycle", v*100)
+				}),
+				NewParameterNode("Detune spread", preset.UnisonDetuneSpread, 0, 100, .1, func(v float32) string {
+					return fmt.Sprintf("%.2f cent", v)
+				}),
+				NewParameterNode("Curve gamma", preset.UnisonCurveGamma, 0.1, 2, .1, nil),
 			),
 		),
 		NewListNode("Visualizer",

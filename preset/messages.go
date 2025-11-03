@@ -7,7 +7,20 @@ const AudioSource msg.Source = 10
 const ParamUpdateKind msg.Kind = 1
 const ParamPullAllKind msg.Kind = 2
 
-const FBDelayParam = iota
+const (
+	// Unison parameters
+	UnisonPanSpread = iota
+	UnisonPhaseSpread
+	UnisonDetuneSpread
+	UnisonCurveGamma
+	UnisonVoices
+
+	// Feedback Delay parameters
+	FBDelayParam
+	FBFeedBack
+	FBMix
+	FBTone
+)
 
 /*
 Message

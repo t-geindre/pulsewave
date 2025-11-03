@@ -27,6 +27,13 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 	osc1Shp := reg.Add(dsp.ShapeTriangle)
 	osc2Shp := reg.Add(dsp.ShapeTableWave, dsp.NewSineWavetable(1024))
 
+	// Unison parameters (all voices share)
+	parameters[UnisonPanSpread] = dsp.NewParam(1.0)
+	parameters[UnisonPhaseSpread] = dsp.NewParam(.1)
+	parameters[UnisonDetuneSpread] = dsp.NewParam(12.0)
+	parameters[UnisonCurveGamma] = dsp.NewParam(1.5)
+	parameters[UnisonVoices] = dsp.NewParam(8)
+
 	// Voice factory
 	voiceFact := func() *dsp.Voice {
 		// Base frequency param (uniq per voice)
@@ -65,12 +72,12 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 		// Unison
 		unison := dsp.NewUnison(dsp.UnisonOpts{
 			SampleRate:   SampleRate,
-			NumVoices:    8,
+			NumVoices:    parameters[UnisonVoices],
 			Factory:      oscFact,
-			PanSpread:    dsp.NewParam(1.0),
-			PhaseSpread:  dsp.NewParam(.1),
-			DetuneSpread: dsp.NewParam(12.0),
-			CurveGamma:   dsp.NewParam(1.5),
+			PanSpread:    parameters[UnisonPanSpread],
+			PhaseSpread:  parameters[UnisonPhaseSpread],
+			DetuneSpread: parameters[UnisonDetuneSpread],
+			CurveGamma:   parameters[UnisonCurveGamma],
 		})
 
 		// LPF
@@ -96,14 +103,18 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 
 	// Delay
 	parameters[FBDelayParam] = dsp.NewParam(0.35)
+	parameters[FBFeedBack] = dsp.NewParam(0.3)
+	parameters[FBMix] = dsp.NewParam(0.2)
+	parameters[FBTone] = dsp.NewParam(2000)
+
 	delay := dsp.NewFeedbackDelay(
 		SampleRate,
 		2.0,
 		poly,
 		parameters[FBDelayParam], // delay time in seconds
-		dsp.NewParam(0.3),        // feedback amount (0-1)
-		dsp.NewParam(0.2),        // mix
-		dsp.NewParam(2000),       // mix amount (0-1)
+		parameters[FBFeedBack],   // feedback amount (0-1)
+		parameters[FBMix],        // mix
+		parameters[FBTone],       // tone
 	)
 
 	return &Polysynth{

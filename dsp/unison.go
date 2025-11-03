@@ -24,6 +24,7 @@ type Unison struct {
 	PhaseSpread  Param // 0..1 (cycles)
 	DetuneSpread Param // cents
 	CurveGamma   Param // >0 ; 1 = linear ; >1 = more center ; <1 = more edges
+	NumVoices    Param
 
 	factory UnisonFactory
 
@@ -34,9 +35,9 @@ type Unison struct {
 
 type UnisonOpts struct {
 	SampleRate float64
-	NumVoices  int
 	Factory    UnisonFactory
 
+	NumVoices    Param
 	PanSpread    Param // 0..1
 	PhaseSpread  Param // 0..1 (cycles)
 	DetuneSpread Param // cents
@@ -50,10 +51,11 @@ func NewUnison(o UnisonOpts) *Unison {
 		PhaseSpread:  o.PhaseSpread,
 		DetuneSpread: o.DetuneSpread,
 		CurveGamma:   o.CurveGamma,
+		NumVoices:    o.NumVoices,
 		factory:      o.Factory,
 		sr:           o.SampleRate,
 	}
-	u.rebuild(o.NumVoices)
+	u.rebuild(int(o.NumVoices.Resolve(0)[0]))
 	return u
 }
 
@@ -149,5 +151,10 @@ func (u *Unison) apply(cycle uint64) {
 		v.phase.SetBase(0.5 + 0.5*c*phSp)
 
 		v.detune.SetBase(c * dtSemiMax)
+	}
+
+	nVoice := int(u.NumVoices.Resolve(cycle)[0])
+	if nVoice != len(u.voices) {
+		u.rebuild(nVoice)
 	}
 }

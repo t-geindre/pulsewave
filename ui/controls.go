@@ -44,6 +44,12 @@ func (c *Controls) Update() (bool, bool, int) {
 			if time.Since(c.upSince) > 1000*time.Millisecond {
 				scr--
 			}
+			if time.Since(c.upSince) > 2000*time.Millisecond {
+				scr -= 5
+			}
+			if time.Since(c.upSince) > 3000*time.Millisecond {
+				scr -= 5
+			}
 		}
 	} else {
 		c.upSince = time.Time{}
@@ -58,6 +64,12 @@ func (c *Controls) Update() (bool, bool, int) {
 			}
 			if time.Since(c.downSince) > 1000*time.Millisecond {
 				scr++
+			}
+			if time.Since(c.downSince) > 2000*time.Millisecond {
+				scr += 5
+			}
+			if time.Since(c.downSince) > 3000*time.Millisecond {
+				scr += 5
 			}
 		}
 	} else {
