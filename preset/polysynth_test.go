@@ -2,11 +2,19 @@ package preset
 
 import (
 	"synth/dsp"
+	"synth/msg"
 	"testing"
 )
 
 func TestPolysynth_ProcessNoAlloc(t *testing.T) {
-	synth := NewPolysynth(44100)
+	// Poll all parameters
+	qIn, qOut := msg.NewQueue(64), msg.NewQueue(64)
+	qIn.TryWrite(msg.Message{
+		Source: AudioSource,
+		Kind:   ParamPullAllKind,
+	})
+
+	synth := NewPolysynth(44100, qIn, qOut)
 	for i := 0; i < 16; i++ {
 		synth.voice.NoteOn(10+i, 1.0)
 	}
