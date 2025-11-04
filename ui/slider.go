@@ -9,14 +9,14 @@ import (
 
 // Todo get is from config
 const (
-	SliderBoxStartX          = 81 - 51
-	SliderBoxStartY          = 107 - 70
-	SliderBoxWidth           = 349 - 57
-	SliderBoxHeight          = 236 - 11
+	SliderBoxStartX          = 30
+	SliderBoxStartY          = 37
+	SliderBoxWidth           = 265
+	SliderBoxHeight          = 225
 	SliderValueBottomSpacing = 140
 	SliderTitleTopSpacing    = 10
-	SliderBackLabelX         = 95 - 51
-	SliderBackLabelY         = 245 - 70
+	SliderBackLabelX         = 44
+	SliderBackLabelY         = 175
 )
 
 type Slider struct {
@@ -52,6 +52,16 @@ func NewSlider(asts *assets.Loader, sn *ParameterNode) (*Slider, error) {
 
 func (s *Slider) Draw(image *ebiten.Image) {
 	image.DrawImage(s.bg, nil)
+
+	// Draw Title
+	titleOpts := &text.DrawOptions{}
+	titleOpts.GeoM.Translate(SliderBoxStartX, SliderBoxStartY+SliderTitleTopSpacing)
+
+	tDisplay := s.node.Label()
+	tw, th := text.Measure(tDisplay, s.faceBack, 0)
+	titleOpts.GeoM.Translate((SliderBoxWidth-tw)/2, th/2)
+
+	text.Draw(image, tDisplay, s.faceBack, titleOpts)
 
 	// Draw Value
 	valueOpts := &text.DrawOptions{}
