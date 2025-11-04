@@ -8,8 +8,8 @@ import (
 
 // Todo get it fron config
 const (
-	BodyHeight = 211
 	BodyWidth  = 376
+	BodyHeight = 211
 	BodyStartX = 51
 	BodyStartY = 70
 	SlideSpeed = .08

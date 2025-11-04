@@ -10,6 +10,7 @@
     ],
     "faces": [
       {"name": "ui/entry", "font": "ui/font", "size": 21},
+      {"name": "ui/param_back", "font": "ui/font", "size": 21},
       {"name": "ui/param", "font": "ui/font", "size": 45}
     ]
 }

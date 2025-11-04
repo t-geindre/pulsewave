@@ -19,7 +19,7 @@ func main() {
 	const SampleRate = 44100
 
 	// Debug mode
-	if len(os.Args) > 1 && os.Args[1] == "--debug" { // Todo implement flag parsing + buffer size option
+	if len(os.Args) > 1 && os.Args[1] == "--debug" { // Todo implement flag parsing + buffer size option + device selection
 		debugMode = true
 	}
 
