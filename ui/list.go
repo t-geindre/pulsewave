@@ -69,7 +69,7 @@ func NewList(asts *assets.Loader, node Node) (*List, error) {
 	// List window + Loop mode
 	l.loop = true
 	ws := ListVisibleItems + 2
-	if len(node.Children()) <= ListVisibleItems {
+	if len(node.Children()) < ListVisibleItems {
 		ws = len(node.Children())
 		l.loop = false
 	}

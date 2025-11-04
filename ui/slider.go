@@ -19,7 +19,7 @@ func NewSlider(asts *assets.Loader, sn *ParameterNode) (*Slider, error) {
 		return nil, err
 	}
 
-	face, err := asts.GetFace("ui/face")
+	face, err := asts.GetFace("ui/param")
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,9 @@ func NewSlider(asts *assets.Loader, sn *ParameterNode) (*Slider, error) {
 
 func (s *Slider) Draw(image *ebiten.Image) {
 	image.DrawImage(s.bg, nil)
-	text.Draw(image, s.node.Display(), s.face, nil)
+	opt := &text.DrawOptions{}
+	opt.GeoM.Translate(50, 60)
+	text.Draw(image, s.node.Display(), s.face, opt)
 }
 
 func (s *Slider) Update() {

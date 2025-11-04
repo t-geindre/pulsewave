@@ -112,7 +112,9 @@ func buildTree() Node {
 			),
 			NewListNode("Low pass filter"),
 			NewListNode("Unison",
-				NewParameterNode("Voices", preset.UnisonVoices, 1, 16, 1, nil),
+				NewParameterNode("Voices", preset.UnisonVoices, 1, 16, 1, func(v float32) string {
+					return fmt.Sprintf("%.0f voices", v)
+				}),
 				NewParameterNode("Pan spread", preset.UnisonPanSpread, 0, 1, .01, nil),
 				NewParameterNode("Phase spread", preset.UnisonPhaseSpread, 0, 1, .01, func(v float32) string {
 					return fmt.Sprintf("%.2f%% cycle", v*100)
