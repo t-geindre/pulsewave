@@ -3,6 +3,7 @@ package ui
 import (
 	"errors"
 	"synth/assets"
+	"synth/preset"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -18,8 +19,8 @@ const (
 var ErrEmptyList = errors.New("empty list")
 
 type List struct {
-	node    Node
-	entries map[Node]*ListEntry
+	node    preset.Node
+	entries map[preset.Node]*ListEntry
 
 	listWindow []int
 	cursorPos  int
@@ -39,7 +40,7 @@ type List struct {
 	scrollingDown   bool
 }
 
-func NewList(asts *assets.Loader, node Node) (*List, error) {
+func NewList(asts *assets.Loader, node preset.Node) (*List, error) {
 	if len(node.Children()) == 0 {
 		return nil, ErrEmptyList
 	}
@@ -52,7 +53,7 @@ func NewList(asts *assets.Loader, node Node) (*List, error) {
 	l := &List{
 		node:      node,
 		cursorImg: cursorImg,
-		entries:   make(map[Node]*ListEntry),
+		entries:   make(map[preset.Node]*ListEntry),
 	}
 
 	if err = l.buildEntries(asts, node); err != nil {
@@ -168,7 +169,7 @@ func (l *List) Scroll(delta int) {
 	l.cursorPos = (l.cursorPos + total) % total
 }
 
-func (l *List) CurrentTarget() Node {
+func (l *List) CurrentTarget() preset.Node {
 	pos := l.cursorPos
 	if l.loop {
 		pos++
@@ -210,7 +211,7 @@ func (l *List) finishScroll() {
 		l.scrollingUp = false
 	}
 }
-func (l *List) buildEntries(asts *assets.Loader, node Node) error {
+func (l *List) buildEntries(asts *assets.Loader, node preset.Node) error {
 	for _, ch := range node.Children() {
 		entry, err := NewListEntry(asts, ch.Label())
 		if err != nil {

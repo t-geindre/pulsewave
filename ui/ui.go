@@ -2,6 +2,7 @@ package ui
 
 import (
 	"synth/assets"
+	"synth/preset"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -20,19 +21,19 @@ type Ui struct {
 	w, h       int
 	controls   Controls
 
-	components map[Node]Component
-	current    Node
-	next       Node
+	components map[preset.Node]Component
+	current    preset.Node
+	next       preset.Node
 	nextTrans  float64
 	transDir   float64
-	tree       *Tree
+	tree       *preset.Tree
 
 	transLeft    *ebiten.Image
 	transRight   *ebiten.Image
 	bodyClipMask *ebiten.Image
 }
 
-func NewUi(asts *assets.Loader, ctrl Controls, tree *Tree) (*Ui, error) {
+func NewUi(asts *assets.Loader, ctrl Controls, tree *preset.Tree) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
@@ -47,7 +48,7 @@ func NewUi(asts *assets.Loader, ctrl Controls, tree *Tree) (*Ui, error) {
 		background:   bg,
 		w:            bds.Dx(),
 		h:            bds.Dy(),
-		components:   make(map[Node]Component),
+		components:   make(map[preset.Node]Component),
 		current:      tree.Node,
 		tree:         tree,
 		controls:     ctrl,
@@ -60,8 +61,6 @@ func NewUi(asts *assets.Loader, ctrl Controls, tree *Tree) (*Ui, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	ui.current = tree.Node.Children()[2].Children()[0].Children()[3] // Todo remove hardcode
 
 	return ui, nil
 }
@@ -144,15 +143,15 @@ func (u *Ui) Layout(_, _ int) (int, int) {
 	return u.w, u.h
 }
 
-func (u *Ui) buildComponents(asts *assets.Loader, n Node) error {
+func (u *Ui) buildComponents(asts *assets.Loader, n preset.Node) error {
 	switch node := n.(type) {
-	case *ParameterNode:
+	case *preset.SliderNode:
 		comp, err := NewSlider(asts, node)
 		if err != nil {
 			return err
 		}
 		u.components[node] = comp
-	case *ListNode:
+	case *preset.ListNode:
 		if len(node.Children()) > 0 {
 			comp, err := NewList(asts, node)
 			if err != nil {
@@ -160,6 +159,12 @@ func (u *Ui) buildComponents(asts *assets.Loader, n Node) error {
 			}
 			u.components[node] = comp
 		}
+	case *preset.SelectorNode:
+		comp, err := NewSelector(asts, node)
+		if err != nil {
+			return err
+		}
+		u.components[node] = comp
 	}
 
 	for _, child := range n.Children() {

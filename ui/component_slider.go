@@ -2,6 +2,7 @@ package ui
 
 import (
 	"synth/assets"
+	"synth/preset"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -23,10 +24,10 @@ type Slider struct {
 	bg        *ebiten.Image
 	faceParam text.Face
 	faceBack  text.Face
-	node      *ParameterNode
+	node      *preset.SliderNode
 }
 
-func NewSlider(asts *assets.Loader, sn *ParameterNode) (*Slider, error) {
+func NewSlider(asts *assets.Loader, sn *preset.SliderNode) (*Slider, error) {
 	bg, err := asts.GetImage("ui/slider/bg")
 	if err != nil {
 		return nil, err
@@ -88,6 +89,6 @@ func (s *Slider) Scroll(delta int) {
 	s.node.SetVal(s.node.Val() + s.node.Step()*float32(-delta))
 }
 
-func (s *Slider) CurrentTarget() Node {
+func (s *Slider) CurrentTarget() preset.Node {
 	return nil
 }

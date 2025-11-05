@@ -1,15 +1,14 @@
-package ui
+package preset
 
 import (
 	"fmt"
 	"synth/msg"
-	"synth/preset"
 )
 
 type Tree struct {
 	Node
 	pInQueue, pOutQueue *msg.Queue
-	parameters          map[uint8]Node
+	parameters          map[uint8]ValueNode
 }
 
 func NewTree(pInQueue, pOutQueue *msg.Queue) *Tree {
@@ -17,7 +16,7 @@ func NewTree(pInQueue, pOutQueue *msg.Queue) *Tree {
 		Node:       buildTree(),
 		pInQueue:   pInQueue,
 		pOutQueue:  pOutQueue,
-		parameters: make(map[uint8]Node),
+		parameters: make(map[uint8]ValueNode),
 	}
 
 	t.AttachNodes(t.Node)
@@ -28,15 +27,15 @@ func NewTree(pInQueue, pOutQueue *msg.Queue) *Tree {
 
 func (t *Tree) PullAll() {
 	t.pOutQueue.TryWrite(msg.Message{
-		Source: preset.AudioSource,
-		Kind:   preset.ParamPullAllKind,
+		Source: AudioSource,
+		Kind:   ParamPullAllKind,
 	})
 }
 
 func (t *Tree) PublishUpdate(key uint8, val float32) {
 	t.pOutQueue.TryWrite(msg.Message{
-		Source: preset.AudioSource,
-		Kind:   preset.ParamUpdateKind,
+		Source: AudioSource,
+		Kind:   ParamUpdateKind,
 		Key:    key,
 		ValF:   val,
 	})
@@ -44,12 +43,10 @@ func (t *Tree) PublishUpdate(key uint8, val float32) {
 
 func (t *Tree) Update() {
 	t.pInQueue.Drain(10, func(m msg.Message) {
-		if m.Kind == preset.ParamUpdateKind {
+		if m.Kind == ParamUpdateKind {
 			for key, node := range t.parameters {
 				if key == m.Key {
-					if pn, ok := node.(*ParameterNode); ok {
-						pn.SetVal(m.ValF)
-					}
+					node.SetVal(m.ValF)
 					break
 				}
 			}
@@ -58,8 +55,8 @@ func (t *Tree) Update() {
 }
 
 func (t *Tree) AttachNodes(n Node) {
-	if pn, ok := n.(*ParameterNode); ok {
-		t.parameters[pn.key] = pn
+	if pn, ok := n.(ValueNode); ok {
+		t.parameters[pn.Key()] = pn
 		pn.Attach(t.PublishUpdate)
 	}
 
@@ -72,7 +69,13 @@ func buildTree() Node {
 	return NewListNode("",
 		NewListNode("Oscillators",
 			NewListNode("Oscillator 1",
-				NewListNode("Waveform"),
+				NewSelectorNode("Waveform", 0,
+					NewSelectorOption("Sine", "sine", 0),
+					NewSelectorOption("Square", "square", 1),
+					NewSelectorOption("Sawtooth", "sawtooth", 2),
+					NewSelectorOption("Triangle", "triangle", 3),
+					NewSelectorOption("Noise", "noise", 4),
+				),
 				NewListNode("Octave"),
 				NewListNode("Semitone"),
 				NewListNode("Detune"),
@@ -101,28 +104,28 @@ func buildTree() Node {
 		),
 		NewListNode("Effects",
 			NewListNode("Feedback delay",
-				NewParameterNode("Delay", preset.FBDelayParam, 0, 2, .001, func(v float32) string {
+				NewSliderNode("Delay", FBDelayParam, 0, 2, .001, func(v float32) string {
 					return fmt.Sprintf("%.0f ms", v*1000)
 				}),
-				NewParameterNode("Feedback", preset.FBFeedBack, 0, 0.95, .01, nil),
-				NewParameterNode("Mix", preset.FBMix, 0, 1, .01, nil),
-				NewParameterNode("Tone", preset.FBTone, 200, 8000, 1, func(v float32) string {
+				NewSliderNode("Feedback", FBFeedBack, 0, 0.95, .01, nil),
+				NewSliderNode("Mix", FBMix, 0, 1, .01, nil),
+				NewSliderNode("Tone", FBTone, 200, 8000, 1, func(v float32) string {
 					return fmt.Sprintf("%.0f Hz", v)
 				}),
 			),
 			NewListNode("Low pass filter"),
 			NewListNode("Unison",
-				NewParameterNode("Voices", preset.UnisonVoices, 1, 16, 1, func(v float32) string {
+				NewSliderNode("Voices", UnisonVoices, 1, 16, 1, func(v float32) string {
 					return fmt.Sprintf("%.0f voices", v)
 				}),
-				NewParameterNode("Pan spread", preset.UnisonPanSpread, 0, 1, .01, nil),
-				NewParameterNode("Phase spread", preset.UnisonPhaseSpread, 0, 1, .01, func(v float32) string {
+				NewSliderNode("Pan spread", UnisonPanSpread, 0, 1, .01, nil),
+				NewSliderNode("Phase spread", UnisonPhaseSpread, 0, 1, .01, func(v float32) string {
 					return fmt.Sprintf("%.0f%% cycle", v*100)
 				}),
-				NewParameterNode("Detune spread", preset.UnisonDetuneSpread, 0, 100, .1, func(v float32) string {
+				NewSliderNode("Detune spread", UnisonDetuneSpread, 0, 100, .1, func(v float32) string {
 					return fmt.Sprintf("%.1f cent", v)
 				}),
-				NewParameterNode("Curve gamma", preset.UnisonCurveGamma, 0.1, 2, .1, nil),
+				NewSliderNode("Curve gamma", UnisonCurveGamma, 0.1, 2, .1, nil),
 			),
 		),
 		NewListNode("Visualizer",

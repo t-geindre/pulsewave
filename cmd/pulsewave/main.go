@@ -79,7 +79,7 @@ func main() {
 		ui.NewKeyboardControls(),
 		ui.NewMidiControls(midiUiOutQ),
 	)
-	tree := ui.NewTree(audioParamOut, uiParamOut)
+	tree := preset.NewTree(audioParamOut, uiParamOut)
 
 	gui, err := ui.NewUi(asts, ctrl, tree)
 	onError(err, "failed to create gui")
