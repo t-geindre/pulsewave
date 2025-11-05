@@ -76,9 +76,7 @@ func buildTree() Node {
 					NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
 					NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
 				),
-				NewSliderNode("Detune", Osc0Detune, -100, 100, .1, func(v float32) string {
-					return fmt.Sprintf("%.1f st", v)
-				}),
+				NewSliderNode("Detune", Osc0Detune, -100, 100, .1, formatSemiTon),
 				NewSliderNode("Gain", Osc0Gain, 0, 1, .01, nil),
 			),
 			NewListNode("Oscillator 2",
@@ -89,9 +87,7 @@ func buildTree() Node {
 					NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
 					NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
 				),
-				NewSliderNode("Detune", Osc1Detune, -100, 100, .1, func(v float32) string {
-					return fmt.Sprintf("%.1f st", v)
-				}),
+				NewSliderNode("Detune", Osc1Detune, -100, 100, .1, formatSemiTon),
 				NewSliderNode("Gain", Osc1Gain, 0, 1, .01, nil),
 			),
 			NewListNode("Oscillator 3",
@@ -102,41 +98,46 @@ func buildTree() Node {
 					NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
 					NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
 				),
-				NewSliderNode("Detune", Osc2Detune, -100, 100, .1, func(v float32) string {
-					return fmt.Sprintf("%.1f st", v)
-				}),
+				NewSliderNode("Detune", Osc2Detune, -100, 100, .1, formatSemiTon),
 				NewSliderNode("Gain", Osc2Gain, 0, 1, .01, nil),
 			),
 		),
 		NewListNode("Modulation",
-			NewListNode("Amplitude"),
+			NewListNode("Amplitude",
+				NewListNode("Envelope ADSR",
+					NewSliderNode("Attack", AmpEnvAttack, 0, 10, .001, formatMillisecond),
+					NewSliderNode("Decay", AmpEnvDecay, 0, 10, .001, formatMillisecond),
+					NewSliderNode("Sustain", AmpEnvSustain, 0, 1, .01, nil),
+					NewSliderNode("Release", AmpEnvRelease, 0, 10, .001, formatMillisecond),
+				),
+				NewListNode("LFO",
+					NewListNode("Waveform"),
+					NewSliderNode("Rate", 0, 0.1, 20, .001, formatHertz),
+					NewSliderNode("Depth", 0, 0, 1, .01, nil),
+				),
+			),
 			NewListNode("Cutoff"),
 			NewListNode("Resonance"),
 			NewListNode("Pitch"),
 		),
 		NewListNode("Effects",
 			NewListNode("Feedback delay",
-				NewSliderNode("Delay", FBDelayParam, 0, 2, .001, func(v float32) string {
-					return fmt.Sprintf("%.0f ms", v*1000)
-				}),
+				NewSliderNode("Delay", FBDelayParam, 0, 2, .001, formatMillisecond),
 				NewSliderNode("Feedback", FBFeedBack, 0, 0.95, .01, nil),
 				NewSliderNode("Mix", FBMix, 0, 1, .01, nil),
-				NewSliderNode("Tone", FBTone, 200, 8000, 1, func(v float32) string {
-					return fmt.Sprintf("%.0f Hz", v)
-				}),
+				NewSliderNode("Tone", FBTone, 200, 8000, 1, formatHertz),
 			),
-			NewListNode("Low pass filter"),
+			NewListNode("Low pass filter",
+				NewSliderNode("Cutoff", LPFCutoff, 20, 20000, 1, formatHertz),
+				NewSliderNode("Resonance", LPFResonance, 0.1, 10, .1, nil),
+			),
 			NewListNode("Unison",
 				NewSliderNode("Voices", UnisonVoices, 1, 16, 1, func(v float32) string {
 					return fmt.Sprintf("%.0f voices", v)
 				}),
 				NewSliderNode("Pan spread", UnisonPanSpread, 0, 1, .01, nil),
-				NewSliderNode("Phase spread", UnisonPhaseSpread, 0, 1, .01, func(v float32) string {
-					return fmt.Sprintf("%.0f%% cycle", v*100)
-				}),
-				NewSliderNode("Detune spread", UnisonDetuneSpread, 0, 100, .1, func(v float32) string {
-					return fmt.Sprintf("%.1f cent", v)
-				}),
+				NewSliderNode("Phase spread", UnisonPhaseSpread, 0, 1, .01, formatCycle),
+				NewSliderNode("Detune spread", UnisonDetuneSpread, 0, 100, .1, formatCent),
 				NewSliderNode("Curve gamma", UnisonCurveGamma, 0.1, 2, .1, nil),
 			),
 		),

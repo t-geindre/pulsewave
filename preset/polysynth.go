@@ -3,7 +3,6 @@ package preset
 import (
 	"synth/dsp"
 	"synth/msg"
-	"time"
 )
 
 type Polysynth struct {
@@ -18,18 +17,8 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 	// Parameters map
 	parameters := make(map[uint8]dsp.Param)
 
-	// Main pitch bend param
-	pitchBend := dsp.NewParam(0)
-
-	// Shape registry (uniq for all voices)
-	reg := dsp.NewShapeRegistry()
-	reg.Add(dsp.ShapeTableWave, dsp.NewSineWavetable(1024))
-	reg.Add(dsp.ShapeSquare)
-	reg.Add(dsp.ShapeSaw)
-	reg.Add(dsp.ShapeTriangle)
-	reg.Add(dsp.ShapeNoise)
-
-	parameters[Osc0Shape] = dsp.NewParam(0) // Sine
+	// Oscillator parameters
+	parameters[Osc0Shape] = dsp.NewParam(2) // Saw
 	parameters[Osc1Shape] = dsp.NewParam(0)
 	parameters[Osc2Shape] = dsp.NewParam(0)
 
@@ -41,12 +30,33 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 	parameters[Osc1Detune] = dsp.NewParam(0)
 	parameters[Osc2Detune] = dsp.NewParam(0)
 
+	// Amplitude envelope parameters
+	parameters[AmpEnvAttack] = dsp.NewParam(0.01)
+	parameters[AmpEnvDecay] = dsp.NewParam(0.1)
+	parameters[AmpEnvSustain] = dsp.NewParam(0.9)
+	parameters[AmpEnvRelease] = dsp.NewParam(0.01)
+
 	// Unison parameters (all voices share)
 	parameters[UnisonPanSpread] = dsp.NewParam(0)
 	parameters[UnisonPhaseSpread] = dsp.NewParam(0)
 	parameters[UnisonDetuneSpread] = dsp.NewParam(0)
 	parameters[UnisonCurveGamma] = dsp.NewParam(1)
 	parameters[UnisonVoices] = dsp.NewParam(1)
+
+	// Low pass filter parameters
+	parameters[LPFCutoff] = dsp.NewSmoothedParam(SampleRate, 8000, 0.005) // Modulated needs smoothing
+	parameters[LPFResonance] = dsp.NewParam(1)
+
+	// Main pitch bend param
+	pitchBend := dsp.NewParam(0)
+
+	// Shape registry (uniq for all voices)
+	reg := dsp.NewShapeRegistry()
+	reg.Add(dsp.ShapeTableWave, dsp.NewSineWavetable(1024))
+	reg.Add(dsp.ShapeSquare)
+	reg.Add(dsp.ShapeSaw)
+	reg.Add(dsp.ShapeTriangle)
+	reg.Add(dsp.ShapeNoise)
 
 	// Voice factory
 	voiceFact := func() *dsp.Voice {
@@ -95,19 +105,23 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 		})
 
 		// LPF
-		cutoff := dsp.NewSmoothedParam(SampleRate, 800, 0.005)
-		reson := dsp.NewParam(1)
-		lpf := dsp.NewLowPassSVF(SampleRate, unison, cutoff, reson)
+		lpf := dsp.NewLowPassSVF(SampleRate, unison, parameters[LPFCutoff], parameters[LPFResonance])
 
-		ctModRateAdsr := dsp.NewADSR(SampleRate, time.Millisecond*5, time.Millisecond*50, 0, time.Millisecond*100)
-		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateAdsr, 4000, nil))
+		//ctModRateAdsr := dsp.NewADSR(SampleRate, time.Millisecond*5, time.Millisecond*50, 0, time.Millisecond*100)
+		//*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateAdsr, 4000, nil))
 
 		ctModRateOsc := dsp.NewOscillator(SampleRate, dsp.ShapeSine, dsp.NewParam(.5), dsp.NewParam(1), nil)
-		*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateOsc, 300, nil))
+		//*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateOsc, 300, nil))
 
 		// Voice
-		adsr := dsp.NewADSR(SampleRate, time.Millisecond*10, time.Millisecond*800, .9, time.Millisecond*100)
-		voice := dsp.NewVoice(lpf, freq, adsr, ctModRateAdsr, ctModRateOsc)
+		adsr := dsp.NewADSR(
+			SampleRate,
+			parameters[AmpEnvAttack],
+			parameters[AmpEnvDecay],
+			parameters[AmpEnvSustain],
+			parameters[AmpEnvRelease],
+		)
+		voice := dsp.NewVoice(lpf, freq, adsr, ctModRateOsc) //, ctModRateAdsr)
 
 		return voice
 	}

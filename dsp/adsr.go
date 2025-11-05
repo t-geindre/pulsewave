@@ -2,7 +2,6 @@ package dsp
 
 import (
 	"math"
-	"time"
 )
 
 type State int
@@ -18,7 +17,7 @@ const (
 type ADSR struct {
 	sr float64
 
-	Atk, Dec, Sus, Rel float64
+	Atk, Dec, Sus, Rel Param
 
 	state State
 	value float32
@@ -28,18 +27,20 @@ type ADSR struct {
 
 	buf       [BlockSize]float32
 	stampedAt uint64
+
+	needRecalc bool
 }
 
-func NewADSR(sr float64, atk, dec time.Duration, sus float64, rel time.Duration) *ADSR {
+func NewADSR(sr float64, atk, dec, sus, rel Param) *ADSR {
 	a := &ADSR{
-		sr:  sr,
-		Atk: atk.Seconds(),
-		Dec: dec.Seconds(),
-		Sus: sus,
-		Rel: rel.Seconds(),
+		sr:         sr,
+		Atk:        atk,
+		Dec:        dec,
+		Sus:        sus,
+		Rel:        rel,
+		needRecalc: true,
+		state:      EnvIdle,
 	}
-
-	a.prepare()
 
 	return a
 }
@@ -47,7 +48,7 @@ func NewADSR(sr float64, atk, dec time.Duration, sus float64, rel time.Duration)
 func (a *ADSR) NoteOn() {
 	a.gate = true
 	if a.state == EnvIdle || a.state == EnvRelease {
-		a.state = EnvAttack
+		a.setState(EnvAttack)
 	}
 }
 
@@ -59,28 +60,45 @@ func (a *ADSR) Reset() {
 func (a *ADSR) NoteOff() {
 	a.gate = false
 	if a.state != EnvIdle {
-		a.state = EnvRelease
+		a.setState(EnvRelease)
 	}
 }
 
-func coefFromTime(t, sr float64) float32 {
+func coefFromTime(t float32, sr float64) float32 {
 	if t <= 0 {
 		return 0
 	}
 
-	return float32(1 - math.Exp(-1.0/(t*sr)))
+	return float32(1 - math.Exp(-1.0/(float64(t)*sr)))
 }
 
-func (a *ADSR) prepare() {
-	a.aCoef = coefFromTime(a.Atk, a.sr)
-	a.dCoef = coefFromTime(a.Dec, a.sr)
-	a.rCoef = coefFromTime(a.Rel, a.sr)
+func (a *ADSR) setState(s State) {
+	a.state = s
+	a.needRecalc = true
+}
+
+func (a *ADSR) recalc(cycle uint64) {
+	if !a.needRecalc {
+		return
+	}
+	a.needRecalc = false
+
+	switch a.state {
+	case EnvAttack:
+		a.aCoef = coefFromTime(a.Atk.Resolve(cycle)[0], a.sr)
+	case EnvDecay:
+		a.dCoef = coefFromTime(a.Dec.Resolve(cycle)[0], a.sr)
+	case EnvRelease:
+		a.rCoef = coefFromTime(a.Rel.Resolve(cycle)[0], a.sr)
+	}
 }
 
 func (a *ADSR) Resolve(cycle uint64) []float32 {
 	if a.stampedAt == cycle {
 		return a.buf[:]
 	}
+
+	a.recalc(cycle)
 
 	for i := 0; i < BlockSize; i++ {
 		switch a.state {
@@ -90,24 +108,24 @@ func (a *ADSR) Resolve(cycle uint64) []float32 {
 			a.value += (1 - a.value) * a.aCoef
 			if a.value > 0.9999 || a.aCoef == 0 {
 				a.value = 1
-				a.state = EnvDecay
+				a.setState(EnvDecay)
 			}
 		case EnvDecay:
-			target := float32(a.Sus)
+			target := a.Sus.Resolve(cycle)[0]
 			a.value += (target - a.value) * a.dCoef
 			if (a.dCoef == 0 && a.value == target) || (a.value-target)*(1) <= 1e-6 {
-				a.state = EnvSustain
+				a.setState(EnvSustain)
 			}
 		case EnvSustain:
-			a.value = float32(a.Sus)
+			a.value = a.Sus.Resolve(cycle)[0]
 			if !a.gate {
-				a.state = EnvRelease
+				a.setState(EnvRelease)
 			}
 		case EnvRelease:
 			a.value += (0 - a.value) * a.rCoef
 			if a.value < 0.001 || a.rCoef == 0 {
 				a.value = 0
-				a.state = EnvIdle
+				a.setState(EnvIdle)
 			}
 		}
 		a.buf[i] = a.value

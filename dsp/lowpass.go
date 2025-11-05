@@ -26,6 +26,7 @@ func NewLowPassSVF(sr float64, src Node, cutoff Param, q Param) *LowPassSVF {
 	}
 }
 
+// Todo bug with high resonance and high cutoff (self-oscillation ?)
 func (f *LowPassSVF) Process(b *Block) {
 	f.tmp.Cycle = b.Cycle
 	f.Src.Process(&f.tmp)

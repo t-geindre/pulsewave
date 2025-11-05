@@ -21,6 +21,12 @@ const (
 	FBMix
 	FBTone
 
+	// Amp Envelope parameters
+	AmpEnvAttack
+	AmpEnvDecay
+	AmpEnvSustain
+	AmpEnvRelease
+
 	// Oscillator parameters
 	Osc0Shape
 	Osc0Detune
@@ -33,6 +39,10 @@ const (
 	Osc2Shape
 	Osc2Detune
 	Osc2Gain
+
+	// Low Pass Filter parameters
+	LPFCutoff
+	LPFResonance
 )
 
 /*
