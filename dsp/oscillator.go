@@ -6,7 +6,7 @@ import (
 
 type Oscillator struct {
 	shapeRegistry *ShapeRegistry
-	shapeIndex    int
+	shapeIndex    Param
 
 	freq       Param
 	width      Param // ShapeSquare only
@@ -29,7 +29,7 @@ func NewOscillator(
 	sqrWidth Param,
 ) *Oscillator {
 	reg := NewShapeRegistry()
-	sid := reg.Add(shape)
+	sid := NewConstParam(reg.Add(shape))
 	return NewRegOscillator(sampleRate, reg, sid, freq, phaseShift, sqrWidth)
 }
 
@@ -39,7 +39,7 @@ func NewOscillator(
 func NewRegOscillator(
 	sampleRate float64,
 	shapeRegistry *ShapeRegistry,
-	shapeIndex int,
+	shapeIndex Param,
 	freq Param,
 	phaseShift Param,
 	sqrWidth Param,
@@ -72,7 +72,7 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 		return s.buf[:]
 	}
 
-	shape, wavetable := s.shapeRegistry.Get(s.shapeIndex)
+	shape, wavetable := s.shapeRegistry.Get(s.shapeIndex.Resolve(cycle)[0])
 
 	if shape == ShapeNoise {
 		for i := 0; i < BlockSize; i++ {

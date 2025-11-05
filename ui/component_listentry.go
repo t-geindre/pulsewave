@@ -22,7 +22,7 @@ func NewListEntry(asts *assets.Loader, str string) (*ListEntry, error) {
 	w, h := ListEntryWidth, ListEntryHeight
 	img := ebiten.NewImage(int(w), int(h))
 
-	face, err := asts.GetFace("ui/entry")
+	face, err := asts.GetFace("ui/list/entry")
 	if err != nil {
 		return nil, err
 	}

@@ -10,8 +10,9 @@
       {"name": "ui/font", "path": "assets/fonts/Roboto-Medium.ttf"}
     ],
     "faces": [
-      {"name": "ui/entry", "font": "ui/font", "size": 21},
-      {"name": "ui/param_back", "font": "ui/font", "size": 21},
-      {"name": "ui/param", "font": "ui/font", "size": 45}
+      {"name": "ui/list/entry", "font": "ui/font", "size": 21},
+      {"name": "ui/slider/back", "font": "ui/font", "size": 21},
+      {"name": "ui/slider", "font": "ui/font", "size": 45},
+      {"name": "ui/selector/back", "font": "ui/font", "size": 21}
     ]
 }

@@ -23,7 +23,7 @@ func NewShapeRegistry() *ShapeRegistry {
 	}
 }
 
-func (s *ShapeRegistry) Add(shape OscShape, table ...*Wavetable) int {
+func (s *ShapeRegistry) Add(shape OscShape, table ...*Wavetable) float32 {
 	var wt *Wavetable
 	if len(table) > 0 {
 		wt = table[0]
@@ -35,10 +35,11 @@ func (s *ShapeRegistry) Add(shape OscShape, table ...*Wavetable) int {
 	s.shapes = append(s.shapes, shape)
 	s.tables = append(s.tables, wt)
 
-	return len(s.shapes) - 1
+	return float32(len(s.shapes) - 1)
 }
 
-func (s *ShapeRegistry) Set(id int, shape OscShape, table ...*Wavetable) {
+func (s *ShapeRegistry) Set(idf float32, shape OscShape, table ...*Wavetable) {
+	id := int(idf)
 	var wt *Wavetable
 	if len(table) > 0 {
 		s.tables[id] = table[0]
@@ -47,6 +48,7 @@ func (s *ShapeRegistry) Set(id int, shape OscShape, table ...*Wavetable) {
 	s.tables[id] = wt
 }
 
-func (s *ShapeRegistry) Get(id int) (OscShape, *Wavetable) {
+func (s *ShapeRegistry) Get(idf float32) (OscShape, *Wavetable) {
+	id := int(idf)
 	return s.shapes[id], s.tables[id]
 }

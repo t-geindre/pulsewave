@@ -23,9 +23,9 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 
 	// Shape registry (uniq for all voices)
 	reg := dsp.NewShapeRegistry()
-	osc0Shp := reg.Add(dsp.ShapeSaw)
-	osc1Shp := reg.Add(dsp.ShapeTriangle)
-	osc2Shp := reg.Add(dsp.ShapeTableWave, dsp.NewSineWavetable(1024))
+	parameters[Osc0Shape] = dsp.NewParam(reg.Add(dsp.ShapeSaw))
+	parameters[Osc1Shape] = dsp.NewParam(reg.Add(dsp.ShapeTriangle))
+	parameters[Osc2Shape] = dsp.NewParam(reg.Add(dsp.ShapeTableWave, dsp.NewSineWavetable(1024)))
 
 	// Unison parameters (all voices share)
 	parameters[UnisonPanSpread] = dsp.NewParam(1.0)
@@ -48,21 +48,21 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 
 			// 0
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, osc0Shp, ft, ph, nil),
+				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc0Shape], dsp.NewTunerParam(ft, dsp.NewParam(0)), ph, nil),
 				dsp.NewParam(.33),
 				dsp.NewParam(0),
 			))
 
 			// 1
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, osc1Shp, dsp.NewTunerParam(ft, dsp.NewParam(-12)), ph, nil),
+				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc1Shape], dsp.NewTunerParam(ft, dsp.NewParam(-12)), ph, nil),
 				dsp.NewParam(.33),
 				dsp.NewParam(0),
 			))
 
 			// 2
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, osc2Shp, dsp.NewTunerParam(ft, dsp.NewParam(+24)), ph, nil),
+				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc2Shape], dsp.NewTunerParam(ft, dsp.NewParam(+24)), ph, nil),
 				dsp.NewParam(0.15),
 				dsp.NewParam(0),
 			))

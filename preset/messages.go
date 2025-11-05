@@ -20,6 +20,19 @@ const (
 	FBFeedBack
 	FBMix
 	FBTone
+
+	// Oscillator parameters
+	Osc0Shape
+	Osc0Detune
+	Osc0Gain
+
+	Osc1Shape
+	Osc1Detune
+	Osc1Gain
+
+	Osc2Shape
+	Osc2Detune
+	Osc2Gain
 )
 
 /*

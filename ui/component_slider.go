@@ -33,12 +33,12 @@ func NewSlider(asts *assets.Loader, sn *preset.SliderNode) (*Slider, error) {
 		return nil, err
 	}
 
-	faceParam, err := asts.GetFace("ui/param")
+	faceParam, err := asts.GetFace("ui/slider")
 	if err != nil {
 		return nil, err
 	}
 
-	faceBack, err := asts.GetFace("ui/param_back")
+	faceBack, err := asts.GetFace("ui/slider/back")
 	if err != nil {
 		return nil, err
 	}
