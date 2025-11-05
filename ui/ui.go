@@ -18,7 +18,7 @@ const (
 type Ui struct {
 	background *ebiten.Image
 	w, h       int
-	controls   *Controls
+	controls   Controls
 
 	components map[Node]Component
 	current    Node
@@ -32,7 +32,7 @@ type Ui struct {
 	bodyClipMask *ebiten.Image
 }
 
-func NewUi(asts *assets.Loader, ctrl *Controls, tree *Tree) (*Ui, error) {
+func NewUi(asts *assets.Loader, ctrl Controls, tree *Tree) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
@@ -61,6 +61,8 @@ func NewUi(asts *assets.Loader, ctrl *Controls, tree *Tree) (*Ui, error) {
 		return nil, err
 	}
 
+	ui.current = tree.Node.Children()[2].Children()[0].Children()[3] // Todo remove hardcode
+
 	return ui, nil
 }
 
@@ -77,9 +79,9 @@ func (u *Ui) Update() error {
 		return nil
 	}
 
-	fw, bw, s := u.controls.Update()
+	hDelta, vDelta := u.controls.Update()
 
-	if fw {
+	if hDelta > 0 {
 		tr := u.components[u.current].CurrentTarget()
 		if tr != nil {
 			u.next = tr
@@ -88,13 +90,13 @@ func (u *Ui) Update() error {
 		return nil
 
 	}
-	if bw && u.current.Parent() != nil {
+	if hDelta < 0 && u.current.Parent() != nil {
 		u.next = u.current.Parent()
 		u.transDir = -1
 		return nil
 	}
 
-	u.components[u.current].Scroll(s)
+	u.components[u.current].Scroll(vDelta)
 	u.components[u.current].Update()
 
 	return nil

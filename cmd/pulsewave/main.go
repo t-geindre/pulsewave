@@ -75,7 +75,10 @@ func main() {
 	err = asts.Load()
 	onError(err, "failed to load assets")
 
-	ctrl := ui.NewControls(midiUiOutQ)
+	ctrl := ui.NewMultiControls(
+		ui.NewKeyboardControls(),
+		ui.NewMidiControls(midiUiOutQ),
+	)
 	tree := ui.NewTree(audioParamOut, uiParamOut)
 
 	gui, err := ui.NewUi(asts, ctrl, tree)

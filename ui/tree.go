@@ -117,10 +117,10 @@ func buildTree() Node {
 				}),
 				NewParameterNode("Pan spread", preset.UnisonPanSpread, 0, 1, .01, nil),
 				NewParameterNode("Phase spread", preset.UnisonPhaseSpread, 0, 1, .01, func(v float32) string {
-					return fmt.Sprintf("%.2f%% cycle", v*100)
+					return fmt.Sprintf("%.0f%% cycle", v*100)
 				}),
 				NewParameterNode("Detune spread", preset.UnisonDetuneSpread, 0, 100, .1, func(v float32) string {
-					return fmt.Sprintf("%.2f cent", v)
+					return fmt.Sprintf("%.1f cent", v)
 				}),
 				NewParameterNode("Curve gamma", preset.UnisonCurveGamma, 0.1, 2, .1, nil),
 			),
