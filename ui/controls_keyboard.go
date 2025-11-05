@@ -21,12 +21,12 @@ func NewKeyboardControls() *KeyboardControls {
 	return &KeyboardControls{
 		vertKeysAccel: map[time.Duration]int{
 			200 * time.Millisecond:  1,
-			1000 * time.Millisecond: 1,
-			2000 * time.Millisecond: 5,
-			3000 * time.Millisecond: 5,
-			4000 * time.Millisecond: 10,
-			5000 * time.Millisecond: 20,
-			6000 * time.Millisecond: 40,
+			500 * time.Millisecond:  1,
+			1000 * time.Millisecond: 5,
+			1500 * time.Millisecond: 5,
+			2000 * time.Millisecond: 10,
+			2500 * time.Millisecond: 20,
+			3500 * time.Millisecond: 40,
 		},
 		vertKeys: map[ebiten.Key]int{
 			ebiten.KeyUp:   -1,

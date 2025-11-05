@@ -9,13 +9,15 @@ const ParamPullAllKind msg.Kind = 2
 
 const (
 	// Unison parameters
-	UnisonPanSpread = iota
+	UnisonOnOff = iota // 0 = off, 1 = on
+	UnisonPanSpread
 	UnisonPhaseSpread
 	UnisonDetuneSpread
 	UnisonCurveGamma
 	UnisonVoices
 
 	// Feedback Delay parameters
+	FBOnOff // 0 = off, 1 = on
 	FBDelayParam
 	FBFeedBack
 	FBMix
@@ -41,6 +43,7 @@ const (
 	Osc2Gain
 
 	// Low Pass Filter parameters
+	LPFOnOff
 	LPFCutoff
 	LPFResonance
 )
