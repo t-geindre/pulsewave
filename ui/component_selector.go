@@ -41,6 +41,10 @@ func NewSelector(asts *assets.Loader, node *preset.SelectorNode) (*Selector, err
 func (s *Selector) Draw(image *ebiten.Image) {
 	image.DrawImage(s.bg, nil)
 
+	// Current
+	idx := int(s.node.Val())
+	text.Draw(image, s.node.Options()[idx].Label(), s.faceBack, nil)
+
 	// Draw back label
 	if p := s.node.Parent(); p != nil {
 		opt := &text.DrawOptions{}
@@ -53,6 +57,12 @@ func (s *Selector) Update() {
 }
 
 func (s *Selector) Scroll(delta int) {
+	v := int(s.node.Val()) + delta
+	for v < 0 {
+		v += len(s.node.Options())
+	}
+	v = v % len(s.node.Options())
+	s.node.SetVal(float32(v))
 }
 
 func (s *Selector) CurrentTarget() preset.Node {

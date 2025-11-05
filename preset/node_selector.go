@@ -15,6 +15,10 @@ func NewSelectorNode(label string, key uint8, options ...*SelectorOption) *Selec
 	}
 }
 
+func (s *SelectorNode) Options() []*SelectorOption {
+	return s.options
+}
+
 type SelectorOption struct {
 	icon  string
 	label string
@@ -27,4 +31,16 @@ func NewSelectorOption(label, icon string, value float32) *SelectorOption {
 		label: label,
 		value: value,
 	}
+}
+
+func (o *SelectorOption) Icon() string {
+	return o.icon
+}
+
+func (o *SelectorOption) Label() string {
+	return o.label
+}
+
+func (o *SelectorOption) Value() float32 {
+	return o.value
 }

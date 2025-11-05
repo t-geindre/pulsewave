@@ -23,16 +23,30 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 
 	// Shape registry (uniq for all voices)
 	reg := dsp.NewShapeRegistry()
-	parameters[Osc0Shape] = dsp.NewParam(reg.Add(dsp.ShapeSaw))
-	parameters[Osc1Shape] = dsp.NewParam(reg.Add(dsp.ShapeTriangle))
-	parameters[Osc2Shape] = dsp.NewParam(reg.Add(dsp.ShapeTableWave, dsp.NewSineWavetable(1024)))
+	reg.Add(dsp.ShapeTableWave, dsp.NewSineWavetable(1024))
+	reg.Add(dsp.ShapeSquare)
+	reg.Add(dsp.ShapeSaw)
+	reg.Add(dsp.ShapeTriangle)
+	reg.Add(dsp.ShapeNoise)
+
+	parameters[Osc0Shape] = dsp.NewParam(0) // Sine
+	parameters[Osc1Shape] = dsp.NewParam(0)
+	parameters[Osc2Shape] = dsp.NewParam(0)
+
+	parameters[Osc0Gain] = dsp.NewParam(1.0)
+	parameters[Osc1Gain] = dsp.NewParam(0)
+	parameters[Osc2Gain] = dsp.NewParam(0)
+
+	parameters[Osc0Detune] = dsp.NewParam(0)
+	parameters[Osc1Detune] = dsp.NewParam(0)
+	parameters[Osc2Detune] = dsp.NewParam(0)
 
 	// Unison parameters (all voices share)
-	parameters[UnisonPanSpread] = dsp.NewParam(1.0)
-	parameters[UnisonPhaseSpread] = dsp.NewParam(.1)
-	parameters[UnisonDetuneSpread] = dsp.NewParam(12.0)
-	parameters[UnisonCurveGamma] = dsp.NewParam(1.5)
-	parameters[UnisonVoices] = dsp.NewParam(8)
+	parameters[UnisonPanSpread] = dsp.NewParam(0)
+	parameters[UnisonPhaseSpread] = dsp.NewParam(0)
+	parameters[UnisonDetuneSpread] = dsp.NewParam(0)
+	parameters[UnisonCurveGamma] = dsp.NewParam(1)
+	parameters[UnisonVoices] = dsp.NewParam(1)
 
 	// Voice factory
 	voiceFact := func() *dsp.Voice {
@@ -48,22 +62,22 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 
 			// 0
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc0Shape], dsp.NewTunerParam(ft, dsp.NewParam(0)), ph, nil),
-				dsp.NewParam(.33),
+				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc0Shape], dsp.NewTunerParam(ft, parameters[Osc0Detune]), ph, nil),
+				parameters[Osc0Gain],
 				dsp.NewParam(0),
 			))
 
 			// 1
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc1Shape], dsp.NewTunerParam(ft, dsp.NewParam(-12)), ph, nil),
-				dsp.NewParam(.33),
+				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc1Shape], dsp.NewTunerParam(ft, parameters[Osc1Detune]), ph, nil),
+				parameters[Osc1Gain],
 				dsp.NewParam(0),
 			))
 
 			// 2
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc2Shape], dsp.NewTunerParam(ft, dsp.NewParam(+24)), ph, nil),
-				dsp.NewParam(0.15),
+				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc2Shape], dsp.NewTunerParam(ft, parameters[Osc2Detune]), ph, nil),
+				parameters[Osc2Gain],
 				dsp.NewParam(0),
 			))
 			return mixer
@@ -103,8 +117,8 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 
 	// Delay
 	parameters[FBDelayParam] = dsp.NewParam(0.35)
-	parameters[FBFeedBack] = dsp.NewParam(0.3)
-	parameters[FBMix] = dsp.NewParam(0.2)
+	parameters[FBFeedBack] = dsp.NewParam(0)
+	parameters[FBMix] = dsp.NewParam(0)
 	parameters[FBTone] = dsp.NewParam(2000)
 
 	delay := dsp.NewFeedbackDelay(

@@ -28,7 +28,7 @@ func getOscTestCases() []*oscillatorTestCase {
 	for _, c := range cases {
 		reg := NewShapeRegistry()
 		sid := reg.Add(c.shape, c.table)
-		c.osc = NewRegOscillator(sr, reg, sid, NewConstParam(440), nil, nil)
+		c.osc = NewRegOscillator(sr, reg, NewConstParam(sid), NewConstParam(440), nil, nil)
 	}
 
 	return cases

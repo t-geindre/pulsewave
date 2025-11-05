@@ -76,8 +76,10 @@ func buildTree() Node {
 					NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
 					NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
 				),
-				NewListNode("Detune"),
-				NewListNode("Gain"),
+				NewSliderNode("Detune", Osc0Detune, -100, 100, .1, func(v float32) string {
+					return fmt.Sprintf("%.1f st", v)
+				}),
+				NewSliderNode("Gain", Osc0Gain, 0, 1, .01, nil),
 			),
 			NewListNode("Oscillator 2",
 				NewSelectorNode("Waveform", Osc1Shape,
@@ -87,8 +89,10 @@ func buildTree() Node {
 					NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
 					NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
 				),
-				NewListNode("Detune"),
-				NewListNode("Gain"),
+				NewSliderNode("Detune", Osc1Detune, -100, 100, .1, func(v float32) string {
+					return fmt.Sprintf("%.1f st", v)
+				}),
+				NewSliderNode("Gain", Osc1Gain, 0, 1, .01, nil),
 			),
 			NewListNode("Oscillator 3",
 				NewSelectorNode("Waveform", Osc2Shape,
@@ -98,8 +102,10 @@ func buildTree() Node {
 					NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
 					NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
 				),
-				NewListNode("Detune"),
-				NewListNode("Gain"),
+				NewSliderNode("Detune", Osc2Detune, -100, 100, .1, func(v float32) string {
+					return fmt.Sprintf("%.1f st", v)
+				}),
+				NewSliderNode("Gain", Osc2Gain, 0, 1, .01, nil),
 			),
 		),
 		NewListNode("Modulation",
