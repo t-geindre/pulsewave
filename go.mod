@@ -6,7 +6,10 @@ toolchain go1.24.9
 
 require (
 	github.com/hajimehoshi/ebiten/v2 v2.8.8
+	github.com/rs/zerolog v1.34.0
+	github.com/viterin/vek v0.4.3
 	gitlab.com/gomidi/midi/v2 v2.3.16
+	google.golang.org/protobuf v1.36.10
 )
 
 require (
@@ -19,9 +22,7 @@ require (
 	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/viterin/partial v1.1.0 // indirect
-	github.com/viterin/vek v0.4.3 // indirect
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
 	golang.org/x/image v0.20.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect

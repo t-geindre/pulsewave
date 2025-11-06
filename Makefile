@@ -11,3 +11,6 @@ bench:
 
 tests:
 	go test ./...
+
+proto:
+	protoc --go_out=. preset/preset.proto

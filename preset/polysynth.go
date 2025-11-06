@@ -16,8 +16,9 @@ type Polysynth struct {
 func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth {
 	// Parameters map
 	preset := NewPreset()
+	constZero := dsp.NewConstParam(0)
 
-	// Main pitch bend param
+	// Global pitch bend
 	pitchBend := dsp.NewParam(0)
 
 	// Shape registry (uniq for all voices)
@@ -32,7 +33,16 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 	voiceFact := func() *dsp.Voice {
 		// Base frequency param (uniq per voice)
 		freq := dsp.NewSmoothedParam(SampleRate, 440, .001)
-		pitch := dsp.NewTunerParam(freq, pitchBend)
+		pitchMod := dsp.NewParam(0)
+		pitch := dsp.NewTunerParam(dsp.NewTunerParam(freq, pitchBend), pitchMod)
+
+		pitchLfo := dsp.NewRegOscillator(SampleRate, reg, preset[PitchLfoShape], preset[PitchLfoFreq], preset[PitchLfoPhase], nil)
+		pitchAdsr := dsp.NewADSR(SampleRate, preset[PitchAdsrAttack], preset[PitchAdsrDecay], preset[PitchAdsrSustain], preset[PitchAdsrRelease])
+
+		*pitchMod.ModInputs() = append(*pitchMod.ModInputs(),
+			//dsp.NewModInput(pitchLfo, NewParamSkipper(preset[PitchLfoAmount], constZero, preset[PitchLfoOnOff]), nil),
+			dsp.NewModInput(pitchAdsr, NewParamSkipper(preset[PitchAdsrAmount], constZero, preset[PitchAdsrOnOff]), nil),
+		)
 
 		// Oscillator factory
 		oscFact := func(ph, dt dsp.Param) dsp.Node {
@@ -87,8 +97,8 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 		cutoff := dsp.NewParam(0)
 		*cutoff.ModInputs() = append(*cutoff.ModInputs(),
 			dsp.NewModInput(preset[LPFCutoff], dsp.NewParam(1), nil),
-			dsp.NewModInput(cutoffLfo, NewParamSkipper(preset[LpfLfoAmount], dsp.NewConstParam(0), preset[LpfLfoOnOff]), nil),
-			dsp.NewModInput(cutoffAdsr, NewParamSkipper(preset[LpfAdsrAmount], dsp.NewConstParam(0), preset[LpfAdsrOnOff]), nil),
+			//dsp.NewModInput(cutoffLfo, NewParamSkipper(preset[LpfLfoAmount], constZero, preset[LpfLfoOnOff]), nil),
+			//dsp.NewModInput(cutoffAdsr, NewParamSkipper(preset[LpfAdsrAmount], constZero, preset[LpfAdsrOnOff]), nil),
 		)
 
 		lpf := dsp.NewLowPassSVF(SampleRate, unisonSkip, cutoff, preset[LPFResonance])
@@ -105,7 +115,7 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 		vca := dsp.NewVca(lpfSkip, gain)
 
 		// Voice
-		voice := dsp.NewVoice(vca, freq, gainAdsr, cutoffLfo, cutoffAdsr)
+		voice := dsp.NewVoice(vca, freq, gainAdsr, cutoffLfo, cutoffAdsr, pitchLfo, pitchAdsr)
 
 		return voice
 	}

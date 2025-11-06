@@ -7,7 +7,7 @@ type Preset map[uint8]dsp.Param
 func NewPreset() Preset {
 	p := make(Preset)
 
-	// Oscillator
+	// Oscillator todo phase + pulse width
 	p[Osc0Shape] = dsp.NewParam(2) // Saw
 	p[Osc1Shape] = dsp.NewParam(0) // Sine
 	p[Osc2Shape] = dsp.NewParam(0) // Sine
@@ -19,6 +19,20 @@ func NewPreset() Preset {
 	p[Osc0Detune] = dsp.NewParam(0)
 	p[Osc1Detune] = dsp.NewParam(12)
 	p[Osc2Detune] = dsp.NewParam(-12)
+
+	// Pitch mod
+	p[PitchLfoOnOff] = dsp.NewParam(0)
+	p[PitchLfoAmount] = dsp.NewParam(12)
+	p[PitchLfoShape] = dsp.NewParam(0)
+	p[PitchLfoFreq] = dsp.NewParam(0.5)
+	p[PitchLfoPhase] = dsp.NewParam(0)
+
+	p[PitchAdsrOnOff] = dsp.NewParam(0)
+	p[PitchAdsrAmount] = dsp.NewParam(-12)
+	p[PitchAdsrAttack] = dsp.NewParam(0.5)
+	p[PitchAdsrDecay] = dsp.NewParam(0.5)
+	p[PitchAdsrSustain] = dsp.NewParam(0)
+	p[PitchAdsrRelease] = dsp.NewParam(0.5)
 
 	// Amplitude envelope
 	p[AmpEnvAttack] = dsp.NewParam(0.02)
@@ -56,8 +70,27 @@ func NewPreset() Preset {
 	p[LpfAdsrAmount] = dsp.NewParam(4000)
 	p[LpfAdsrAttack] = dsp.NewParam(0.01)
 	p[LpfAdsrDecay] = dsp.NewParam(0.1)
-	p[LpfAdsrSustain] = dsp.NewParam(1)
+	p[LpfAdsrSustain] = dsp.NewParam(0)
 	p[LpfAdsrRelease] = dsp.NewParam(0.2)
 
 	return p
+}
+
+func NewFromProto(pb *ProtoPreset) Preset {
+	p := NewPreset() // start with default preset, avoid missing params
+	for _, e := range pb.Params {
+		p[uint8(e.Id)] = dsp.NewParam(e.Value)
+	}
+	return p
+}
+
+func (p *Preset) ToProto() *ProtoPreset {
+	msg := &ProtoPreset{}
+	for id, param := range *p {
+		msg.Params = append(msg.Params, &ProtoParamEntry{
+			Id:    uint32(id),
+			Value: param.GetBase(),
+		})
+	}
+	return msg
 }

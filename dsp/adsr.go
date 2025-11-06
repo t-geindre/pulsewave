@@ -106,7 +106,7 @@ func (a *ADSR) Resolve(cycle uint64) []float32 {
 			a.value = 0
 		case EnvAttack:
 			a.value += (1 - a.value) * a.aCoef
-			if a.value > 0.9999 || a.aCoef == 0 {
+			if a.value > 0.999 || a.aCoef == 0 {
 				a.value = 1
 				a.setState(EnvDecay)
 			}

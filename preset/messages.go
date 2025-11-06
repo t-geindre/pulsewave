@@ -16,6 +16,19 @@ const (
 	UnisonCurveGamma
 	UnisonVoices
 
+	// Pitch Modulation
+	PitchLfoOnOff
+	PitchLfoAmount
+	PitchLfoShape
+	PitchLfoFreq
+	PitchLfoPhase
+	PitchAdsrOnOff
+	PitchAdsrAmount
+	PitchAdsrAttack
+	PitchAdsrDecay
+	PitchAdsrSustain
+	PitchAdsrRelease
+
 	// Feedback Delay parameters
 	FBOnOff // 0 = off, 1 = on
 	FBDelayParam

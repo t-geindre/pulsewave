@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package preset;
+
+option go_package = "/preset";
+
+message ProtoParamEntry {
+  uint32 id = 1;
+  float value = 2;
+}
+
+message ProtoPreset {
+  repeated ProtoParamEntry params = 1;
+}
