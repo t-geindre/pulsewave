@@ -15,46 +15,7 @@ type Polysynth struct {
 
 func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth {
 	// Parameters map
-	parameters := make(map[uint8]dsp.Param)
-
-	// Oscillator parameters
-	parameters[Osc0Shape] = dsp.NewParam(2) // Saw
-	parameters[Osc1Shape] = dsp.NewParam(0)
-	parameters[Osc2Shape] = dsp.NewParam(0)
-
-	parameters[Osc0Gain] = dsp.NewParam(.33)
-	parameters[Osc1Gain] = dsp.NewParam(0)
-	parameters[Osc2Gain] = dsp.NewParam(0)
-
-	parameters[Osc0Detune] = dsp.NewParam(0)
-	parameters[Osc1Detune] = dsp.NewParam(0)
-	parameters[Osc2Detune] = dsp.NewParam(0)
-
-	// Amplitude envelope parameters
-	parameters[AmpEnvAttack] = dsp.NewParam(0.01)
-	parameters[AmpEnvDecay] = dsp.NewParam(0.1)
-	parameters[AmpEnvSustain] = dsp.NewParam(0.9)
-	parameters[AmpEnvRelease] = dsp.NewParam(0.01)
-
-	// Unison parameters (all voices share)
-	parameters[UnisonOnOff] = dsp.NewParam(0)
-	parameters[UnisonPanSpread] = dsp.NewParam(0)
-	parameters[UnisonPhaseSpread] = dsp.NewParam(0)
-	parameters[UnisonDetuneSpread] = dsp.NewParam(0)
-	parameters[UnisonCurveGamma] = dsp.NewParam(1)
-	parameters[UnisonVoices] = dsp.NewParam(1)
-
-	// Feedback Delay parameters
-	parameters[FBDelayParam] = dsp.NewParam(0.35)
-	parameters[FBFeedBack] = dsp.NewParam(.3)
-	parameters[FBMix] = dsp.NewParam(.2)
-	parameters[FBTone] = dsp.NewParam(2000)
-	parameters[FBOnOff] = dsp.NewParam(0)
-
-	// Low pass filter parameters
-	parameters[LPFOnOff] = dsp.NewParam(0)
-	parameters[LPFCutoff] = dsp.NewSmoothedParam(SampleRate, 8000, 0.005) // Modulated needs smoothing
-	parameters[LPFResonance] = dsp.NewParam(1)
+	preset := NewPreset()
 
 	// Main pitch bend param
 	pitchBend := dsp.NewParam(0)
@@ -81,62 +42,70 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 
 			// 0
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc0Shape], dsp.NewTunerParam(ft, parameters[Osc0Detune]), ph, nil),
-				parameters[Osc0Gain],
+				dsp.NewRegOscillator(SampleRate, reg, preset[Osc0Shape], dsp.NewTunerParam(ft, preset[Osc0Detune]), ph, nil),
+				preset[Osc0Gain],
 				dsp.NewParam(0),
 			))
 
 			// 1
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc1Shape], dsp.NewTunerParam(ft, parameters[Osc1Detune]), ph, nil),
-				parameters[Osc1Gain],
+				dsp.NewRegOscillator(SampleRate, reg, preset[Osc1Shape], dsp.NewTunerParam(ft, preset[Osc1Detune]), ph, nil),
+				preset[Osc1Gain],
 				dsp.NewParam(0),
 			))
 
 			// 2
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, parameters[Osc2Shape], dsp.NewTunerParam(ft, parameters[Osc2Detune]), ph, nil),
-				parameters[Osc2Gain],
+				dsp.NewRegOscillator(SampleRate, reg, preset[Osc2Shape], dsp.NewTunerParam(ft, preset[Osc2Detune]), ph, nil),
+				preset[Osc2Gain],
 				dsp.NewParam(0),
 			))
+
 			return mixer
 		}
 
 		// Unison
 		unison := dsp.NewUnison(dsp.UnisonOpts{
 			SampleRate:   SampleRate,
-			NumVoices:    parameters[UnisonVoices],
+			NumVoices:    preset[UnisonVoices],
 			Factory:      oscFact,
-			PanSpread:    parameters[UnisonPanSpread],
-			PhaseSpread:  parameters[UnisonPhaseSpread],
-			DetuneSpread: parameters[UnisonDetuneSpread],
-			CurveGamma:   parameters[UnisonCurveGamma],
+			PanSpread:    preset[UnisonPanSpread],
+			PhaseSpread:  preset[UnisonPhaseSpread],
+			DetuneSpread: preset[UnisonDetuneSpread],
+			CurveGamma:   preset[UnisonCurveGamma],
 		})
-		unisonSkip := NewSkipper(
+		unisonSkip := NewNodeSkipper(
 			unison,
 			oscFact(dsp.NewParam(0), dsp.NewParam(0)), // Unique voice
-			parameters[UnisonOnOff],
+			preset[UnisonOnOff],
 		)
 
 		// LPF
-		lpf := dsp.NewLowPassSVF(SampleRate, unisonSkip, parameters[LPFCutoff], parameters[LPFResonance])
-		lpfSkip := NewSkipper(lpf, unisonSkip, parameters[LPFOnOff])
+		cutoffLfo := dsp.NewRegOscillator(SampleRate, reg, preset[LpfLfoShape], preset[LpfLfoFreq], preset[LpfLfoPhase], nil)
+		cutoffAdsr := dsp.NewADSR(SampleRate, preset[LpfAdsrAttack], preset[LpfAdsrDecay], preset[LpfAdsrSustain], preset[LpfAdsrRelease])
 
-		//ctModRateAdsr := dsp.NewADSR(SampleRate, time.Millisecond*5, time.Millisecond*50, 0, time.Millisecond*100)
-		//*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateAdsr, 4000, nil))
+		cutoff := dsp.NewParam(0)
+		*cutoff.ModInputs() = append(*cutoff.ModInputs(),
+			dsp.NewModInput(preset[LPFCutoff], dsp.NewParam(1), nil),
+			dsp.NewModInput(cutoffLfo, NewParamSkipper(preset[LpfLfoAmount], dsp.NewConstParam(0), preset[LpfLfoOnOff]), nil),
+			dsp.NewModInput(cutoffAdsr, NewParamSkipper(preset[LpfAdsrAmount], dsp.NewConstParam(0), preset[LpfAdsrOnOff]), nil),
+		)
 
-		ctModRateOsc := dsp.NewOscillator(SampleRate, dsp.ShapeSine, dsp.NewParam(.5), dsp.NewParam(1), nil)
-		//*cutoff.ModInputs() = append(*cutoff.ModInputs(), dsp.NewModInput(ctModRateOsc, 300, nil))
+		lpf := dsp.NewLowPassSVF(SampleRate, unisonSkip, cutoff, preset[LPFResonance])
+		lpfSkip := NewNodeSkipper(lpf, unisonSkip, preset[LPFOnOff])
+
+		// Amplitude envelope
+		gainAdsr := dsp.NewADSR(SampleRate, preset[AmpEnvAttack], preset[AmpEnvDecay], preset[AmpEnvSustain], preset[AmpEnvRelease])
+
+		gain := dsp.NewParam(0)
+		*gain.ModInputs() = append(*gain.ModInputs(),
+			dsp.NewModInput(gainAdsr, dsp.NewConstParam(1.0), nil),
+		)
+
+		vca := dsp.NewVca(lpfSkip, gain)
 
 		// Voice
-		adsr := dsp.NewADSR(
-			SampleRate,
-			parameters[AmpEnvAttack],
-			parameters[AmpEnvDecay],
-			parameters[AmpEnvSustain],
-			parameters[AmpEnvRelease],
-		)
-		voice := dsp.NewVoice(lpfSkip, freq, adsr, ctModRateOsc) //, ctModRateAdsr)
+		voice := dsp.NewVoice(vca, freq, gainAdsr, cutoffLfo, cutoffAdsr)
 
 		return voice
 	}
@@ -145,16 +114,8 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 	poly := dsp.NewPolyVoice(8, voiceFact)
 
 	// Delay with skipper
-	delay := dsp.NewFeedbackDelay(
-		SampleRate,
-		2.0,
-		poly,
-		parameters[FBDelayParam], // delay time in seconds
-		parameters[FBFeedBack],   // feedback amount (0-1)
-		parameters[FBMix],        // mix
-		parameters[FBTone],       // tone
-	)
-	delaySkip := NewSkipper(delay, poly, parameters[FBOnOff])
+	delay := dsp.NewFeedbackDelay(SampleRate, 2.0, poly, preset[FBDelayParam], preset[FBFeedBack], preset[FBMix], preset[FBTone])
+	delaySkip := NewNodeSkipper(delay, poly, preset[FBOnOff])
 
 	return &Polysynth{
 		Node:       delaySkip,
@@ -162,7 +123,7 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 		pitch:      pitchBend,
 		pInQueue:   pInQueue,
 		pOutQueue:  pOutQueue,
-		parameters: parameters,
+		parameters: preset,
 	}
 }
 

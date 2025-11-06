@@ -13,23 +13,31 @@ type Envelope interface {
 
 type Voice struct {
 	Node
-	freq  Param
-	gain  Param
-	env   Envelope
-	extra []Resettable
+	freq   Param
+	envs   []Envelope
+	resets []Resettable
 }
 
-func NewVoice(src Node, freq Param, env Envelope, extra ...Resettable) *Voice {
-	gain := NewParam(0)
-	*gain.ModInputs() = append(*gain.ModInputs(), NewModInput(env, 1.0, nil))
-
-	return &Voice{
-		Node:  NewVca(src, gain),
-		freq:  freq,
-		gain:  gain,
-		env:   env,
-		extra: extra,
+func NewVoice(src Node, freq Param, extra ...any) *Voice {
+	v := &Voice{
+		Node:   src,
+		freq:   freq,
+		envs:   make([]Envelope, 0),
+		resets: make([]Resettable, 0),
 	}
+
+	for _, e := range extra {
+		switch e := e.(type) {
+		case Envelope:
+			v.envs = append(v.envs, e)
+		case Resettable:
+			v.resets = append(v.resets, e)
+		default:
+			panic("invalid extra")
+		}
+	}
+
+	return v
 }
 
 func (v *Voice) NoteOn(key int, vel float32) {
@@ -37,19 +45,27 @@ func (v *Voice) NoteOn(key int, vel float32) {
 	v.freq.SetBase(MidiKeys[key])
 
 	v.Node.Reset()
-	if v.env.IsIdle() {
-	}
-	for _, n := range v.extra {
-		n.Reset()
+
+	for _, reset := range v.resets {
+		reset.Reset()
 	}
 
-	v.env.NoteOn()
+	for _, env := range v.envs {
+		env.NoteOn()
+	}
 }
 
 func (v *Voice) NoteOff() {
-	v.env.NoteOff()
+	for _, env := range v.envs {
+		env.NoteOff()
+	}
 }
 
 func (v *Voice) IsIdle() bool {
-	return v.env.IsIdle()
+	for _, env := range v.envs {
+		if !env.IsIdle() {
+			return false
+		}
+	}
+	return true
 }

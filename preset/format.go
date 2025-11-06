@@ -14,6 +14,10 @@ func formatHertz(v float32) string {
 	return fmt.Sprintf("%.0f Hz", v)
 }
 
+func formatLowHertz(v float32) string {
+	return fmt.Sprintf("%.2f Hz", v)
+}
+
 func formatCycle(v float32) string {
 	return fmt.Sprintf("%.0f%% cycle", v*100)
 }

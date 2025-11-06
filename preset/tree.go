@@ -69,54 +69,35 @@ func buildTree() Node {
 	return NewListNode("",
 		NewListNode("Oscillators",
 			NewListNode("Oscillator 1",
-				NewSelectorNode("Waveform", Osc0Shape,
-					NewSelectorOption("Sine", "ui/icons/sine_wave", 0),
-					NewSelectorOption("Square", "ui/icons/square_wave", 1),
-					NewSelectorOption("Sawtooth", "ui/icons/saw_wave", 2),
-					NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
-					NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
-				),
+				waveFormNode(Osc0Shape),
 				NewSliderNode("Detune", Osc0Detune, -100, 100, .1, formatSemiTon),
 				NewSliderNode("Gain", Osc0Gain, 0, 1, .01, nil),
 			),
 			NewListNode("Oscillator 2",
-				NewSelectorNode("Waveform", Osc1Shape,
-					NewSelectorOption("Sine", "ui/icons/sine_wave", 0),
-					NewSelectorOption("Square", "ui/icons/square_wave", 1),
-					NewSelectorOption("Sawtooth", "ui/icons/saw_wave", 2),
-					NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
-					NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
-				),
+				waveFormNode(Osc2Shape),
 				NewSliderNode("Detune", Osc1Detune, -100, 100, .1, formatSemiTon),
 				NewSliderNode("Gain", Osc1Gain, 0, 1, .01, nil),
 			),
 			NewListNode("Oscillator 3",
-				NewSelectorNode("Waveform", Osc2Shape,
-					NewSelectorOption("Sine", "ui/icons/sine_wave", 0),
-					NewSelectorOption("Square", "ui/icons/square_wave", 1),
-					NewSelectorOption("Sawtooth", "ui/icons/saw_wave", 2),
-					NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
-					NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
-				),
+				waveFormNode(Osc2Shape),
 				NewSliderNode("Detune", Osc2Detune, -100, 100, .1, formatSemiTon),
 				NewSliderNode("Gain", Osc2Gain, 0, 1, .01, nil),
 			),
 		),
 		NewListNode("Modulation",
-			NewListNode("Amplitude",
-				NewListNode("Envelope ADSR",
-					NewSliderNode("Attack", AmpEnvAttack, 0, 10, .001, formatMillisecond),
-					NewSliderNode("Decay", AmpEnvDecay, 0, 10, .001, formatMillisecond),
-					NewSliderNode("Sustain", AmpEnvSustain, 0, 1, .01, nil),
-					NewSliderNode("Release", AmpEnvRelease, 0, 10, .001, formatMillisecond),
-				),
+			adsrNode("Amplitude", AmpEnvAttack, AmpEnvDecay, AmpEnvSustain, AmpEnvRelease),
+			NewListNode("Cutoff",
 				NewListNode("LFO",
-					NewListNode("Waveform"),
-					NewSliderNode("Rate", 0, 0.1, 20, .001, formatHertz),
-					NewSliderNode("Depth", 0, 0, 1, .01, nil),
+					NewSliderNode("ON/OFF", LpfLfoOnOff, 0, 1, 1, formatOnOff),
+					NewSliderNode("Amount", LpfLfoAmount, 20, 20000, 1, formatHertz),
+					waveFormNode(LpfLfoShape),
+					NewSliderNode("Rate", LpfLfoFreq, 0.01, 20, .01, formatLowHertz),
+					NewSliderNode("Phase", LpfLfoPhase, 0, 1, .01, formatCycle),
+				),
+				adsrNodeWithToggle("ADSR", LpfAdsrOnOff, LpfAdsrAttack, LpfAdsrDecay, LpfAdsrSustain, LpfAdsrRelease,
+					NewSliderNode("Amount", LpfAdsrAmount, 20, 20000, 1, formatHertz),
 				),
 			),
-			NewListNode("Cutoff"),
 			NewListNode("Resonance"),
 			NewListNode("Pitch"),
 		),
@@ -131,7 +112,7 @@ func buildTree() Node {
 			NewListNode("Low pass filter",
 				NewSliderNode("ON/OFF", LPFOnOff, 0, 1, 1, formatOnOff),
 				NewSliderNode("Cutoff", LPFCutoff, 20, 20000, 1, formatHertz),
-				NewSliderNode("Resonance", LPFResonance, 0.1, 10, .1, nil),
+				NewSliderNode("Resonance", LPFResonance, 0.1, 10, .01, nil),
 			),
 			NewListNode("Unison",
 				NewSliderNode("ON/OFF", UnisonOnOff, 0, 1, 1, formatOnOff),
@@ -141,7 +122,7 @@ func buildTree() Node {
 				NewSliderNode("Pan spread", UnisonPanSpread, 0, 1, .01, nil),
 				NewSliderNode("Phase spread", UnisonPhaseSpread, 0, 1, .01, formatCycle),
 				NewSliderNode("Detune spread", UnisonDetuneSpread, 0, 100, .1, formatCent),
-				NewSliderNode("Curve gamma", UnisonCurveGamma, 0.1, 2, .1, nil),
+				NewSliderNode("Curve gamma", UnisonCurveGamma, 0.1, 4, .1, nil),
 			),
 		),
 		NewListNode("Visualizer",
@@ -162,4 +143,36 @@ func buildTree() Node {
 			NewListNode("About"),
 		),
 	)
+}
+
+func waveFormNode(key uint8) Node {
+	return NewSelectorNode("Waveform", key,
+		NewSelectorOption("Sine", "ui/icons/sine_wave", 0),
+		NewSelectorOption("Square", "ui/icons/square_wave", 1),
+		NewSelectorOption("Sawtooth", "ui/icons/saw_wave", 2),
+		NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
+		NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
+	)
+}
+
+func adsrNode(label string, att, dec, sus, rel uint8, children ...Node) Node {
+	n := NewListNode(label,
+		NewSliderNode("Attack", att, 0, 10, .001, formatMillisecond),
+		NewSliderNode("Decay", dec, 0, 10, .001, formatMillisecond),
+		NewSliderNode("Sustain", sus, 0, 1, .01, nil),
+		NewSliderNode("Release", rel, 0, 10, .001, formatMillisecond),
+	)
+
+	for _, c := range children {
+		n.Append(c)
+	}
+
+	return n
+}
+
+func adsrNodeWithToggle(label string, toggle, att, dec, sus, rel uint8, children ...Node) Node {
+	node := adsrNode(label, att, dec, sus, rel, children...)
+	node.Prepend(NewSliderNode("ON/OFF", toggle, 0, 1, 1, formatOnOff))
+
+	return node
 }

@@ -6,6 +6,7 @@ type Node interface {
 	Parent() Node
 	SetParent(Node)
 	Append(Node)
+	Prepend(Node)
 }
 
 type AttachFunc func(uint8, float32)

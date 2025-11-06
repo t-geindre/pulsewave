@@ -37,3 +37,8 @@ func (n *ListNode) Append(child Node) {
 	child.SetParent(n)
 	n.children = append(n.children, child)
 }
+
+func (n *ListNode) Prepend(child Node) {
+	child.SetParent(n)
+	n.children = append([]Node{child}, n.children...)
+}

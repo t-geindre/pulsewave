@@ -34,14 +34,16 @@ func (s *ParamSimple) Resolve(cycle uint64) []float32 {
 	}
 
 	for _, mi := range s.inputs {
-		src := mi.Src.Resolve(cycle)
-		if mi.Map == nil {
+		src := mi.Src().Resolve(cycle)
+		amount := mi.Amount().Resolve(cycle)
+		mapf := mi.Map()
+		if mapf == nil {
 			for i := 0; i < BlockSize; i++ {
-				s.buf[i] += mi.Amount * src[i]
+				s.buf[i] += amount[i] * src[i]
 			}
 		} else {
 			for i := 0; i < BlockSize; i++ {
-				s.buf[i] += mi.Amount * mi.Map(src[i])
+				s.buf[i] += amount[i] * mapf(src[i])
 			}
 		}
 	}

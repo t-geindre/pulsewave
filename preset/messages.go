@@ -46,6 +46,19 @@ const (
 	LPFOnOff
 	LPFCutoff
 	LPFResonance
+
+	LpfLfoOnOff
+	LpfLfoAmount
+	LpfLfoShape
+	LpfLfoFreq
+	LpfLfoPhase
+
+	LpfAdsrOnOff
+	LpfAdsrAmount
+	LpfAdsrAttack
+	LpfAdsrDecay
+	LpfAdsrSustain
+	LpfAdsrRelease
 )
 
 /*

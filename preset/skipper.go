@@ -2,20 +2,20 @@ package preset
 
 import "synth/dsp"
 
-type Skipper struct {
+type NodeSkipper struct {
 	dsp.Param
 	normal, skipped dsp.Node
 }
 
-func NewSkipper(normal, skipped dsp.Node, p dsp.Param) *Skipper {
-	return &Skipper{
-		Param:   p,
+func NewNodeSkipper(normal, skipped dsp.Node, toggle dsp.Param) *NodeSkipper {
+	return &NodeSkipper{
+		Param:   toggle,
 		normal:  normal,
 		skipped: skipped,
 	}
 }
 
-func (s *Skipper) Process(block *dsp.Block) {
+func (s *NodeSkipper) Process(block *dsp.Block) {
 	if s.Resolve(block.Cycle)[0] < 0.5 {
 		s.skipped.Process(block)
 		return
@@ -24,6 +24,28 @@ func (s *Skipper) Process(block *dsp.Block) {
 	s.normal.Process(block)
 }
 
-func (s *Skipper) Reset() {
+func (s *NodeSkipper) Reset() {
 	s.normal.Reset()
+}
+
+type ParamSkipper struct {
+	dsp.Param
+	toggle dsp.Param
+	def    *dsp.ConstParam
+}
+
+func NewParamSkipper(param dsp.Param, def *dsp.ConstParam, toggle dsp.Param) *ParamSkipper {
+	return &ParamSkipper{
+		Param:  param,
+		def:    def,
+		toggle: toggle,
+	}
+}
+
+func (p *ParamSkipper) Resolve(cycle uint64) []float32 {
+	if p.toggle.Resolve(cycle)[0] < 0.5 {
+		return p.def.Resolve(cycle)
+	}
+
+	return p.Param.Resolve(cycle)
 }
