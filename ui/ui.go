@@ -95,7 +95,9 @@ func (u *Ui) Update() error {
 		return nil
 	}
 
-	u.components[u.current].Scroll(vDelta)
+	if vDelta != 0 {
+		u.components[u.current].Scroll(vDelta)
+	}
 	u.components[u.current].Update()
 
 	return nil

@@ -131,7 +131,7 @@ func (l *List) Draw(screen *ebiten.Image) {
 }
 
 func (l *List) Scroll(delta int) {
-	if l.animatingWin || delta == 0 {
+	if l.animatingWin {
 		return
 	}
 
