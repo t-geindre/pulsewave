@@ -6,91 +6,119 @@ type Preset map[uint8]dsp.Param
 
 func NewPreset() Preset {
 	p := make(Preset)
-
-	// Oscillator todo phase + pulse width
-	p[Osc0Shape] = dsp.NewParam(2) // Saw
-	p[Osc1Shape] = dsp.NewParam(0) // Sine
-	p[Osc2Shape] = dsp.NewParam(0) // Sine
-
-	p[Osc0Gain] = dsp.NewParam(.33)
-	p[Osc1Gain] = dsp.NewParam(.10)
-	p[Osc2Gain] = dsp.NewParam(.10)
-
-	p[Osc0Detune] = dsp.NewParam(0)
-	p[Osc1Detune] = dsp.NewParam(12)
-	p[Osc2Detune] = dsp.NewParam(-12)
-
-	// Pitch mod
-	p[PitchLfoOnOff] = dsp.NewParam(0)
-	p[PitchLfoAmount] = dsp.NewParam(12)
-	p[PitchLfoShape] = dsp.NewParam(0)
-	p[PitchLfoFreq] = dsp.NewParam(0.5)
-	p[PitchLfoPhase] = dsp.NewParam(0)
-
-	p[PitchAdsrOnOff] = dsp.NewParam(0)
-	p[PitchAdsrAmount] = dsp.NewParam(-12)
-	p[PitchAdsrAttack] = dsp.NewParam(0.5)
-	p[PitchAdsrDecay] = dsp.NewParam(0.5)
-	p[PitchAdsrSustain] = dsp.NewParam(0)
-	p[PitchAdsrRelease] = dsp.NewParam(0.5)
-
-	// Amplitude envelope
-	p[AmpEnvAttack] = dsp.NewParam(0.02)
-	p[AmpEnvDecay] = dsp.NewParam(0.02)
-	p[AmpEnvSustain] = dsp.NewParam(0.9)
-	p[AmpEnvRelease] = dsp.NewParam(0.02)
-
-	// Unison (all voices share)
-	p[UnisonOnOff] = dsp.NewParam(1)
-	p[UnisonPanSpread] = dsp.NewParam(1)
-	p[UnisonPhaseSpread] = dsp.NewParam(.1)
-	p[UnisonDetuneSpread] = dsp.NewParam(10)
-	p[UnisonCurveGamma] = dsp.NewParam(1.5)
-	p[UnisonVoices] = dsp.NewParam(8)
-
-	// Feedback Delay
-	p[FBDelayParam] = dsp.NewParam(0.35)
-	p[FBFeedBack] = dsp.NewParam(.3)
-	p[FBMix] = dsp.NewParam(.2)
-	p[FBTone] = dsp.NewParam(2000)
-	p[FBOnOff] = dsp.NewParam(1)
-
-	// Low pass filter
-	p[LPFOnOff] = dsp.NewParam(1)
-	p[LPFCutoff] = dsp.NewParam(2000)
-	p[LPFResonance] = dsp.NewParam(1)
-
-	p[LpfLfoOnOff] = dsp.NewParam(0)
-	p[LpfLfoAmount] = dsp.NewParam(1500)
-	p[LpfLfoShape] = dsp.NewParam(0) // Sine
-	p[LpfLfoFreq] = dsp.NewParam(0.5)
-	p[LpfLfoPhase] = dsp.NewParam(0)
-
-	p[LpfAdsrOnOff] = dsp.NewParam(0)
-	p[LpfAdsrAmount] = dsp.NewParam(4000)
-	p[LpfAdsrAttack] = dsp.NewParam(0.01)
-	p[LpfAdsrDecay] = dsp.NewParam(0.1)
-	p[LpfAdsrSustain] = dsp.NewParam(0)
-	p[LpfAdsrRelease] = dsp.NewParam(0.2)
+	p.setDefaults()
 
 	return p
 }
 
 func NewFromProto(pb *ProtoPreset) Preset {
-	p := NewPreset() // start with default preset, avoid missing params
+	p := make(Preset)
+	p.setDefaults()
 	for _, e := range pb.Params {
 		p[uint8(e.Id)] = dsp.NewParam(e.Value)
 	}
 	return p
 }
 
-func (p *Preset) ToProto() *ProtoPreset {
+func (p Preset) ToProto() *ProtoPreset {
 	msg := &ProtoPreset{}
-	for id, param := range *p {
+	for id, param := range p {
 		msg.Params = append(msg.Params, &ProtoParamEntry{
 			Id:    uint32(id),
 			Value: param.GetBase(),
 		})
 	}
 	return msg
+}
+
+func (p Preset) setDefaults() {
+	for _, id := range []uint8{
+		// Oscillator todo phase + pulse width
+		Osc0Shape,
+		Osc1Shape,
+		Osc2Shape,
+
+		Osc0Gain,
+		Osc1Gain,
+		Osc2Gain,
+
+		Osc0Detune,
+		Osc1Detune,
+		Osc2Detune,
+
+		Osc0Phase,
+		Osc1Phase,
+		Osc2Phase,
+
+		Osc0Pw,
+		Osc1Pw,
+		Osc2Pw,
+
+		// Pitch mod
+		PitchLfoOnOff,
+		PitchLfoAmount,
+		PitchLfoShape,
+		PitchLfoFreq,
+		PitchLfoPhase,
+
+		PitchAdsrOnOff,
+		PitchAdsrAmount,
+		PitchAdsrAttack,
+		PitchAdsrDecay,
+		PitchAdsrSustain,
+		PitchAdsrRelease,
+
+		// Amplitude envelope
+		AmpEnvAttack,
+		AmpEnvDecay,
+		AmpEnvSustain,
+		AmpEnvRelease,
+
+		// Unison (all voices share)
+		UnisonOnOff,
+		UnisonPanSpread,
+		UnisonPhaseSpread,
+		UnisonDetuneSpread,
+		UnisonCurveGamma,
+		UnisonVoices,
+
+		// Feedback Delay
+		FBDelayParam,
+		FBFeedBack,
+		FBMix,
+		FBTone,
+		FBOnOff,
+
+		// Low pass filter
+		LPFOnOff,
+		LPFCutoff,
+		LPFResonance,
+
+		LpfLfoOnOff,
+		LpfLfoAmount,
+		LpfLfoShape,
+		LpfLfoFreq,
+		LpfLfoPhase,
+
+		LpfAdsrOnOff,
+		LpfAdsrAmount,
+		LpfAdsrAttack,
+		LpfAdsrDecay,
+		LpfAdsrSustain,
+		LpfAdsrRelease,
+	} {
+		p[id] = dsp.NewParam(0)
+	}
+
+	// Output some sounds by default
+	p[Osc0Gain].SetBase(.33)
+	p[AmpEnvAttack].SetBase(0.005)
+	p[AmpEnvDecay].SetBase(0.005)
+	p[AmpEnvSustain].SetBase(0.9)
+	p[AmpEnvRelease].SetBase(0.005)
+
+	// Set default oscillator PW
+	p[Osc0Pw].SetBase(0.5)
+	p[Osc1Pw].SetBase(0.5)
+	p[Osc2Pw].SetBase(0.5)
 }

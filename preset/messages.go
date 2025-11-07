@@ -46,14 +46,20 @@ const (
 	Osc0Shape
 	Osc0Detune
 	Osc0Gain
+	Osc0Phase
+	Osc0Pw
 
 	Osc1Shape
 	Osc1Detune
 	Osc1Gain
+	Osc1Phase
+	Osc1Pw
 
 	Osc2Shape
 	Osc2Detune
 	Osc2Gain
+	Osc2Phase
+	Osc2Pw
 
 	// Low Pass Filter parameters
 	LPFOnOff

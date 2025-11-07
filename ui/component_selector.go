@@ -12,12 +12,19 @@ import (
 const (
 	SelectorBackLabelX = 44
 	SelectorBackLabelY = 175
+	BoxStartX          = 38
+	BoxStartY          = 46
+	BoxWith            = 297
+	BoxHeight          = 114
+	IconSpacing        = 25
 )
 
 type Selector struct {
-	bg       *ebiten.Image
-	node     *preset.SelectorNode
-	faceBack text.Face
+	bg          *ebiten.Image
+	node        *preset.SelectorNode
+	faceBack    text.Face
+	icons       map[float32]*ebiten.Image
+	clippingBox *ebiten.Image
 }
 
 func NewSelector(asts *assets.Loader, node *preset.SelectorNode) (*Selector, error) {
@@ -31,19 +38,58 @@ func NewSelector(asts *assets.Loader, node *preset.SelectorNode) (*Selector, err
 		return nil, err
 	}
 
+	icons := make(map[float32]*ebiten.Image)
+	for _, opt := range node.Options() {
+		if opt.Icon() != "" {
+			iconImg, err := asts.GetImage(opt.Icon())
+			if err != nil {
+				return nil, err
+			}
+			icons[opt.Value()] = iconImg
+		}
+	}
+
 	return &Selector{
-		bg:       bg,
-		node:     node,
-		faceBack: faceBack,
+		bg:          bg,
+		node:        node,
+		faceBack:    faceBack,
+		icons:       icons,
+		clippingBox: ebiten.NewImage(BoxWith, BoxHeight),
 	}, nil
 }
 
 func (s *Selector) Draw(image *ebiten.Image) {
 	image.DrawImage(s.bg, nil)
+	s.clippingBox.Clear()
 
-	// Current
-	idx := int(s.node.Val())
-	text.Draw(image, s.node.Options()[idx].Label(), s.faceBack, nil)
+	// Options
+	cur := int(s.node.Val())
+
+	for _, idx := range []int{
+		cur,
+	} {
+		option := s.node.Options()[idx]
+		icon := s.icons[option.Value()]
+
+		tw, th := text.Measure(option.Label(), s.faceBack, 0)
+		iconBds := icon.Bounds()
+
+		width := float64(iconBds.Dx()) + tw + IconSpacing
+		startX := (BoxWith - width) / 2
+
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(startX, (float64(BoxHeight)-float64(iconBds.Dy()))/2)
+		s.clippingBox.DrawImage(icon, op)
+
+		opt := &text.DrawOptions{}
+		opt.GeoM.Translate(startX+float64(iconBds.Dx())+IconSpacing, float64(iconBds.Dy())/2+float64(th)/2)
+		text.Draw(s.clippingBox, option.Label(), s.faceBack, opt)
+	}
+
+	// Clipping box draw
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(BoxStartX, BoxStartY)
+	image.DrawImage(s.clippingBox, op)
 
 	// Draw back label
 	if p := s.node.Parent(); p != nil {

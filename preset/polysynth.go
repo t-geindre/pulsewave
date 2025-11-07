@@ -40,11 +40,11 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 		pitchAdsr := dsp.NewADSR(SampleRate, preset[PitchAdsrAttack], preset[PitchAdsrDecay], preset[PitchAdsrSustain], preset[PitchAdsrRelease])
 
 		*pitchMod.ModInputs() = append(*pitchMod.ModInputs(),
-			//dsp.NewModInput(pitchLfo, NewParamSkipper(preset[PitchLfoAmount], constZero, preset[PitchLfoOnOff]), nil),
+			dsp.NewModInput(pitchLfo, NewParamSkipper(preset[PitchLfoAmount], constZero, preset[PitchLfoOnOff]), nil),
 			dsp.NewModInput(pitchAdsr, NewParamSkipper(preset[PitchAdsrAmount], constZero, preset[PitchAdsrOnOff]), nil),
 		)
 
-		// Oscillator factory
+		// Oscillator factory todo implement phase
 		oscFact := func(ph, dt dsp.Param) dsp.Node {
 			// Mixer, registry
 			mixer := dsp.NewMixer(dsp.NewParam(1), false)
@@ -52,21 +52,21 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 
 			// 0
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset[Osc0Shape], dsp.NewTunerParam(ft, preset[Osc0Detune]), ph, nil),
+				dsp.NewRegOscillator(SampleRate, reg, preset[Osc0Shape], dsp.NewTunerParam(ft, preset[Osc0Detune]), ph, preset[Osc0Pw]),
 				preset[Osc0Gain],
 				dsp.NewParam(0),
 			))
 
 			// 1
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset[Osc1Shape], dsp.NewTunerParam(ft, preset[Osc1Detune]), ph, nil),
+				dsp.NewRegOscillator(SampleRate, reg, preset[Osc1Shape], dsp.NewTunerParam(ft, preset[Osc1Detune]), ph, preset[Osc1Pw]),
 				preset[Osc1Gain],
 				dsp.NewParam(0),
 			))
 
 			// 2
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset[Osc2Shape], dsp.NewTunerParam(ft, preset[Osc2Detune]), ph, nil),
+				dsp.NewRegOscillator(SampleRate, reg, preset[Osc2Shape], dsp.NewTunerParam(ft, preset[Osc2Detune]), ph, preset[Osc2Pw]),
 				preset[Osc2Gain],
 				dsp.NewParam(0),
 			))
@@ -97,8 +97,8 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 		cutoff := dsp.NewParam(0)
 		*cutoff.ModInputs() = append(*cutoff.ModInputs(),
 			dsp.NewModInput(preset[LPFCutoff], dsp.NewParam(1), nil),
-			//dsp.NewModInput(cutoffLfo, NewParamSkipper(preset[LpfLfoAmount], constZero, preset[LpfLfoOnOff]), nil),
-			//dsp.NewModInput(cutoffAdsr, NewParamSkipper(preset[LpfAdsrAmount], constZero, preset[LpfAdsrOnOff]), nil),
+			dsp.NewModInput(cutoffLfo, NewParamSkipper(preset[LpfLfoAmount], constZero, preset[LpfLfoOnOff]), nil),
+			dsp.NewModInput(cutoffAdsr, NewParamSkipper(preset[LpfAdsrAmount], constZero, preset[LpfAdsrOnOff]), nil),
 		)
 
 		lpf := dsp.NewLowPassSVF(SampleRate, unisonSkip, cutoff, preset[LPFResonance])

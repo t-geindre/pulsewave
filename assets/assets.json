@@ -4,7 +4,12 @@
       {"name": "ui/list/arrow", "path": "assets/imgs/arrow.png"},
       {"name": "ui/list/selected", "path": "assets/imgs/selected.png"},
       {"name": "ui/slider/bg", "path": "assets/imgs/slider_bg.png"},
-      {"name": "ui/selector/bg", "path": "assets/imgs/selector_bg.png"}
+      {"name": "ui/selector/bg", "path": "assets/imgs/selector_bg.png"},
+      {"name": "ui/icons/sine_wave", "path": "assets/imgs/w_sine.png"},
+      {"name": "ui/icons/square_wave", "path":  "assets/imgs/w_square.png"},
+      {"name": "ui/icons/saw_wave", "path":  "assets/imgs/w_saw.png"},
+      {"name": "ui/icons/triangle_wave", "path":  "assets/imgs/w_triangle.png"},
+      {"name": "ui/icons/noise_wave", "path":  "assets/imgs/w_noise.png"}
     ],
     "fonts": [
       {"name": "ui/font", "path": "assets/fonts/Roboto-Medium.ttf"}
