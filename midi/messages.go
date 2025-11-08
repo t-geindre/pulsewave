@@ -6,5 +6,5 @@ const MidiSource msg.Source = 0
 
 const NoteOnKind msg.Kind = 1
 const NoteOffKind msg.Kind = 2
-const PitchBendKind msg.Kind = 4
-const ControlChangeKind msg.Kind = 3
+const PitchBendKind msg.Kind = 3
+const ControlChangeKind msg.Kind = 4

@@ -4,8 +4,8 @@ import "synth/msg"
 
 const AudioSource msg.Source = 10
 
-const ParamUpdateKind msg.Kind = 1
-const ParamPullAllKind msg.Kind = 2
+const ParamUpdateKind msg.Kind = 20
+const ParamPullAllKind msg.Kind = 21
 
 const (
 	// Unison parameters
