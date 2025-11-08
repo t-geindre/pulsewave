@@ -18,6 +18,7 @@
       {"name": "ui/list/entry", "font": "ui/font", "size": 21},
       {"name": "ui/slider/back", "font": "ui/font", "size": 21},
       {"name": "ui/slider", "font": "ui/font", "size": 45},
-      {"name": "ui/selector/back", "font": "ui/font", "size": 21}
+      {"name": "ui/selector/back", "font": "ui/font", "size": 21},
+      {"name": "ui/selector/option", "font": "ui/font", "size": 35}
     ]
 }

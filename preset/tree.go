@@ -94,7 +94,7 @@ func buildTree() Node {
 			adsrNode("Amplitude", AmpEnvAttack, AmpEnvDecay, AmpEnvSustain, AmpEnvRelease),
 			NewListNode("Cutoff",
 				NewListNode("LFO",
-					NewSliderNode("ON/OFF", LpfLfoOnOff, 0, 1, 1, formatOnOff),
+					onOffNode(LpfLfoOnOff),
 					NewSliderNode("Amount", LpfLfoAmount, 20, 20000, 1, formatHertz),
 					waveFormNode(LpfLfoShape),
 					NewSliderNode("Rate", LpfLfoFreq, 0.01, 20, .01, formatLowHertz),
@@ -107,7 +107,7 @@ func buildTree() Node {
 			NewListNode("Resonance"),
 			NewListNode("Pitch",
 				NewListNode("LFO",
-					NewSliderNode("ON/OFF", PitchLfoOnOff, 0, 1, 1, formatOnOff),
+					onOffNode(PitchLfoOnOff),
 					NewSliderNode("Amount", PitchLfoAmount, -1000, 1000, 1, formatSemiTon),
 					waveFormNode(PitchLfoShape),
 					NewSliderNode("Rate", PitchLfoFreq, 0.01, 20, .01, formatLowHertz),
@@ -120,19 +120,19 @@ func buildTree() Node {
 		),
 		NewListNode("Effects",
 			NewListNode("Feedback delay",
-				NewSliderNode("ON/OFF", FBOnOff, 0, 1, 1, formatOnOff),
+				onOffNode(FBOnOff),
 				NewSliderNode("Delay", FBDelayParam, 0, 2, .001, formatMillisecond),
 				NewSliderNode("Feedback", FBFeedBack, 0, 0.95, .01, nil),
 				NewSliderNode("Mix", FBMix, 0, 1, .01, nil),
 				NewSliderNode("Tone", FBTone, 200, 8000, 1, formatHertz),
 			),
 			NewListNode("Low pass filter",
-				NewSliderNode("ON/OFF", LPFOnOff, 0, 1, 1, formatOnOff),
+				onOffNode(LPFOnOff),
 				NewSliderNode("Cutoff", LPFCutoff, 20, 20000, 1, formatHertz),
 				NewSliderNode("Resonance", LPFResonance, 0.1, 10, .01, nil),
 			),
 			NewListNode("Unison",
-				NewSliderNode("ON/OFF", UnisonOnOff, 0, 1, 1, formatOnOff),
+				onOffNode(UnisonOnOff),
 				NewSliderNode("Voices", UnisonVoices, 1, 16, 1, func(v float32) string {
 					return fmt.Sprintf("%.0f voices", v)
 				}),
@@ -189,7 +189,14 @@ func adsrNode(label string, att, dec, sus, rel uint8, children ...Node) Node {
 
 func adsrNodeWithToggle(label string, toggle, att, dec, sus, rel uint8, children ...Node) Node {
 	node := adsrNode(label, att, dec, sus, rel, children...)
-	node.Prepend(NewSliderNode("ON/OFF", toggle, 0, 1, 1, formatOnOff))
+	node.Prepend(onOffNode(toggle))
 
 	return node
+}
+
+func onOffNode(key uint8) Node {
+	return NewSelectorNode("ON/OFF", key,
+		NewSelectorOption("OFF", "", 0),
+		NewSelectorOption("ON", "", 1),
+	)
 }

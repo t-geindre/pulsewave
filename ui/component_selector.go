@@ -13,18 +13,27 @@ const (
 	SelectorBackLabelX = 44
 	SelectorBackLabelY = 175
 	BoxStartX          = 38
-	BoxStartY          = 46
+	BoxStartY          = 40
 	BoxWith            = 297
-	BoxHeight          = 114
+	BoxHeight          = 126
 	IconSpacing        = 25
+	ScrollSpeed        = 10
 )
 
 type Selector struct {
 	bg          *ebiten.Image
 	node        *preset.SelectorNode
 	faceBack    text.Face
+	faceOption  text.Face
 	icons       map[float32]*ebiten.Image
 	clippingBox *ebiten.Image
+
+	scrollY       float64
+	targetY       float64
+	prevIndex     int
+	isMoving      bool
+	dir           int
+	currentOffset float64
 }
 
 func NewSelector(asts *assets.Loader, node *preset.SelectorNode) (*Selector, error) {
@@ -34,6 +43,11 @@ func NewSelector(asts *assets.Loader, node *preset.SelectorNode) (*Selector, err
 	}
 
 	faceBack, err := asts.GetFace("ui/selector/back")
+	if err != nil {
+		return nil, err
+	}
+
+	faceOption, err := asts.GetFace("ui/selector/option")
 	if err != nil {
 		return nil, err
 	}
@@ -53,45 +67,84 @@ func NewSelector(asts *assets.Loader, node *preset.SelectorNode) (*Selector, err
 		bg:          bg,
 		node:        node,
 		faceBack:    faceBack,
+		faceOption:  faceOption,
 		icons:       icons,
 		clippingBox: ebiten.NewImage(BoxWith, BoxHeight),
+		prevIndex:   int(node.Val()),
 	}, nil
+}
+
+func (s *Selector) Update() {
+	if !s.isMoving {
+		return
+	}
+
+	const duration = BoxHeight / ScrollSpeed
+	if s.scrollY < 1.0 {
+		s.scrollY += 1.0 / duration
+		if s.scrollY > 1.0 {
+			s.scrollY = 1.0
+		}
+	}
+
+	t := easeOutCubic(s.scrollY)
+	currentOffset := t * s.targetY
+
+	if s.scrollY >= 1.0 {
+		s.isMoving = false
+		s.scrollY = 0
+		s.targetY = 0
+	}
+
+	s.currentOffset = currentOffset
+}
+
+func (s *Selector) Scroll(delta int) {
+	if s.isMoving {
+		return
+	}
+
+	prev := int(s.node.Val())
+	v := prev + delta
+	for v < 0 {
+		v += len(s.node.Options())
+	}
+	v = v % len(s.node.Options())
+
+	s.node.SetVal(float32(v))
+	s.prevIndex = prev
+	s.isMoving = true
+
+	if delta > 0 {
+		s.dir = 1
+		s.targetY = BoxHeight
+	} else {
+		s.dir = -1
+		s.targetY = -BoxHeight
+	}
 }
 
 func (s *Selector) Draw(image *ebiten.Image) {
 	image.DrawImage(s.bg, nil)
 	s.clippingBox.Clear()
 
-	// Options
 	cur := int(s.node.Val())
+	options := s.node.Options()
 
-	for _, idx := range []int{
-		cur,
-	} {
-		option := s.node.Options()[idx]
-		icon := s.icons[option.Value()]
-
-		tw, th := text.Measure(option.Label(), s.faceBack, 0)
-		iconBds := icon.Bounds()
-
-		width := float64(iconBds.Dx()) + tw + IconSpacing
-		startX := (BoxWith - width) / 2
-
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(startX, (float64(BoxHeight)-float64(iconBds.Dy()))/2)
-		s.clippingBox.DrawImage(icon, op)
-
-		opt := &text.DrawOptions{}
-		opt.GeoM.Translate(startX+float64(iconBds.Dx())+IconSpacing, float64(iconBds.Dy())/2+float64(th)/2)
-		text.Draw(s.clippingBox, option.Label(), s.faceBack, opt)
+	if !s.isMoving {
+		s.drawOption(s.clippingBox, options[cur], 0)
+	} else {
+		prev := s.prevIndex
+		dir := s.dir
+		offset := s.currentOffset
+		s.drawOption(s.clippingBox, options[prev], -offset)
+		s.drawOption(s.clippingBox, options[cur], float64(dir)*BoxHeight-offset)
 	}
 
-	// Clipping box draw
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(BoxStartX, BoxStartY)
 	image.DrawImage(s.clippingBox, op)
 
-	// Draw back label
 	if p := s.node.Parent(); p != nil {
 		opt := &text.DrawOptions{}
 		opt.GeoM.Translate(SelectorBackLabelX, SelectorBackLabelY)
@@ -99,16 +152,38 @@ func (s *Selector) Draw(image *ebiten.Image) {
 	}
 }
 
-func (s *Selector) Update() {
-}
+func (s *Selector) drawOption(dst *ebiten.Image, opt *preset.SelectorOption, y float64) {
+	icon, hasIcon := s.icons[opt.Value()]
+	tw, th := text.Measure(opt.Label(), s.faceOption, 0)
 
-func (s *Selector) Scroll(delta int) {
-	v := int(s.node.Val()) + delta
-	for v < 0 {
-		v += len(s.node.Options())
+	var iconW, iconH float64
+	if hasIcon && icon != nil {
+		bds := icon.Bounds()
+		iconW = float64(bds.Dx())
+		iconH = float64(bds.Dy())
 	}
-	v = v % len(s.node.Options())
-	s.node.SetVal(float32(v))
+
+	spacing := 0.0
+	if hasIcon && icon != nil {
+		spacing = IconSpacing
+	}
+
+	width := iconW + spacing + tw
+	startX := (BoxWith - width) / 2
+
+	centerY := float64(BoxHeight) / 2
+
+	if hasIcon && icon != nil {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(startX, centerY-iconH/2+y)
+		dst.DrawImage(icon, op)
+	}
+
+	txt := &text.DrawOptions{}
+	txtX := startX + iconW + spacing
+	txtY := centerY - th/2 + y
+	txt.GeoM.Translate(txtX, txtY)
+	text.Draw(dst, opt.Label(), s.faceOption, txt)
 }
 
 func (s *Selector) CurrentTarget() preset.Node {
