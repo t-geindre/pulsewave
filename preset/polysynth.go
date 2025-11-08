@@ -2,6 +2,7 @@ package preset
 
 import (
 	"synth/dsp"
+	"synth/midi"
 	"synth/msg"
 )
 
@@ -154,17 +155,6 @@ func (p *Polysynth) Process(b *dsp.Block) {
 	p.Node.Process(b)
 }
 
-func (p *Polysynth) PublishParameters() {
-	for key, param := range p.parameters {
-		p.pOutQueue.TryWrite(msg.Message{
-			Source: AudioSource,
-			Kind:   ParamUpdateKind,
-			Key:    key,
-			ValF:   param.GetBase(),
-		})
-	}
-}
-
 func (p *Polysynth) HandleMessage(m msg.Message) {
 	switch m.Kind {
 	case ParamPullAllKind:
@@ -173,5 +163,27 @@ func (p *Polysynth) HandleMessage(m msg.Message) {
 		if param, ok := p.parameters[m.Key]; ok {
 			param.SetBase(m.ValF)
 		}
+	case midi.NoteOnKind:
+		// Todo handle vel properly with LUT (precalculated curve)
+		p.voice.NoteOn(int(m.Key), float32(m.Val8)/127)
+	case midi.NoteOffKind:
+		p.voice.NoteOff(int(m.Key))
+	case midi.PitchBendKind:
+		rel := float32(0)
+		if m.Val16 >= 128 || m.Val16 <= -128 {
+			rel = float32(m.Val16) / 8192.0 * 2.0 // 2 semitones range
+		}
+		p.pitch.SetBase(rel)
+	}
+}
+
+func (p *Polysynth) PublishParameters() {
+	for key, param := range p.parameters {
+		p.pOutQueue.TryWrite(msg.Message{
+			Source: AudioSource,
+			Kind:   ParamUpdateKind,
+			Key:    key,
+			ValF:   param.GetBase(),
+		})
 	}
 }
