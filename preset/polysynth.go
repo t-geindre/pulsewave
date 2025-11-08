@@ -180,10 +180,9 @@ func (p *Polysynth) HandleMessage(m msg.Message) {
 func (p *Polysynth) PublishParameters() {
 	for key, param := range p.parameters {
 		p.pOutQueue.TryWrite(msg.Message{
-			Source: AudioSource,
-			Kind:   ParamUpdateKind,
-			Key:    key,
-			ValF:   param.GetBase(),
+			Kind: ParamUpdateKind,
+			Key:  key,
+			ValF: param.GetBase(),
 		})
 	}
 }

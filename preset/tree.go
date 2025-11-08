@@ -27,17 +27,15 @@ func NewTree(pInQueue, pOutQueue *msg.Queue) *Tree {
 
 func (t *Tree) PullAll() {
 	t.pOutQueue.TryWrite(msg.Message{
-		Source: AudioSource,
-		Kind:   ParamPullAllKind,
+		Kind: ParamPullAllKind,
 	})
 }
 
 func (t *Tree) PublishUpdate(key uint8, val float32) {
 	t.pOutQueue.TryWrite(msg.Message{
-		Source: AudioSource,
-		Kind:   ParamUpdateKind,
-		Key:    key,
-		ValF:   val,
+		Kind: ParamUpdateKind,
+		Key:  key,
+		ValF: val,
 	})
 }
 

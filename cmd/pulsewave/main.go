@@ -25,15 +25,15 @@ func main() {
 
 	// Messaging : Midi
 	router := msg.NewRouter(logger())
-	midiInQ, midiInId := router.AddInput(1024)
-	midiAudioOutQ, midiAudioOutId := router.AddOutput(1024)
-	midiUiOutQ, miniUiOutId := router.AddOutput(1024)
+	midiInQ := router.AddInput(1024)
+	midiAudioOutQ := router.AddOutput(1024)
+	midiUiOutQ := router.AddOutput(1024)
 
-	router.AddRoute(midiInId, midiAudioOutId, midi.MidiSource, midi.NoteOnKind)
-	router.AddRoute(midiInId, midiAudioOutId, midi.MidiSource, midi.NoteOffKind)
-	router.AddRoute(midiInId, midiAudioOutId, midi.MidiSource, midi.PitchBendKind)
+	router.AddRoute(midiInQ, midi.NoteOnKind, midiAudioOutQ)
+	router.AddRoute(midiInQ, midi.NoteOffKind, midiAudioOutQ)
+	router.AddRoute(midiInQ, midi.PitchBendKind, midiAudioOutQ)
 
-	router.AddRoute(midiInId, miniUiOutId, midi.MidiSource, midi.ControlChangeKind)
+	router.AddRoute(midiInQ, midi.ControlChangeKind, midiUiOutQ)
 
 	// Messaging : UI/Audio Parameters - One way, no routing
 	audioParamOut := msg.NewQueue(1024)
@@ -48,15 +48,31 @@ func main() {
 	midiPlayer := midi.NewPlayer(clean, synth, midiAudioOutQ)
 
 	// Midi setup
-	midi := midi.NewListener(logger())
-	defer midi.Close()
+	midiListener := midi.NewListener(logger())
+	defer midiListener.Close()
 
-	device, err := midi.FindDevice()
+	device, err := midiListener.FindDevice()
 	if err != nil {
 		l := logger()
-		l.Warn().Err(err).Msg("failed to find midi device")
+		l.Warn().Err(err).Msg("failed to find midiListener device")
+		// TODO REMOVE ME
+		go func() {
+			for {
+				midiInQ.TryWrite(msg.Message{
+					Kind: midi.NoteOnKind,
+					Key:  60,
+				})
+				time.Sleep(500 * time.Millisecond)
+				midiInQ.TryWrite(msg.Message{
+					Kind: midi.NoteOffKind,
+					Key:  60,
+				})
+				time.Sleep(500 * time.Millisecond)
+			}
+		}()
+
 	} else {
-		err = midi.Listen(device, midiInQ)
+		err = midiListener.Listen(device, midiInQ)
 		onError(err, "failed to listen to device")
 	}
 

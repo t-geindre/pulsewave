@@ -6,49 +6,40 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// Todo decorate queue to log message drop?
 type route struct {
-	in, out int
-	src     Source
+	in, out *Queue
 	kind    Kind
 }
 
 type Router struct {
-	inputs  []*Queue
-	outputs []*Queue
-	routes  []route
-	logger  zerolog.Logger
+	inputs []*Queue
+	routes []route
+	logger zerolog.Logger
 }
 
 func NewRouter(log zerolog.Logger) *Router {
 	return &Router{
-		inputs:  make([]*Queue, 0),
-		outputs: make([]*Queue, 0),
-		routes:  make([]route, 0),
-		logger:  log.With().Str("component", "router").Logger(),
+		inputs: make([]*Queue, 0),
+		routes: make([]route, 0),
+		logger: log.With().Str("component", "router").Logger(),
 	}
 }
 
-func (r *Router) AddInput(cap int) (*Queue, int) {
-	r.inputs = append(r.inputs, NewQueue(cap))
-	idx := len(r.inputs) - 1
-
-	return r.inputs[idx], idx
+func (r *Router) AddInput(cap int) *Queue {
+	q := NewQueue(cap)
+	r.inputs = append(r.inputs, q)
+	return q
 }
 
-func (r *Router) AddOutput(cap int) (*Queue, int) {
-	r.outputs = append(r.outputs, NewQueue(cap))
-	idx := len(r.outputs) - 1
-
-	return r.outputs[idx], idx
+func (r *Router) AddOutput(cap int) *Queue {
+	return NewQueue(cap)
 }
 
-func (r *Router) AddRoute(in, out int, src Source, kind Kind) {
+func (r *Router) AddRoute(in *Queue, kind Kind, out *Queue) {
 	r.routes = append(r.routes, route{
 		in:   in,
-		out:  out,
-		src:  src,
 		kind: kind,
+		out:  out,
 	})
 }
 
@@ -66,7 +57,7 @@ func (r *Router) doRoute() bool {
 	var msg Message
 	var handled bool
 
-	for inK, input := range r.inputs {
+	for _, input := range r.inputs {
 		if !input.TryRead(&msg) {
 			continue
 		}
@@ -74,20 +65,14 @@ func (r *Router) doRoute() bool {
 		handled = true
 
 		for _, rt := range r.routes {
-			if rt.in != inK {
-				continue
-			}
-			if rt.src != msg.Source {
+			if rt.in != input {
 				continue
 			}
 			if rt.kind != msg.Kind {
 				continue
 			}
 
-			output := r.outputs[rt.out]
-			if !output.TryWrite(msg) {
-				r.logger.Warn().Int("out", rt.out).Msg("message dropped")
-			}
+			rt.out.TryWrite(msg)
 		}
 	}
 

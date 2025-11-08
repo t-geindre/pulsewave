@@ -2,8 +2,6 @@ package preset
 
 import "synth/msg"
 
-const AudioSource msg.Source = 10
-
 const ParamUpdateKind msg.Kind = 20
 const ParamPullAllKind msg.Kind = 21
 
