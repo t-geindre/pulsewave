@@ -8,13 +8,13 @@ import (
 
 type Polysynth struct {
 	dsp.Node
-	voice               *dsp.PolyVoice
-	pitch               dsp.Param
-	pOutQueue, pInQueue *msg.Queue
-	parameters          map[uint8]dsp.Param
+	voice      *dsp.PolyVoice
+	pitch      dsp.Param
+	outQ, inQ  *msg.Queue
+	parameters map[uint8]dsp.Param
 }
 
-func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth {
+func NewPolysynth(SampleRate float64, inQ, outQ *msg.Queue) *Polysynth {
 	// Parameters map
 	preset := NewPreset()
 	constZero := dsp.NewConstParam(0)
@@ -132,8 +132,8 @@ func NewPolysynth(SampleRate float64, pInQueue, pOutQueue *msg.Queue) *Polysynth
 		Node:       delaySkip,
 		voice:      poly,
 		pitch:      pitchBend,
-		pInQueue:   pInQueue,
-		pOutQueue:  pOutQueue,
+		inQ:        inQ,
+		outQ:       outQ,
 		parameters: preset,
 	}
 }
@@ -151,7 +151,7 @@ func (p *Polysynth) SetPitchBend(semiTones float32) {
 }
 
 func (p *Polysynth) Process(b *dsp.Block) {
-	p.pInQueue.Drain(10, p.HandleMessage)
+	p.inQ.Drain(10, p.HandleMessage)
 	p.Node.Process(b)
 }
 
@@ -179,7 +179,7 @@ func (p *Polysynth) HandleMessage(m msg.Message) {
 
 func (p *Polysynth) PublishParameters() {
 	for key, param := range p.parameters {
-		p.pOutQueue.TryWrite(msg.Message{
+		p.outQ.TryWrite(msg.Message{
 			Kind: ParamUpdateKind,
 			Key:  key,
 			ValF: param.GetBase(),

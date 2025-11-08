@@ -26,26 +26,29 @@ func main() {
 	// Messaging : Midi
 	router := msg.NewRouter(logger())
 	midiInQ := router.AddInput(1024)
-	midiAudioOutQ := router.AddOutput(1024)
-	midiUiOutQ := router.AddOutput(1024)
+	audioOutQ := router.AddOutput(1024)
+	audioInQ := router.AddInput(1024)
 
-	router.AddRoute(midiInQ, midi.NoteOnKind, midiAudioOutQ)
-	router.AddRoute(midiInQ, midi.NoteOffKind, midiAudioOutQ)
-	router.AddRoute(midiInQ, midi.PitchBendKind, midiAudioOutQ)
+	uiOutQ := router.AddOutput(1024)
+	uiInQ := router.AddInput(1024)
 
-	router.AddRoute(midiInQ, midi.ControlChangeKind, midiUiOutQ)
+	router.AddRoute(midiInQ, midi.NoteOnKind, audioOutQ)
+	router.AddRoute(midiInQ, midi.NoteOffKind, audioOutQ)
+	router.AddRoute(midiInQ, midi.PitchBendKind, audioOutQ)
 
-	// Messaging : UI/Audio Parameters - One way, no routing
-	audioParamOut := msg.NewQueue(1024)
-	uiParamOut := msg.NewQueue(1024)
+	router.AddRoute(midiInQ, midi.ControlChangeKind, uiOutQ)
+
+	router.AddRoute(uiInQ, preset.ParamUpdateKind, audioOutQ)
+	router.AddRoute(uiInQ, preset.ParamPullAllKind, audioOutQ)
+
+	router.AddRoute(audioInQ, preset.ParamUpdateKind, uiOutQ)
 
 	go router.Route()
 
 	// Signal Chain
-	synth := preset.NewPolysynth(SampleRate, uiParamOut, audioParamOut)
+	synth := preset.NewPolysynth(SampleRate, audioOutQ, audioInQ)
 	headroom := dsp.NewVca(synth, dsp.NewParam(0.8))
 	clean := dsp.NewLowPassSVF(SampleRate, headroom, dsp.NewParam(18000), dsp.NewParam(0.5))
-	midiPlayer := midi.NewPlayer(clean, synth, midiAudioOutQ)
 
 	// Midi setup
 	midiListener := midi.NewListener(logger())
@@ -78,7 +81,7 @@ func main() {
 
 	// Player
 	ctx := audio.NewContext(SampleRate)
-	player, err := ctx.NewPlayerF32(dsp.NewStream(midiPlayer))
+	player, err := ctx.NewPlayerF32(dsp.NewStream(clean))
 	onError(err, "failed to create player")
 
 	player.SetBufferSize(time.Millisecond * 25)
@@ -93,9 +96,9 @@ func main() {
 
 	ctrl := ui.NewMultiControls(
 		ui.NewKeyboardControls(),
-		ui.NewMidiControls(midiUiOutQ),
+		ui.NewMidiControls(uiOutQ),
 	)
-	tree := preset.NewTree(audioParamOut, uiParamOut)
+	tree := preset.NewTree(uiOutQ, uiInQ)
 
 	gui, err := ui.NewUi(asts, ctrl, tree)
 	onError(err, "failed to create gui")
