@@ -121,4 +121,6 @@ func (p Preset) setDefaults() {
 	p[Osc0Pw].SetBase(0.5)
 	p[Osc1Pw].SetBase(0.5)
 	p[Osc2Pw].SetBase(0.5)
+
+	p[UnisonVoices].SetBase(1)
 }

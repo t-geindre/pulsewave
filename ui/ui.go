@@ -2,6 +2,7 @@ package ui
 
 import (
 	"synth/assets"
+	"synth/msg"
 	"synth/preset"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -21,6 +22,8 @@ type Ui struct {
 	w, h       int
 	controls   Controls
 
+	messenger *Messenger
+
 	components map[preset.Node]Component
 	current    preset.Node
 	next       preset.Node
@@ -33,7 +36,7 @@ type Ui struct {
 	bodyClipMask *ebiten.Image
 }
 
-func NewUi(asts *assets.Loader, ctrl Controls, tree *preset.Tree) (*Ui, error) {
+func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
@@ -44,14 +47,26 @@ func NewUi(asts *assets.Loader, ctrl Controls, tree *preset.Tree) (*Ui, error) {
 	ebiten.SetWindowSize(bds.Dx(), bds.Dy())
 	ebiten.SetWindowTitle("Pulsewave")
 
+	// Menu tree + controls
+	midiCtrls := NewMidiControls()
+	ctrls := NewMultiControls(
+		NewKeyboardControls(),
+		midiCtrls,
+	)
+	tree := preset.NewTree()
+
+	messenger := NewMessenger(tree, midiCtrls, inQ, outQ)
+	messenger.PullAllParameters()
+
 	ui := &Ui{
 		background:   bg,
 		w:            bds.Dx(),
 		h:            bds.Dy(),
 		components:   make(map[preset.Node]Component),
+		messenger:    messenger,
 		current:      tree.Node,
 		tree:         tree,
-		controls:     ctrl,
+		controls:     ctrls,
 		bodyClipMask: ebiten.NewImage(BodyWidth, BodyHeight),
 		transLeft:    ebiten.NewImage(BodyWidth, BodyHeight),
 		transRight:   ebiten.NewImage(BodyWidth, BodyHeight),
@@ -66,7 +81,7 @@ func NewUi(asts *assets.Loader, ctrl Controls, tree *preset.Tree) (*Ui, error) {
 }
 
 func (u *Ui) Update() error {
-	u.tree.Update()
+	u.messenger.Update()
 
 	if u.next != nil {
 		u.nextTrans += SlideSpeed

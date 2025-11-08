@@ -59,20 +59,6 @@ func main() {
 		l := logger()
 		l.Warn().Err(err).Msg("failed to find midiListener device")
 		// TODO REMOVE ME
-		go func() {
-			for {
-				midiInQ.TryWrite(msg.Message{
-					Kind: midi.NoteOnKind,
-					Key:  60,
-				})
-				time.Sleep(500 * time.Millisecond)
-				midiInQ.TryWrite(msg.Message{
-					Kind: midi.NoteOffKind,
-					Key:  60,
-				})
-				time.Sleep(500 * time.Millisecond)
-			}
-		}()
 
 	} else {
 		err = midiListener.Listen(device, midiInQ)
@@ -94,13 +80,7 @@ func main() {
 	err = asts.Load()
 	onError(err, "failed to load assets")
 
-	ctrl := ui.NewMultiControls(
-		ui.NewKeyboardControls(),
-		ui.NewMidiControls(uiOutQ),
-	)
-	tree := preset.NewTree(uiOutQ, uiInQ)
-
-	gui, err := ui.NewUi(asts, ctrl, tree)
+	gui, err := ui.NewUi(asts, uiOutQ, uiInQ)
 	onError(err, "failed to create gui")
 
 	err = ebiten.RunGame(gui)

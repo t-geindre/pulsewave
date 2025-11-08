@@ -2,64 +2,40 @@ package preset
 
 import (
 	"fmt"
-	"synth/msg"
 )
 
 type Tree struct {
 	Node
-	pInQueue, pOutQueue *msg.Queue
-	parameters          map[uint8]ValueNode
+	parameters map[uint8]ValueNode
 }
 
-func NewTree(pInQueue, pOutQueue *msg.Queue) *Tree {
+func NewTree() *Tree {
 	t := &Tree{
 		Node:       buildTree(),
-		pInQueue:   pInQueue,
-		pOutQueue:  pOutQueue,
 		parameters: make(map[uint8]ValueNode),
 	}
-
-	t.AttachNodes(t.Node)
-	t.PullAll()
 
 	return t
 }
 
-func (t *Tree) PullAll() {
-	t.pOutQueue.TryWrite(msg.Message{
-		Kind: ParamPullAllKind,
-	})
+func (t *Tree) SetParam(key uint8, val float32) {
+	if pn, ok := t.parameters[key]; ok {
+		pn.SetVal(val)
+	}
 }
 
-func (t *Tree) PublishUpdate(key uint8, val float32) {
-	t.pOutQueue.TryWrite(msg.Message{
-		Kind: ParamUpdateKind,
-		Key:  key,
-		ValF: val,
-	})
+func (t *Tree) AttachUpdater(publish func(key uint8, val float32)) {
+	t.attachNodes(t.Node, publish)
 }
 
-func (t *Tree) Update() {
-	t.pInQueue.Drain(10, func(m msg.Message) {
-		if m.Kind == ParamUpdateKind {
-			for key, node := range t.parameters {
-				if key == m.Key {
-					node.SetVal(m.ValF)
-					break
-				}
-			}
-		}
-	})
-}
-
-func (t *Tree) AttachNodes(n Node) {
+func (t *Tree) attachNodes(n Node, f func(key uint8, val float32)) {
 	if pn, ok := n.(ValueNode); ok {
 		t.parameters[pn.Key()] = pn
-		pn.Attach(t.PublishUpdate)
+		pn.Attach(f)
 	}
 
 	for _, c := range n.Children() {
-		t.AttachNodes(c)
+		t.attachNodes(c, f)
 	}
 }
 
@@ -147,7 +123,6 @@ func buildTree() Node {
 		NewListNode("Presets",
 			NewListNode("Load preset"),
 			NewListNode("Save preset"),
-			// Todo ON/OFF, add toggle node
 			NewListNode("Auto save"),
 		),
 		NewListNode("Settings",
