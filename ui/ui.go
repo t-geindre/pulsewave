@@ -49,13 +49,16 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue) (*Ui, error) {
 
 	// Menu tree + controls
 	midiCtrls := NewMidiControls()
-	ctrls := NewMultiControls(
-		NewKeyboardControls(),
-		midiCtrls,
-	)
 	tree := preset.NewTree()
 
 	messenger := NewMessenger(tree, midiCtrls, inQ, outQ)
+
+	ctrls := NewMultiControls(
+		NewPlayControls(messenger),
+		NewKeyboardControls(),
+		midiCtrls,
+	)
+
 	messenger.PullAllParameters()
 
 	ui := &Ui{

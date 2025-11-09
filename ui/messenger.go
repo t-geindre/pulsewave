@@ -49,3 +49,20 @@ func (m *Messenger) PublishParameterUpdate(key uint8, val float32) {
 		ValF: val,
 	})
 }
+
+func (m *Messenger) NoteOn(chanNum, noteNum, velocity uint8) {
+	m.outQ.TryWrite(msg.Message{
+		Kind: midi.NoteOnKind,
+		Chan: chanNum,
+		Key:  noteNum,
+		Val8: velocity,
+	})
+}
+
+func (m *Messenger) NoteOff(chanNum, noteNum uint8) {
+	m.outQ.TryWrite(msg.Message{
+		Kind: midi.NoteOffKind,
+		Chan: chanNum,
+		Key:  noteNum,
+	})
+}
