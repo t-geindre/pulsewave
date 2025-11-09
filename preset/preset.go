@@ -32,95 +32,76 @@ func (p Preset) ToProto() *ProtoPreset {
 }
 
 func (p Preset) setDefaults() {
-	for _, id := range []uint8{
-		// Oscillator todo phase + pulse width
-		Osc0Shape,
-		Osc1Shape,
-		Osc2Shape,
+	p[Osc0Shape] = dsp.NewParam(0)
+	p[Osc1Shape] = dsp.NewParam(0)
+	p[Osc2Shape] = dsp.NewParam(0)
 
-		Osc0Gain,
-		Osc1Gain,
-		Osc2Gain,
+	p[Osc0Gain] = dsp.NewParam(0.33)
+	p[Osc1Gain] = dsp.NewParam(0)
+	p[Osc2Gain] = dsp.NewParam(0)
 
-		Osc0Detune,
-		Osc1Detune,
-		Osc2Detune,
+	p[Osc0Detune] = dsp.NewParam(0)
+	p[Osc1Detune] = dsp.NewParam(0)
+	p[Osc2Detune] = dsp.NewParam(0)
 
-		Osc0Phase,
-		Osc1Phase,
-		Osc2Phase,
+	p[Osc0Phase] = dsp.NewParam(0)
+	p[Osc1Phase] = dsp.NewParam(0)
+	p[Osc2Phase] = dsp.NewParam(0)
 
-		Osc0Pw,
-		Osc1Pw,
-		Osc2Pw,
+	p[Osc0Pw] = dsp.NewParam(0)
+	p[Osc1Pw] = dsp.NewParam(0)
+	p[Osc2Pw] = dsp.NewParam(0)
 
-		// Pitch mod
-		PitchLfoOnOff,
-		PitchLfoAmount,
-		PitchLfoShape,
-		PitchLfoFreq,
-		PitchLfoPhase,
+	// Pitch mod
+	p[PitchLfoOnOff] = dsp.NewParam(0)
+	p[PitchLfoAmount] = dsp.NewParam(0)
+	p[PitchLfoShape] = dsp.NewParam(0)
+	p[PitchLfoFreq] = dsp.NewParam(0)
+	p[PitchLfoPhase] = dsp.NewParam(0)
 
-		PitchAdsrOnOff,
-		PitchAdsrAmount,
-		PitchAdsrAttack,
-		PitchAdsrDecay,
-		PitchAdsrSustain,
-		PitchAdsrRelease,
+	p[PitchAdsrOnOff] = dsp.NewParam(0)
+	p[PitchAdsrAmount] = dsp.NewParam(0)
+	p[PitchAdsrAttack] = dsp.NewParam(0)
+	p[PitchAdsrDecay] = dsp.NewParam(0)
+	p[PitchAdsrSustain] = dsp.NewParam(0)
+	p[PitchAdsrRelease] = dsp.NewParam(0)
 
-		// Amplitude envelope
-		AmpEnvAttack,
-		AmpEnvDecay,
-		AmpEnvSustain,
-		AmpEnvRelease,
+	// Amplitude envelope
+	p[AmpEnvAttack] = dsp.NewParam(.01)
+	p[AmpEnvDecay] = dsp.NewParam(.01)
+	p[AmpEnvSustain] = dsp.NewParam(.9)
+	p[AmpEnvRelease] = dsp.NewParam(.01)
 
-		// Unison (all voices share)
-		UnisonOnOff,
-		UnisonPanSpread,
-		UnisonPhaseSpread,
-		UnisonDetuneSpread,
-		UnisonCurveGamma,
-		UnisonVoices,
+	// Unison (all voices share)
+	p[UnisonOnOff] = dsp.NewParam(0)
+	p[UnisonPanSpread] = dsp.NewParam(0)
+	p[UnisonPhaseSpread] = dsp.NewParam(0)
+	p[UnisonDetuneSpread] = dsp.NewParam(0)
+	p[UnisonCurveGamma] = dsp.NewParam(0)
+	p[UnisonVoices] = dsp.NewParam(0)
 
-		// Feedback Delay
-		FBDelayParam,
-		FBFeedBack,
-		FBMix,
-		FBTone,
-		FBOnOff,
+	// Feedback Delay
+	p[FBDelayParam] = dsp.NewParam(0)
+	p[FBFeedBack] = dsp.NewParam(0)
+	p[FBMix] = dsp.NewParam(0)
+	p[FBTone] = dsp.NewParam(0)
+	p[FBOnOff] = dsp.NewParam(0)
 
-		// Low pass filter
-		LPFOnOff,
-		LPFCutoff,
-		LPFResonance,
+	// Low pass filter
+	p[LPFOnOff] = dsp.NewParam(0)
+	p[LPFCutoff] = dsp.NewParam(0)
+	p[LPFResonance] = dsp.NewParam(0)
 
-		LpfLfoOnOff,
-		LpfLfoAmount,
-		LpfLfoShape,
-		LpfLfoFreq,
-		LpfLfoPhase,
+	p[LpfLfoOnOff] = dsp.NewParam(0)
+	p[LpfLfoAmount] = dsp.NewParam(0)
+	p[LpfLfoShape] = dsp.NewParam(0)
+	p[LpfLfoFreq] = dsp.NewParam(0)
+	p[LpfLfoPhase] = dsp.NewParam(0)
 
-		LpfAdsrOnOff,
-		LpfAdsrAmount,
-		LpfAdsrAttack,
-		LpfAdsrDecay,
-		LpfAdsrSustain,
-		LpfAdsrRelease,
-	} {
-		p[id] = dsp.NewParam(0)
-	}
-
-	// Output some sounds by default
-	p[Osc0Gain].SetBase(.33)
-	p[AmpEnvAttack].SetBase(0.005)
-	p[AmpEnvDecay].SetBase(0.005)
-	p[AmpEnvSustain].SetBase(0.9)
-	p[AmpEnvRelease].SetBase(0.005)
-
-	// Set default oscillator PW
-	p[Osc0Pw].SetBase(0.5)
-	p[Osc1Pw].SetBase(0.5)
-	p[Osc2Pw].SetBase(0.5)
-
-	p[UnisonVoices].SetBase(1)
+	p[LpfAdsrOnOff] = dsp.NewParam(0)
+	p[LpfAdsrAmount] = dsp.NewParam(0)
+	p[LpfAdsrAttack] = dsp.NewParam(0)
+	p[LpfAdsrDecay] = dsp.NewParam(0)
+	p[LpfAdsrSustain] = dsp.NewParam(0)
+	p[LpfAdsrRelease] = dsp.NewParam(0)
 }

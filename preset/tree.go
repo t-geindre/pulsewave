@@ -2,6 +2,7 @@ package preset
 
 import (
 	"fmt"
+	"synth/dsp"
 )
 
 type Tree struct {
@@ -37,6 +38,22 @@ func (t *Tree) attachNodes(n Node, f func(key uint8, val float32)) {
 	for _, c := range n.Children() {
 		t.attachNodes(c, f)
 	}
+}
+
+func (t *Tree) LoadPreset(p Preset) {
+	for key, param := range p {
+		t.SetParam(key, param.GetBase())
+	}
+}
+
+func (t *Tree) GetPreset() Preset {
+	p := NewPreset()
+
+	for key, pn := range t.parameters {
+		p[key] = dsp.NewParam(pn.Val())
+	}
+
+	return p
 }
 
 func buildTree() Node {

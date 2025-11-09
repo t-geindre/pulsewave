@@ -1,11 +1,15 @@
 package ui
 
 import (
+	"fmt"
+	"os"
 	"synth/assets"
 	"synth/msg"
 	"synth/preset"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"google.golang.org/protobuf/proto"
 )
 
 // Todo get it fron config
@@ -59,8 +63,6 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue) (*Ui, error) {
 		midiCtrls,
 	)
 
-	messenger.PullAllParameters()
-
 	ui := &Ui{
 		background:   bg,
 		w:            bds.Dx(),
@@ -80,10 +82,38 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue) (*Ui, error) {
 		return nil, err
 	}
 
+	// todo Move elsewhere
+	presetData, err := os.ReadFile("assets/presets/saved.preset")
+	if err != nil {
+		return nil, err
+	}
+	var pp preset.ProtoPreset
+	err = proto.Unmarshal(presetData, &pp)
+	if err != nil {
+		return nil, err
+	}
+	p := preset.NewFromProto(&pp)
+	ui.tree.LoadPreset(p)
+	fmt.Printf("loaded %f\n", p[preset.Osc0Shape].GetBase())
+
 	return ui, nil
 }
 
 func (u *Ui) Update() error {
+	// Todo implement a proper save dialog
+	if inpututil.IsKeyJustPressed(ebiten.KeyF5) {
+		p := u.tree.GetPreset()
+		pp := p.ToProto()
+		raw, err := proto.Marshal(pp)
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile("assets/presets/saved.preset", raw, 0644)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("saved %f\n", p[preset.Osc0Shape].GetBase())
+	}
 	u.messenger.Update()
 
 	if u.next != nil {
