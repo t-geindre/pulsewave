@@ -2,14 +2,18 @@ package dsp
 
 import (
 	"testing"
-	"time"
 )
 
 var voiceFact = func() *Voice {
 	const sr = 44100.0
 
 	freq := NewParam(440)
-	env := NewADSR(sr, time.Millisecond*10, time.Millisecond*50, 0.8, time.Millisecond*100)
+	env := NewADSR(sr,
+		NewConstParam(10/1000),
+		NewConstParam(50/1000),
+		NewConstParam(0.8),
+		NewConstParam(100/1000),
+	)
 	src := NewOscillator(sr, ShapeNoise, freq, nil, nil) // Noise = fastest
 
 	return NewVoice(src, freq, env)

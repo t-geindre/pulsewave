@@ -10,8 +10,7 @@ func TestPolysynth_ProcessNoAlloc(t *testing.T) {
 	// Poll all parameters
 	qIn, qOut := msg.NewQueue(64), msg.NewQueue(64)
 	qIn.TryWrite(msg.Message{
-		Source: AudioSource,
-		Kind:   ParamPullAllKind,
+		Kind: ParamPullAllKind,
 	})
 
 	synth := NewPolysynth(44100, qIn, qOut)
