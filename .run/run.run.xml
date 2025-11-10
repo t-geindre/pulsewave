@@ -2,9 +2,6 @@
   <configuration default="false" name="run" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="br-academy" />
     <working_directory value="$PROJECT_DIR$/synth" />
-    <envs>
-      <env name="PATH" value="%PATH%;$PROJECT_DIR$\synth\bin\midicat" />
-    </envs>
     <kind value="PACKAGE" />
     <package value="synth/cmd/pulsewave" />
     <directory value="$PROJECT_DIR$" />
