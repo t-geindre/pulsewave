@@ -115,9 +115,6 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 		p -= math.Floor(p)
 
 		switch shape {
-		case ShapeSine:
-			s.buf[i] = float32(math.Sin(twoPi * p))
-
 		case ShapeSaw:
 			y := float32(2*p - 1)
 			dt := math.Abs(float64(fb[i])) / s.sr

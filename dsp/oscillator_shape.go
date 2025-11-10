@@ -3,8 +3,7 @@ package dsp
 type OscShape int
 
 const (
-	ShapeSine OscShape = iota
-	ShapeSaw
+	ShapeSaw OscShape = iota
 	ShapeTriangle
 	ShapeSquare
 	ShapeNoise

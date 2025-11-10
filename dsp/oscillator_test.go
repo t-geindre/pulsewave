@@ -13,7 +13,6 @@ func getOscTestCases() []*oscillatorTestCase {
 	const sr = 44100.0
 
 	cases := []*oscillatorTestCase{
-		{"Sine math.sin", ShapeSine, nil, nil},
 		{"WT 1024", ShapeTableWave, NewSineWavetable(1024), nil},
 		{"WT 512", ShapeTableWave, NewSineWavetable(512), nil},
 		{"WT 256", ShapeTableWave, NewSineWavetable(256), nil},
