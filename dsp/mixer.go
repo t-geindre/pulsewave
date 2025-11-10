@@ -133,10 +133,10 @@ func (m *Mixer) Process(b *Block) {
 	}
 }
 
-func (m *Mixer) Reset() {
+func (m *Mixer) Reset(soft bool) {
 	for _, in := range m.Inputs {
 		if in != nil && in.Src != nil {
-			in.Src.Reset()
+			in.Src.Reset(soft)
 		}
 	}
 }

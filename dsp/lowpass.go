@@ -82,10 +82,10 @@ func (f *LowPassSVF) Process(b *Block) {
 	}
 }
 
-func (f *LowPassSVF) Reset() {
+func (f *LowPassSVF) Reset(soft bool) {
 	f.ic1L = 0
 	f.ic2L = 0
 	f.ic1R = 0
 	f.ic2R = 0
-	f.Src.Reset()
+	f.Src.Reset(soft)
 }

@@ -1,7 +1,7 @@
 package dsp
 
 type Resettable interface {
-	Reset()
+	Reset(bool)
 }
 
 type Envelope interface {
@@ -43,11 +43,11 @@ func NewVoice(src Node, freq Param, extra ...any) *Voice {
 func (v *Voice) NoteOn(key int, vel float32) {
 	// v.gain.SetBase(vel) todo handle vel, probably with a param modulator
 	v.freq.SetBase(MidiKeys[key])
-
-	v.Node.Reset()
+	soft := !v.envs[0].IsIdle()
+	v.Node.Reset(soft)
 
 	for _, reset := range v.resets {
-		reset.Reset()
+		reset.Reset(soft)
 	}
 
 	for _, env := range v.envs {

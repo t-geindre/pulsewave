@@ -34,8 +34,8 @@ func (p *Player) Process(block *dsp.Block) {
 	p.Node.Process(block)
 }
 
-func (p *Player) Reset() {
-	p.Node.Reset()
+func (p *Player) Reset(soft bool) {
+	p.Node.Reset(soft)
 }
 
 func (p *Player) processMessage(m msg.Message) {

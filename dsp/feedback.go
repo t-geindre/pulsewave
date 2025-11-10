@@ -149,8 +149,8 @@ func (d *FeedbackDelay) safeResolve(p Param, cycle uint64) []float32 {
 	return p.Resolve(cycle)
 }
 
-func (d *FeedbackDelay) Reset() {
-	// Todo check if we should do something here
+func (d *FeedbackDelay) Reset(bool) {
+	// delay comes after voicing, no reset needed
 }
 
 // todo move this elsewhere

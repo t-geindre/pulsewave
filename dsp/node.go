@@ -2,5 +2,5 @@ package dsp
 
 type Node interface {
 	Source
-	Reset()
+	Reset(soft bool)
 }

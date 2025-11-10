@@ -63,12 +63,12 @@ func (u *Unison) SetVoices(n int) {
 	u.pendingVoices = n
 }
 
-func (u *Unison) Reset() {
+func (u *Unison) Reset(soft bool) {
 	if u.pendingVoices > 0 {
 		u.rebuild(u.pendingVoices)
 		u.pendingVoices = 0
 	}
-	u.Mixer.Reset()
+	u.Mixer.Reset(soft)
 }
 
 func (u *Unison) Process(b *Block) {

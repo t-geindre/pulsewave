@@ -22,6 +22,6 @@ func (v *Vca) Process(b *Block) {
 	}
 }
 
-func (v *Vca) Reset() {
-	v.Node.Reset()
+func (v *Vca) Reset(soft bool) {
+	v.Node.Reset(soft)
 }

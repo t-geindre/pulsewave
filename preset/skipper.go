@@ -24,8 +24,8 @@ func (s *NodeSkipper) Process(block *dsp.Block) {
 	s.normal.Process(block)
 }
 
-func (s *NodeSkipper) Reset() {
-	s.normal.Reset()
+func (s *NodeSkipper) Reset(soft bool) {
+	s.normal.Reset(soft)
 }
 
 type ParamSkipper struct {
