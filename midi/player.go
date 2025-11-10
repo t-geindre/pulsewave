@@ -48,7 +48,7 @@ func (p *Player) processMessage(m msg.Message) {
 	case PitchBendKind:
 		rel := float32(0)
 		if m.Val16 >= 128 || m.Val16 <= -128 {
-			rel = float32(m.Val16) / 8192.0 * 2.0 // 2 semitones range
+			rel = float32(m.Val16) / 8192.0 * 4.0 // 4 semitones range
 		}
 		p.inst.SetPitchBend(rel)
 	}

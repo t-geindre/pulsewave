@@ -62,18 +62,15 @@ func (a *ADSR) NoteOff() {
 
 func coefFromTime(t float32, sr float64) float32 {
 	if t <= 0 {
-		return 0
+		return 1
 	}
 
 	return float32(1 - math.Exp(-1.0/(float64(t)*sr)))
 }
 
 func (a *ADSR) setState(s State) {
-	switch s {
-	case EnvRelease:
-		if a.state == EnvIdle {
-			return
-		}
+	if s == EnvRelease && a.state == EnvIdle {
+		return
 	}
 
 	a.state = s

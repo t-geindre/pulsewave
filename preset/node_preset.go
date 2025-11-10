@@ -63,6 +63,7 @@ func (pn *PresetNode) Validate() {
 		pn.Load()
 	case 1:
 		pn.Save()
+		pn.SetVal(0) // reset to Load, avoid accidental save
 	}
 }
 

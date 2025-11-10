@@ -56,9 +56,10 @@ func NewRegOscillator(
 }
 
 func (s *Oscillator) Reset(soft bool) {
-	if !soft {
-		s.phase = 0
+	if soft {
+		return
 	}
+	s.phase = 0
 }
 
 func (s *Oscillator) Process(block *Block) {
