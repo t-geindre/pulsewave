@@ -47,15 +47,7 @@ func NewADSR(sr float64, atk, dec, sus, rel Param) *ADSR {
 
 func (a *ADSR) NoteOn() {
 	a.gate = true
-
-	switch a.state {
-	case EnvIdle:
-		a.value = 0
-		a.setState(EnvAttack)
-
-	case EnvRelease, EnvDecay, EnvSustain, EnvAttack:
-		a.setState(EnvAttack)
-	}
+	a.setState(EnvAttack)
 }
 
 func (a *ADSR) Reset() {
@@ -65,9 +57,7 @@ func (a *ADSR) Reset() {
 
 func (a *ADSR) NoteOff() {
 	a.gate = false
-	if a.state != EnvIdle {
-		a.setState(EnvRelease)
-	}
+	a.setState(EnvRelease)
 }
 
 func coefFromTime(t float32, sr float64) float32 {
@@ -79,8 +69,16 @@ func coefFromTime(t float32, sr float64) float32 {
 }
 
 func (a *ADSR) setState(s State) {
+	switch s {
+	case EnvRelease:
+		if a.state == EnvIdle {
+			return
+		}
+	}
+
 	a.state = s
 	a.needRecalc = true
+
 }
 
 func (a *ADSR) recalc(cycle uint64) {
