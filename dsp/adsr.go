@@ -47,7 +47,14 @@ func NewADSR(sr float64, atk, dec, sus, rel Param) *ADSR {
 
 func (a *ADSR) NoteOn() {
 	a.gate = true
-	if a.state == EnvIdle || a.state == EnvRelease {
+
+	switch a.state {
+	case EnvIdle:
+		a.value = 0
+		a.setState(EnvAttack)
+
+	case EnvRelease, EnvDecay, EnvSustain, EnvAttack:
+		// retrigger doux : on repart en Attack depuis la valeur actuelle
 		a.setState(EnvAttack)
 	}
 }
