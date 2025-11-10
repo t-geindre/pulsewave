@@ -1,8 +1,7 @@
 package preset
 
 import (
-	"os"
-	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -49,16 +48,13 @@ func onOffNode(key uint8) Node {
 }
 
 func allPresetsNodes(pth string, logger zerolog.Logger) []Node {
-	files, err := os.ReadDir(pth)
+	files, err := filepath.Glob(filepath.Join(pth, "*.preset"))
 	if err != nil {
 		logger.Error().Err(err).Str("path", pth).Msg("failed to read presets directory")
 	}
 	var presets []Node
 	for _, f := range files {
-		if f.IsDir() {
-			continue
-		}
-		presets = append(presets, NewPresetNode(path.Join(pth, f.Name()), logger))
+		presets = append(presets, NewPresetNode(f, logger))
 	}
 
 	slices.SortFunc(presets, func(a, b Node) int {

@@ -51,6 +51,16 @@ func (n *ListNode) SetRoot(r Node) {
 	}
 }
 
+func (n *ListNode) Remove(child Node) {
+	for i, c := range n.children {
+		if c == child {
+			n.children = append(n.children[:i], n.children[i+1:]...)
+			child.SetParent(nil)
+			return
+		}
+	}
+}
+
 func (n *ListNode) Root() Node {
 	return n.root
 }

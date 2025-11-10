@@ -7,6 +7,7 @@ type Node interface {
 	SetParent(Node)
 	Append(Node)
 	Prepend(Node)
+	Remove(Node)
 	SetRoot(Node)
 	Root() Node
 }

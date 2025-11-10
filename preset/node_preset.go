@@ -23,7 +23,7 @@ func NewPresetNode(file string, logger zerolog.Logger) *PresetNode {
 
 	data, err := os.ReadFile(file)
 	if err != nil {
-		logger.Err(err).Msg("cannot load preset")
+		logger.Warn().Err(err).Msg("cannot load preset")
 	}
 	pp := &ProtoPreset{}
 	err = proto.Unmarshal(data, pp)
@@ -34,6 +34,9 @@ func NewPresetNode(file string, logger zerolog.Logger) *PresetNode {
 	logger = logger.With().Str("preset", pp.Name).Logger()
 
 	preset := NewPresetFromProto(pp)
+	if preset.Name == "" {
+		preset.Name = "Unknown"
+	}
 
 	return &PresetNode{
 		SelectorNode: NewSelectorNode(preset.Name, NONE,
@@ -66,7 +69,7 @@ func (pn *PresetNode) Validate() {
 func (pn *PresetNode) Load() {
 	tree, ok := pn.Root().(*Tree)
 	if !ok {
-		pn.logger.Err(ErrRootIsNotTree).Msg("cannot load preset")
+		pn.logger.Fatal().Err(ErrRootIsNotTree).Msg("cannot load preset")
 	}
 
 	tree.LoadPreset(pn.preset)
@@ -76,7 +79,7 @@ func (pn *PresetNode) Load() {
 func (pn *PresetNode) Save() {
 	tree, ok := pn.Root().(*Tree)
 	if !ok {
-		pn.logger.Err(ErrRootIsNotTree).Msg("cannot save preset")
+		pn.logger.Fatal().Err(ErrRootIsNotTree).Msg("cannot save preset")
 	}
 
 	preset := tree.GetPreset()
