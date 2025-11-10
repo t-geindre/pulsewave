@@ -72,7 +72,7 @@ func main() {
 	player, err := ctx.NewPlayerF32(dsp.NewStream(clean))
 	onError(err, "failed to create player")
 
-	player.SetBufferSize(time.Millisecond * 25)
+	player.SetBufferSize(time.Millisecond * 15)
 	player.Play()
 
 	// UI

@@ -16,7 +16,7 @@ type PlayControls struct {
 func NewPlayControls(messenger *Messenger) *PlayControls {
 	return &PlayControls{
 		keys: []*playKey{
-			{key: ebiten.KeyA, note: 60},         // C4
+			{key: ebiten.KeyA, note: 60},         // Caaaaaaaaaaza4
 			{key: ebiten.KeyS, note: 62},         // D4
 			{key: ebiten.KeyD, note: 64},         // E4
 			{key: ebiten.KeyF, note: 65},         // F4
@@ -33,6 +33,16 @@ func NewPlayControls(messenger *Messenger) *PlayControls {
 			{key: ebiten.KeyU, note: 70},         // A#4
 			{key: ebiten.KeyO, note: 73},         // C#5
 			{key: ebiten.KeyP, note: 75},         // D#5
+			{key: ebiten.KeyZ, note: 36},         // C2
+			{key: ebiten.KeyX, note: 38},         // D2
+			{key: ebiten.KeyC, note: 40},         // E2
+			{key: ebiten.KeyV, note: 41},         // F2
+			{key: ebiten.KeyB, note: 43},         // G2
+			{key: ebiten.KeyN, note: 45},         // A2
+			{key: ebiten.KeyM, note: 47},         // B2
+			{key: ebiten.KeyComma, note: 48},     // C3
+			{key: ebiten.KeyPeriod, note: 50},    // D3
+			{key: ebiten.KeySlash, note: 52},     // E3
 		},
 		messenger: messenger,
 	}

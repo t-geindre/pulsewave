@@ -8,5 +8,8 @@
     <directory value="$PROJECT_DIR$" />
     <filePath value="$PROJECT_DIR$/synth/cmd/test/main.go" />
     <method v="2" />
+        <envs>
+      <env name="PATH" value="%PATH%;$PROJECT_DIR$\synth\bin\midicat" />
+    </envs>
   </configuration>
 </component>
