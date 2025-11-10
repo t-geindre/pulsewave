@@ -2,27 +2,33 @@ package preset
 
 import "synth/dsp"
 
-type Preset map[uint8]dsp.Param
+type Preset struct {
+	Params map[uint8]dsp.Param
+	Name   string
+}
 
-func NewPreset() Preset {
-	p := make(Preset)
+func NewPreset() *Preset {
+	p := &Preset{
+		Params: make(map[uint8]dsp.Param),
+	}
 	p.setDefaults()
 
 	return p
 }
 
-func NewFromProto(pb *ProtoPreset) Preset {
-	p := make(Preset)
-	p.setDefaults()
+func NewPresetFromProto(pb *ProtoPreset) *Preset {
+	p := NewPreset()
+	p.Name = pb.Name
 	for _, e := range pb.Params {
-		p[uint8(e.Id)] = dsp.NewParam(e.Value)
+		p.Params[uint8(e.Id)] = dsp.NewParam(e.Value)
 	}
 	return p
 }
 
-func (p Preset) ToProto() *ProtoPreset {
+func (p *Preset) ToProto() *ProtoPreset {
 	msg := &ProtoPreset{}
-	for id, param := range p {
+	msg.Name = p.Name
+	for id, param := range p.Params {
 		msg.Params = append(msg.Params, &ProtoParamEntry{
 			Id:    uint32(id),
 			Value: param.GetBase(),
@@ -31,77 +37,77 @@ func (p Preset) ToProto() *ProtoPreset {
 	return msg
 }
 
-func (p Preset) setDefaults() {
-	p[Osc0Shape] = dsp.NewParam(0)
-	p[Osc1Shape] = dsp.NewParam(0)
-	p[Osc2Shape] = dsp.NewParam(0)
+func (p *Preset) setDefaults() {
+	p.Params[Osc0Shape] = dsp.NewParam(0)
+	p.Params[Osc1Shape] = dsp.NewParam(0)
+	p.Params[Osc2Shape] = dsp.NewParam(0)
 
-	p[Osc0Gain] = dsp.NewParam(0.33)
-	p[Osc1Gain] = dsp.NewParam(0)
-	p[Osc2Gain] = dsp.NewParam(0)
+	p.Params[Osc0Gain] = dsp.NewParam(0.33)
+	p.Params[Osc1Gain] = dsp.NewParam(0)
+	p.Params[Osc2Gain] = dsp.NewParam(0)
 
-	p[Osc0Detune] = dsp.NewParam(0)
-	p[Osc1Detune] = dsp.NewParam(0)
-	p[Osc2Detune] = dsp.NewParam(0)
+	p.Params[Osc0Detune] = dsp.NewParam(0)
+	p.Params[Osc1Detune] = dsp.NewParam(0)
+	p.Params[Osc2Detune] = dsp.NewParam(0)
 
-	p[Osc0Phase] = dsp.NewParam(0)
-	p[Osc1Phase] = dsp.NewParam(0)
-	p[Osc2Phase] = dsp.NewParam(0)
+	p.Params[Osc0Phase] = dsp.NewParam(0)
+	p.Params[Osc1Phase] = dsp.NewParam(0)
+	p.Params[Osc2Phase] = dsp.NewParam(0)
 
-	p[Osc0Pw] = dsp.NewParam(0)
-	p[Osc1Pw] = dsp.NewParam(0)
-	p[Osc2Pw] = dsp.NewParam(0)
+	p.Params[Osc0Pw] = dsp.NewParam(0)
+	p.Params[Osc1Pw] = dsp.NewParam(0)
+	p.Params[Osc2Pw] = dsp.NewParam(0)
 
 	// Pitch mod
-	p[PitchLfoOnOff] = dsp.NewParam(0)
-	p[PitchLfoAmount] = dsp.NewParam(0)
-	p[PitchLfoShape] = dsp.NewParam(0)
-	p[PitchLfoFreq] = dsp.NewParam(0)
-	p[PitchLfoPhase] = dsp.NewParam(0)
+	p.Params[PitchLfoOnOff] = dsp.NewParam(0)
+	p.Params[PitchLfoAmount] = dsp.NewParam(0)
+	p.Params[PitchLfoShape] = dsp.NewParam(0)
+	p.Params[PitchLfoFreq] = dsp.NewParam(0)
+	p.Params[PitchLfoPhase] = dsp.NewParam(0)
 
-	p[PitchAdsrOnOff] = dsp.NewParam(0)
-	p[PitchAdsrAmount] = dsp.NewParam(0)
-	p[PitchAdsrAttack] = dsp.NewParam(0)
-	p[PitchAdsrDecay] = dsp.NewParam(0)
-	p[PitchAdsrSustain] = dsp.NewParam(0)
-	p[PitchAdsrRelease] = dsp.NewParam(0)
+	p.Params[PitchAdsrOnOff] = dsp.NewParam(0)
+	p.Params[PitchAdsrAmount] = dsp.NewParam(0)
+	p.Params[PitchAdsrAttack] = dsp.NewParam(0)
+	p.Params[PitchAdsrDecay] = dsp.NewParam(0)
+	p.Params[PitchAdsrSustain] = dsp.NewParam(0)
+	p.Params[PitchAdsrRelease] = dsp.NewParam(0)
 
 	// Amplitude envelope
-	p[AmpEnvAttack] = dsp.NewParam(.01)
-	p[AmpEnvDecay] = dsp.NewParam(.01)
-	p[AmpEnvSustain] = dsp.NewParam(.9)
-	p[AmpEnvRelease] = dsp.NewParam(.01)
+	p.Params[AmpEnvAttack] = dsp.NewParam(10.0 / 1000)
+	p.Params[AmpEnvDecay] = dsp.NewParam(10.0 / 1000)
+	p.Params[AmpEnvSustain] = dsp.NewParam(.9)
+	p.Params[AmpEnvRelease] = dsp.NewParam(10.0 / 1000)
 
 	// Unison (all voices share)
-	p[UnisonOnOff] = dsp.NewParam(0)
-	p[UnisonPanSpread] = dsp.NewParam(0)
-	p[UnisonPhaseSpread] = dsp.NewParam(0)
-	p[UnisonDetuneSpread] = dsp.NewParam(0)
-	p[UnisonCurveGamma] = dsp.NewParam(0)
-	p[UnisonVoices] = dsp.NewParam(0)
+	p.Params[UnisonOnOff] = dsp.NewParam(0)
+	p.Params[UnisonPanSpread] = dsp.NewParam(1)
+	p.Params[UnisonPhaseSpread] = dsp.NewParam(.1)
+	p.Params[UnisonDetuneSpread] = dsp.NewParam(12)
+	p.Params[UnisonCurveGamma] = dsp.NewParam(1.5)
+	p.Params[UnisonVoices] = dsp.NewParam(4)
 
 	// Feedback Delay
-	p[FBDelayParam] = dsp.NewParam(0)
-	p[FBFeedBack] = dsp.NewParam(0)
-	p[FBMix] = dsp.NewParam(0)
-	p[FBTone] = dsp.NewParam(0)
-	p[FBOnOff] = dsp.NewParam(0)
+	p.Params[FBOnOff] = dsp.NewParam(0)
+	p.Params[FBDelayParam] = dsp.NewParam(350.0 / 1000)
+	p.Params[FBFeedBack] = dsp.NewParam(.3)
+	p.Params[FBMix] = dsp.NewParam(.3)
+	p.Params[FBTone] = dsp.NewParam(5000)
 
 	// Low pass filter
-	p[LPFOnOff] = dsp.NewParam(0)
-	p[LPFCutoff] = dsp.NewParam(0)
-	p[LPFResonance] = dsp.NewParam(0)
+	p.Params[LPFOnOff] = dsp.NewParam(0)
+	p.Params[LPFCutoff] = dsp.NewParam(3000)
+	p.Params[LPFResonance] = dsp.NewParam(1)
 
-	p[LpfLfoOnOff] = dsp.NewParam(0)
-	p[LpfLfoAmount] = dsp.NewParam(0)
-	p[LpfLfoShape] = dsp.NewParam(0)
-	p[LpfLfoFreq] = dsp.NewParam(0)
-	p[LpfLfoPhase] = dsp.NewParam(0)
+	p.Params[LpfLfoOnOff] = dsp.NewParam(0)
+	p.Params[LpfLfoAmount] = dsp.NewParam(800)
+	p.Params[LpfLfoShape] = dsp.NewParam(0)
+	p.Params[LpfLfoFreq] = dsp.NewParam(.3)
+	p.Params[LpfLfoPhase] = dsp.NewParam(0)
 
-	p[LpfAdsrOnOff] = dsp.NewParam(0)
-	p[LpfAdsrAmount] = dsp.NewParam(0)
-	p[LpfAdsrAttack] = dsp.NewParam(0)
-	p[LpfAdsrDecay] = dsp.NewParam(0)
-	p[LpfAdsrSustain] = dsp.NewParam(0)
-	p[LpfAdsrRelease] = dsp.NewParam(0)
+	p.Params[LpfAdsrOnOff] = dsp.NewParam(0)
+	p.Params[LpfAdsrAmount] = dsp.NewParam(0)
+	p.Params[LpfAdsrAttack] = dsp.NewParam(0)
+	p.Params[LpfAdsrDecay] = dsp.NewParam(0)
+	p.Params[LpfAdsrSustain] = dsp.NewParam(0)
+	p.Params[LpfAdsrRelease] = dsp.NewParam(0)
 }

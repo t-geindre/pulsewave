@@ -7,6 +7,8 @@ type Node interface {
 	SetParent(Node)
 	Append(Node)
 	Prepend(Node)
+	SetRoot(Node)
+	Root() Node
 }
 
 type AttachFunc func(uint8, float32)
@@ -18,35 +20,12 @@ type ValueNode interface {
 	Attach(AttachFunc)
 }
 
-type ParamNode struct {
-	val     float32
-	key     uint8
-	publish AttachFunc
+type OptionNode interface {
+	Node
+	ValueNode
+	Options() []*SelectorOption
 }
 
-func NewParamNode(key uint8) *ParamNode {
-	return &ParamNode{
-		key: key,
-	}
-}
-
-func (p *ParamNode) Val() float32 {
-	return p.val
-}
-
-func (p *ParamNode) SetVal(f float32) {
-	if p.val == f {
-		return
-	}
-
-	p.val = f
-	p.publish(p.key, f)
-}
-
-func (p *ParamNode) Key() uint8 {
-	return p.key
-}
-
-func (p *ParamNode) Attach(publish AttachFunc) {
-	p.publish = publish
+type OptionValidateNode interface {
+	Validate()
 }

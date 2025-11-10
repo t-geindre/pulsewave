@@ -22,10 +22,11 @@ const (
 
 type Selector struct {
 	bg          *ebiten.Image
-	node        *preset.SelectorNode
+	node        preset.OptionNode
 	faceBack    text.Face
 	faceOption  text.Face
 	icons       map[float32]*ebiten.Image
+	forward     *ebiten.Image
 	clippingBox *ebiten.Image
 
 	scrollY       float64
@@ -36,7 +37,7 @@ type Selector struct {
 	currentOffset float64
 }
 
-func NewSelector(asts *assets.Loader, node *preset.SelectorNode) (*Selector, error) {
+func NewSelector(asts *assets.Loader, node preset.OptionNode) (*Selector, error) {
 	bg, err := asts.GetImage("ui/selector/bg")
 	if err != nil {
 		return nil, err
@@ -50,6 +51,14 @@ func NewSelector(asts *assets.Loader, node *preset.SelectorNode) (*Selector, err
 	faceOption, err := asts.GetFace("ui/selector/option")
 	if err != nil {
 		return nil, err
+	}
+
+	var forward *ebiten.Image
+	if _, ok := node.(preset.OptionValidateNode); ok {
+		forward, err = asts.GetImage("ui/arrow_froward")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	icons := make(map[float32]*ebiten.Image)
@@ -68,6 +77,7 @@ func NewSelector(asts *assets.Loader, node *preset.SelectorNode) (*Selector, err
 		node:        node,
 		faceBack:    faceBack,
 		faceOption:  faceOption,
+		forward:     forward,
 		icons:       icons,
 		clippingBox: ebiten.NewImage(BoxWith, BoxHeight),
 		prevIndex:   int(node.Val()),
@@ -184,8 +194,21 @@ func (s *Selector) drawOption(dst *ebiten.Image, opt *preset.SelectorOption, y f
 	txtY := centerY - th/2 + y
 	txt.GeoM.Translate(txtX, txtY)
 	text.Draw(dst, opt.Label(), s.faceOption, txt)
+
+	if s.forward != nil {
+		op := &ebiten.DrawImageOptions{}
+		bds := s.forward.Bounds()
+		fw := float64(bds.Dx())
+		fh := float64(bds.Dy())
+		op.GeoM.Translate(BoxWith/2-fw/2+width, centerY-fh/2+y)
+		dst.DrawImage(s.forward, op)
+	}
 }
 
 func (s *Selector) CurrentTarget() preset.Node {
+	if val, ok := s.node.(preset.OptionValidateNode); ok {
+		val.Validate()
+		return s.node.Parent()
+	}
 	return nil
 }

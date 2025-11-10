@@ -49,7 +49,7 @@ func main() {
 
 	// Signal Chain
 	synth := preset.NewPolysynth(SampleRate, audioOutQ, audioInQ)
-	headroom := dsp.NewVca(synth, dsp.NewParam(0.8))
+	headroom := dsp.NewVca(synth, dsp.NewParam(0.9))
 	clean := dsp.NewLowPassSVF(SampleRate, headroom, dsp.NewParam(18000), dsp.NewParam(0.5))
 
 	// Midi setup
@@ -60,8 +60,6 @@ func main() {
 	if err != nil {
 		l := logger()
 		l.Warn().Err(err).Msg("failed to find midiListener device")
-		// TODO REMOVE ME
-
 	} else {
 		err = midiListener.Listen(device, midiInQ)
 		onError(err, "failed to listen to device")
@@ -82,7 +80,7 @@ func main() {
 	err = asts.Load()
 	onError(err, "failed to load assets")
 
-	gui, err := ui.NewUi(asts, uiOutQ, uiInQ)
+	gui, err := ui.NewUi(asts, uiOutQ, uiInQ, logger())
 	onError(err, "failed to create gui")
 
 	err = ebiten.RunGame(gui)

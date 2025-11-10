@@ -37,12 +37,12 @@ func NewPolysynth(SampleRate float64, inQ, outQ *msg.Queue) *Polysynth {
 		pitchMod := dsp.NewParam(0)
 		pitch := dsp.NewTunerParam(dsp.NewTunerParam(freq, pitchBend), pitchMod)
 
-		pitchLfo := dsp.NewRegOscillator(SampleRate, reg, preset[PitchLfoShape], preset[PitchLfoFreq], preset[PitchLfoPhase], nil)
-		pitchAdsr := dsp.NewADSR(SampleRate, preset[PitchAdsrAttack], preset[PitchAdsrDecay], preset[PitchAdsrSustain], preset[PitchAdsrRelease])
+		pitchLfo := dsp.NewRegOscillator(SampleRate, reg, preset.Params[PitchLfoShape], preset.Params[PitchLfoFreq], preset.Params[PitchLfoPhase], nil)
+		pitchAdsr := dsp.NewADSR(SampleRate, preset.Params[PitchAdsrAttack], preset.Params[PitchAdsrDecay], preset.Params[PitchAdsrSustain], preset.Params[PitchAdsrRelease])
 
 		*pitchMod.ModInputs() = append(*pitchMod.ModInputs(),
-			dsp.NewModInput(pitchLfo, NewParamSkipper(preset[PitchLfoAmount], constZero, preset[PitchLfoOnOff]), nil),
-			dsp.NewModInput(pitchAdsr, NewParamSkipper(preset[PitchAdsrAmount], constZero, preset[PitchAdsrOnOff]), nil),
+			dsp.NewModInput(pitchLfo, NewParamSkipper(preset.Params[PitchLfoAmount], constZero, preset.Params[PitchLfoOnOff]), nil),
+			dsp.NewModInput(pitchAdsr, NewParamSkipper(preset.Params[PitchAdsrAmount], constZero, preset.Params[PitchAdsrOnOff]), nil),
 		)
 
 		// Oscillator factory todo implement phase
@@ -53,22 +53,22 @@ func NewPolysynth(SampleRate float64, inQ, outQ *msg.Queue) *Polysynth {
 
 			// 0
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset[Osc0Shape], dsp.NewTunerParam(ft, preset[Osc0Detune]), ph, preset[Osc0Pw]),
-				preset[Osc0Gain],
+				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc0Shape], dsp.NewTunerParam(ft, preset.Params[Osc0Detune]), ph, preset.Params[Osc0Pw]),
+				preset.Params[Osc0Gain],
 				dsp.NewParam(0),
 			))
 
 			// 1
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset[Osc1Shape], dsp.NewTunerParam(ft, preset[Osc1Detune]), ph, preset[Osc1Pw]),
-				preset[Osc1Gain],
+				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc1Shape], dsp.NewTunerParam(ft, preset.Params[Osc1Detune]), ph, preset.Params[Osc1Pw]),
+				preset.Params[Osc1Gain],
 				dsp.NewParam(0),
 			))
 
 			// 2
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset[Osc2Shape], dsp.NewTunerParam(ft, preset[Osc2Detune]), ph, preset[Osc2Pw]),
-				preset[Osc2Gain],
+				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc2Shape], dsp.NewTunerParam(ft, preset.Params[Osc2Detune]), ph, preset.Params[Osc2Pw]),
+				preset.Params[Osc2Gain],
 				dsp.NewParam(0),
 			))
 
@@ -78,35 +78,35 @@ func NewPolysynth(SampleRate float64, inQ, outQ *msg.Queue) *Polysynth {
 		// Unison
 		unison := dsp.NewUnison(dsp.UnisonOpts{
 			SampleRate:   SampleRate,
-			NumVoices:    preset[UnisonVoices],
+			NumVoices:    preset.Params[UnisonVoices],
 			Factory:      oscFact,
-			PanSpread:    preset[UnisonPanSpread],
-			PhaseSpread:  preset[UnisonPhaseSpread],
-			DetuneSpread: preset[UnisonDetuneSpread],
-			CurveGamma:   preset[UnisonCurveGamma],
+			PanSpread:    preset.Params[UnisonPanSpread],
+			PhaseSpread:  preset.Params[UnisonPhaseSpread],
+			DetuneSpread: preset.Params[UnisonDetuneSpread],
+			CurveGamma:   preset.Params[UnisonCurveGamma],
 		})
 		unisonSkip := NewNodeSkipper(
 			unison,
 			oscFact(dsp.NewParam(0), dsp.NewParam(0)), // Unique voice
-			preset[UnisonOnOff],
+			preset.Params[UnisonOnOff],
 		)
 
 		// LPF
-		cutoffLfo := dsp.NewRegOscillator(SampleRate, reg, preset[LpfLfoShape], preset[LpfLfoFreq], preset[LpfLfoPhase], nil)
-		cutoffAdsr := dsp.NewADSR(SampleRate, preset[LpfAdsrAttack], preset[LpfAdsrDecay], preset[LpfAdsrSustain], preset[LpfAdsrRelease])
+		cutoffLfo := dsp.NewRegOscillator(SampleRate, reg, preset.Params[LpfLfoShape], preset.Params[LpfLfoFreq], preset.Params[LpfLfoPhase], nil)
+		cutoffAdsr := dsp.NewADSR(SampleRate, preset.Params[LpfAdsrAttack], preset.Params[LpfAdsrDecay], preset.Params[LpfAdsrSustain], preset.Params[LpfAdsrRelease])
 
 		cutoff := dsp.NewParam(0)
 		*cutoff.ModInputs() = append(*cutoff.ModInputs(),
-			dsp.NewModInput(preset[LPFCutoff], dsp.NewParam(1), nil),
-			dsp.NewModInput(cutoffLfo, NewParamSkipper(preset[LpfLfoAmount], constZero, preset[LpfLfoOnOff]), nil),
-			dsp.NewModInput(cutoffAdsr, NewParamSkipper(preset[LpfAdsrAmount], constZero, preset[LpfAdsrOnOff]), nil),
+			dsp.NewModInput(preset.Params[LPFCutoff], dsp.NewParam(1), nil),
+			dsp.NewModInput(cutoffLfo, NewParamSkipper(preset.Params[LpfLfoAmount], constZero, preset.Params[LpfLfoOnOff]), nil),
+			dsp.NewModInput(cutoffAdsr, NewParamSkipper(preset.Params[LpfAdsrAmount], constZero, preset.Params[LpfAdsrOnOff]), nil),
 		)
 
-		lpf := dsp.NewLowPassSVF(SampleRate, unisonSkip, cutoff, preset[LPFResonance])
-		lpfSkip := NewNodeSkipper(lpf, unisonSkip, preset[LPFOnOff])
+		lpf := dsp.NewLowPassSVF(SampleRate, unisonSkip, cutoff, preset.Params[LPFResonance])
+		lpfSkip := NewNodeSkipper(lpf, unisonSkip, preset.Params[LPFOnOff])
 
 		// Amplitude envelope
-		gainAdsr := dsp.NewADSR(SampleRate, preset[AmpEnvAttack], preset[AmpEnvDecay], preset[AmpEnvSustain], preset[AmpEnvRelease])
+		gainAdsr := dsp.NewADSR(SampleRate, preset.Params[AmpEnvAttack], preset.Params[AmpEnvDecay], preset.Params[AmpEnvSustain], preset.Params[AmpEnvRelease])
 
 		gain := dsp.NewParam(0)
 		*gain.ModInputs() = append(*gain.ModInputs(),
@@ -125,8 +125,8 @@ func NewPolysynth(SampleRate float64, inQ, outQ *msg.Queue) *Polysynth {
 	poly := dsp.NewPolyVoice(8, voiceFact)
 
 	// Delay with skipper
-	delay := dsp.NewFeedbackDelay(SampleRate, 2.0, poly, preset[FBDelayParam], preset[FBFeedBack], preset[FBMix], preset[FBTone])
-	delaySkip := NewNodeSkipper(delay, poly, preset[FBOnOff])
+	delay := dsp.NewFeedbackDelay(SampleRate, 2.0, poly, preset.Params[FBDelayParam], preset.Params[FBFeedBack], preset.Params[FBMix], preset.Params[FBTone])
+	delaySkip := NewNodeSkipper(delay, poly, preset.Params[FBOnOff])
 
 	return &Polysynth{
 		Node:       delaySkip,
@@ -134,7 +134,7 @@ func NewPolysynth(SampleRate float64, inQ, outQ *msg.Queue) *Polysynth {
 		pitch:      pitchBend,
 		inQ:        inQ,
 		outQ:       outQ,
-		parameters: preset,
+		parameters: preset.Params,
 	}
 }
 

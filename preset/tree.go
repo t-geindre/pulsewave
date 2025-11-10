@@ -1,8 +1,9 @@
 package preset
 
 import (
-	"fmt"
 	"synth/dsp"
+
+	"github.com/rs/zerolog"
 )
 
 type Tree struct {
@@ -10,11 +11,13 @@ type Tree struct {
 	parameters map[uint8]ValueNode
 }
 
-func NewTree() *Tree {
+func NewTree(logger zerolog.Logger) *Tree {
 	t := &Tree{
-		Node:       buildTree(),
+		Node:       buildTree(logger),
 		parameters: make(map[uint8]ValueNode),
 	}
+
+	t.SetRoot(t)
 
 	return t
 }
@@ -40,153 +43,34 @@ func (t *Tree) attachNodes(n Node, f func(key uint8, val float32)) {
 	}
 }
 
-func (t *Tree) LoadPreset(p Preset) {
-	for key, param := range p {
+func (t *Tree) LoadPreset(p *Preset) {
+	for key, param := range p.Params {
 		t.SetParam(key, param.GetBase())
 	}
 }
 
-func (t *Tree) GetPreset() Preset {
+func (t *Tree) GetPreset() *Preset {
 	p := NewPreset()
 
 	for key, pn := range t.parameters {
-		p[key] = dsp.NewParam(pn.Val())
+		p.Params[key] = dsp.NewParam(pn.Val())
 	}
 
 	return p
 }
 
-func buildTree() Node {
-	return NewListNode("",
-		NewListNode("Oscillators",
-			NewListNode("Oscillator 1",
-				waveFormNode(Osc0Shape),
-				NewSliderNode("Detune", Osc0Detune, -100, 100, .1, formatSemiTon),
-				NewSliderNode("Gain", Osc0Gain, 0, 1, .01, nil),
-				NewSliderNode("Phase", Osc0Phase, 0, 1, .01, formatCycle),
-				NewSliderNode("Pulse width", Osc0Pw, 0.01, 0.5, .01, nil),
-			),
-			NewListNode("Oscillator 2",
-				waveFormNode(Osc1Shape),
-				NewSliderNode("Detune", Osc1Detune, -100, 100, .1, formatSemiTon),
-				NewSliderNode("Gain", Osc1Gain, 0, 1, .01, nil),
-				NewSliderNode("Phase", Osc1Phase, 0, 1, .01, formatCycle),
-				NewSliderNode("Pulse width", Osc1Pw, 0.01, 0.5, .01, nil),
-			),
-			NewListNode("Oscillator 3",
-				waveFormNode(Osc2Shape),
-				NewSliderNode("Detune", Osc2Detune, -100, 100, .1, formatSemiTon),
-				NewSliderNode("Gain", Osc2Gain, 0, 1, .01, nil),
-				NewSliderNode("Phase", Osc2Phase, 0, 1, .01, formatCycle),
-				NewSliderNode("Pulse width", Osc2Pw, 0.01, 0.5, .01, nil),
-			),
-		),
-		NewListNode("Modulation",
-			adsrNode("Amplitude", AmpEnvAttack, AmpEnvDecay, AmpEnvSustain, AmpEnvRelease),
-			NewListNode("Cutoff",
-				NewListNode("LFO",
-					onOffNode(LpfLfoOnOff),
-					NewSliderNode("Amount", LpfLfoAmount, 20, 20000, 1, formatHertz),
-					waveFormNode(LpfLfoShape),
-					NewSliderNode("Rate", LpfLfoFreq, 0.01, 20, .01, formatLowHertz),
-					NewSliderNode("Phase", LpfLfoPhase, 0, 1, .01, formatCycle),
-				),
-				adsrNodeWithToggle("ADSR", LpfAdsrOnOff, LpfAdsrAttack, LpfAdsrDecay, LpfAdsrSustain, LpfAdsrRelease,
-					NewSliderNode("Amount", LpfAdsrAmount, -20000, 20000, 1, formatHertz),
-				),
-			),
-			NewListNode("Resonance"),
-			NewListNode("Pitch",
-				NewListNode("LFO",
-					onOffNode(PitchLfoOnOff),
-					NewSliderNode("Amount", PitchLfoAmount, -1000, 1000, 1, formatSemiTon),
-					waveFormNode(PitchLfoShape),
-					NewSliderNode("Rate", PitchLfoFreq, 0.01, 20, .01, formatLowHertz),
-					NewSliderNode("Phase", PitchLfoPhase, 0, 1, .01, formatCycle),
-				),
-				adsrNodeWithToggle("ADSR", PitchAdsrOnOff, PitchAdsrAttack, PitchAdsrDecay, PitchAdsrSustain, PitchAdsrRelease,
-					NewSliderNode("Amount", PitchAdsrAmount, -1000, 1000, 1, formatSemiTon),
-				),
-			),
-		),
-		NewListNode("Effects",
-			NewListNode("Feedback delay",
-				onOffNode(FBOnOff),
-				NewSliderNode("Delay", FBDelayParam, 0, 2, .001, formatMillisecond),
-				NewSliderNode("Feedback", FBFeedBack, 0, 0.95, .01, nil),
-				NewSliderNode("Mix", FBMix, 0, 1, .01, nil),
-				NewSliderNode("Tone", FBTone, 200, 8000, 1, formatHertz),
-			),
-			NewListNode("Low pass filter",
-				onOffNode(LPFOnOff),
-				NewSliderNode("Cutoff", LPFCutoff, 20, 20000, 1, formatHertz),
-				NewSliderNode("Resonance", LPFResonance, 0.1, 10, .01, nil),
-			),
-			NewListNode("Unison",
-				onOffNode(UnisonOnOff),
-				NewSliderNode("Voices", UnisonVoices, 1, 16, 1, func(v float32) string {
-					return fmt.Sprintf("%.0f voices", v)
-				}),
-				NewSliderNode("Pan spread", UnisonPanSpread, 0, 1, .01, nil),
-				NewSliderNode("Phase spread", UnisonPhaseSpread, 0, 1, .01, formatCycle),
-				NewSliderNode("Detune spread", UnisonDetuneSpread, 0, 100, .1, formatCent),
-				NewSliderNode("Curve gamma", UnisonCurveGamma, 0.1, 4, .1, nil),
-			),
-		),
-		NewListNode("Visualizer",
-			NewListNode("Spectrum"),
-			NewListNode("Oscilloscope"),
-		),
-		NewListNode("Presets",
-			NewListNode("Load preset"),
-			NewListNode("Save preset"),
-			NewListNode("Auto save"),
-		),
-		NewListNode("Settings",
-			NewListNode("General"),
-			NewListNode("Master gain"),
-			NewListNode("MIDI controller"),
-			NewListNode("Pitch bend"),
-			NewListNode("About"),
-		),
-	)
+func (t *Tree) Query(f func(n Node) bool) []Node {
+	var result []Node
+	t.queryNodes(t.Node, f, &result)
+	return result
 }
 
-func waveFormNode(key uint8) Node {
-	return NewSelectorNode("Waveform", key,
-		NewSelectorOption("Sine", "ui/icons/sine_wave", 0),
-		NewSelectorOption("Square", "ui/icons/square_wave", 1),
-		NewSelectorOption("Sawtooth", "ui/icons/saw_wave", 2),
-		NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
-		NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
-	)
-}
-
-func adsrNode(label string, att, dec, sus, rel uint8, children ...Node) Node {
-	n := NewListNode(label,
-		NewSliderNode("Attack", att, 0, 10, .001, formatMillisecond),
-		NewSliderNode("Decay", dec, 0, 10, .001, formatMillisecond),
-		NewSliderNode("Sustain", sus, 0, 1, .01, nil),
-		NewSliderNode("Release", rel, 0, 10, .001, formatMillisecond),
-	)
-
-	for _, c := range children {
-		n.Append(c)
+func (t *Tree) queryNodes(n Node, f func(n Node) bool, result *[]Node) {
+	if f(n) {
+		*result = append(*result, n)
 	}
 
-	return n
-}
-
-func adsrNodeWithToggle(label string, toggle, att, dec, sus, rel uint8, children ...Node) Node {
-	node := adsrNode(label, att, dec, sus, rel, children...)
-	node.Prepend(onOffNode(toggle))
-
-	return node
-}
-
-func onOffNode(key uint8) Node {
-	return NewSelectorNode("ON/OFF", key,
-		NewSelectorOption("OFF", "", 0),
-		NewSelectorOption("ON", "", 1),
-	)
+	for _, c := range n.Children() {
+		t.queryNodes(c, f, result)
+	}
 }

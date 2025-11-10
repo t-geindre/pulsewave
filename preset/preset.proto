@@ -11,4 +11,5 @@ message ProtoParamEntry {
 
 message ProtoPreset {
   repeated ProtoParamEntry params = 1;
+  string name = 2;
 }

@@ -54,7 +54,6 @@ func (a *ADSR) NoteOn() {
 		a.setState(EnvAttack)
 
 	case EnvRelease, EnvDecay, EnvSustain, EnvAttack:
-		// retrigger doux : on repart en Attack depuis la valeur actuelle
 		a.setState(EnvAttack)
 	}
 }

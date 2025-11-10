@@ -76,6 +76,7 @@ func (x *ProtoParamEntry) GetValue() float32 {
 type ProtoPreset struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Params        []*ProtoParamEntry     `protobuf:"bytes,1,rep,name=params,proto3" json:"params,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -117,6 +118,13 @@ func (x *ProtoPreset) GetParams() []*ProtoParamEntry {
 	return nil
 }
 
+func (x *ProtoPreset) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 var File_preset_preset_proto protoreflect.FileDescriptor
 
 const file_preset_preset_proto_rawDesc = "" +
@@ -124,9 +132,10 @@ const file_preset_preset_proto_rawDesc = "" +
 	"\x13preset/preset.proto\x12\x06preset\"7\n" +
 	"\x0fProtoParamEntry\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x02R\x05value\">\n" +
+	"\x05value\x18\x02 \x01(\x02R\x05value\"R\n" +
 	"\vProtoPreset\x12/\n" +
-	"\x06params\x18\x01 \x03(\v2\x17.preset.ProtoParamEntryR\x06paramsB\tZ\a/presetb\x06proto3"
+	"\x06params\x18\x01 \x03(\v2\x17.preset.ProtoParamEntryR\x06params\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04nameB\tZ\a/presetb\x06proto3"
 
 var (
 	file_preset_preset_proto_rawDescOnce sync.Once

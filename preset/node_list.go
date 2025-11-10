@@ -4,6 +4,7 @@ type ListNode struct {
 	label    string
 	children []Node
 	parent   Node
+	root     Node
 }
 
 func NewListNode(label string, children ...Node) *ListNode {
@@ -41,4 +42,15 @@ func (n *ListNode) Append(child Node) {
 func (n *ListNode) Prepend(child Node) {
 	child.SetParent(n)
 	n.children = append([]Node{child}, n.children...)
+}
+
+func (n *ListNode) SetRoot(r Node) {
+	n.root = r
+	for _, c := range n.children {
+		c.SetRoot(r)
+	}
+}
+
+func (n *ListNode) Root() Node {
+	return n.root
 }

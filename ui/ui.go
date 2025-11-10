@@ -1,15 +1,12 @@
 package ui
 
 import (
-	"fmt"
-	"os"
 	"synth/assets"
 	"synth/msg"
 	"synth/preset"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"google.golang.org/protobuf/proto"
+	"github.com/rs/zerolog"
 )
 
 // Todo get it fron config
@@ -40,7 +37,7 @@ type Ui struct {
 	bodyClipMask *ebiten.Image
 }
 
-func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue) (*Ui, error) {
+func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue, logger zerolog.Logger) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
@@ -53,7 +50,7 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue) (*Ui, error) {
 
 	// Menu tree + controls
 	midiCtrls := NewMidiControls()
-	tree := preset.NewTree()
+	tree := preset.NewTree(logger)
 
 	messenger := NewMessenger(tree, midiCtrls, inQ, outQ)
 
@@ -62,6 +59,15 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue) (*Ui, error) {
 		NewKeyboardControls(),
 		midiCtrls,
 	)
+
+	// Load first preset
+	presets := tree.Query(func(n preset.Node) bool {
+		_, ok := n.(*preset.PresetNode)
+		return ok
+	})
+	if len(presets) > 0 {
+		presets[0].(*preset.PresetNode).Load()
+	}
 
 	ui := &Ui{
 		background:   bg,
@@ -82,38 +88,10 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue) (*Ui, error) {
 		return nil, err
 	}
 
-	// todo Move elsewhere
-	presetData, err := os.ReadFile("assets/presets/saved.preset")
-	if err != nil {
-		return nil, err
-	}
-	var pp preset.ProtoPreset
-	err = proto.Unmarshal(presetData, &pp)
-	if err != nil {
-		return nil, err
-	}
-	p := preset.NewFromProto(&pp)
-	ui.tree.LoadPreset(p)
-	fmt.Printf("loaded %f\n", p[preset.Osc0Shape].GetBase())
-
 	return ui, nil
 }
 
 func (u *Ui) Update() error {
-	// Todo implement a proper save dialog
-	if inpututil.IsKeyJustPressed(ebiten.KeyF5) {
-		p := u.tree.GetPreset()
-		pp := p.ToProto()
-		raw, err := proto.Marshal(pp)
-		if err != nil {
-			return err
-		}
-		err = os.WriteFile("assets/presets/saved.preset", raw, 0644)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("saved %f\n", p[preset.Osc0Shape].GetBase())
-	}
 	u.messenger.Update()
 
 	if u.next != nil {
@@ -133,6 +111,10 @@ func (u *Ui) Update() error {
 		if tr != nil {
 			u.next = tr
 			u.transDir = 1
+			if tr == u.current.Parent() {
+				// Component sending us back up the tree should slide left
+				u.transDir = -1
+			}
 		}
 		return nil
 
@@ -209,7 +191,7 @@ func (u *Ui) buildComponents(asts *assets.Loader, n preset.Node) error {
 			}
 			u.components[node] = comp
 		}
-	case *preset.SelectorNode:
+	case preset.OptionNode:
 		comp, err := NewSelector(asts, node)
 		if err != nil {
 			return err
