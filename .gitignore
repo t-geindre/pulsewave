@@ -1,3 +1,6 @@
 # Ignore decoded presets
 assets/presets/*.json
 assets/presets/*.txtpb
+
+# Ignore benchmark results
+bench
