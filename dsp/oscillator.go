@@ -96,7 +96,7 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 
 	var phb []float32
 	if s.phaseShift != nil {
-		phb = s.phaseShift.Resolve(cycle) // 0..1 tours
+		phb = s.phaseShift.Resolve(cycle) // 0..1 cycle
 	}
 
 	const twoPi = 2 * math.Pi
