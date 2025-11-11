@@ -104,6 +104,8 @@ func encodeAll() error {
 			return err
 		}
 		fmt.Println("✅", outBin)
+
+		os.Remove(f)
 	}
 	return nil
 }
