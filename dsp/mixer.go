@@ -73,11 +73,8 @@ func (m *Mixer) Process(b *Block) {
 
 		// Fast path: no gain, no pan
 		if gainB == nil && panB == nil {
-			var tmpL, tmpR [BlockSize]float32
-			vek32.Add_Into(tmpL[:], m.accL[:], m.tmp.L[:])
-			vek32.Add_Into(tmpR[:], m.accR[:], m.tmp.R[:])
-			copy(m.accL[:], tmpL[:])
-			copy(m.accR[:], tmpR[:])
+			vek32.Add_Inplace(m.accL[:], m.tmp.L[:])
+			vek32.Add_Inplace(m.accR[:], m.tmp.R[:])
 			continue
 		}
 
@@ -95,13 +92,11 @@ func (m *Mixer) Process(b *Block) {
 			gL[i], gR[i] = g*gl, g*gr
 		}
 
-		var tmpL, tmpR, mixL, mixR [BlockSize]float32
+		var tmpL, tmpR [BlockSize]float32
 		vek32.Mul_Into(tmpL[:], m.tmp.L[:], gL[:])
 		vek32.Mul_Into(tmpR[:], m.tmp.R[:], gR[:])
-		vek32.Add_Into(mixL[:], m.accL[:], tmpL[:])
-		vek32.Add_Into(mixR[:], m.accR[:], tmpR[:])
-		copy(m.accL[:], mixL[:])
-		copy(m.accR[:], mixR[:])
+		vek32.Add_Inplace(m.accL[:], tmpL[:])
+		vek32.Add_Inplace(m.accR[:], tmpR[:])
 	}
 
 	// Apply master gain / soft clip
