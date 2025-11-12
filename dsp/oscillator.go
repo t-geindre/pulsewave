@@ -8,6 +8,10 @@ type Oscillator struct {
 	shapeRegistry *ShapeRegistry
 	shapeIndex    Param
 
+	shapeIdx  float32
+	shape     OscShape
+	wavetable *Wavetable
+
 	freq       Param
 	width      Param // ShapeSquare only
 	phaseShift Param
@@ -52,6 +56,7 @@ func NewRegOscillator(
 		phaseShift:    phaseShift,
 		width:         sqrWidth,
 		rng:           0x9E3779B9, // arbitrary non-zero seed
+		shapeIdx:      -1,         // force load shape on first Process
 	}
 }
 
@@ -75,9 +80,15 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 		return s.buf[:]
 	}
 
-	shape, wavetable := s.shapeRegistry.Get(s.shapeIndex.Resolve(cycle)[0])
+	sIdx := s.shapeIndex.Resolve(cycle)[0]
+	if sIdx != s.shapeIdx {
+		shape, wavetable := s.shapeRegistry.Get(sIdx)
+		s.shape = shape
+		s.wavetable = wavetable
+		s.shapeIdx = sIdx
+	}
 
-	if shape == ShapeNoise {
+	if s.shape == ShapeNoise {
 		for i := 0; i < BlockSize; i++ {
 			x := s.xorShift32()
 			u := float32(x) * (1.0 / 4294967296.0)
@@ -90,7 +101,7 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 	fb := s.freq.Resolve(cycle)
 
 	var wb []float32
-	if shape == ShapeSquare && s.width != nil {
+	if s.shape == ShapeSquare && s.width != nil {
 		wb = s.width.Resolve(cycle)
 	}
 
@@ -114,7 +125,7 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 
 		p -= math.Floor(p)
 
-		switch shape {
+		switch s.shape {
 		case ShapeSaw:
 			y := float32(2*p - 1)
 			dt := math.Abs(float64(fb[i])) / s.sr
@@ -155,17 +166,17 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 			s.buf[i] = 0.5 * (y1 - y2)
 
 		case ShapeTableWave:
-			pos := p * float64(wavetable.Size-1)
-			if pos >= float64(wavetable.Size) {
-				pos -= float64(wavetable.Size)
+			pos := p * float64(s.wavetable.Size-1)
+			if pos >= float64(s.wavetable.Size) {
+				pos -= float64(s.wavetable.Size)
 			}
 
 			idx := int(pos)
-			next := (idx + 1) % wavetable.Size
+			next := (idx + 1) % s.wavetable.Size
 			f := float32(pos - float64(idx))
 
-			v1 := wavetable.Table[idx]
-			v2 := wavetable.Table[next]
+			v1 := s.wavetable.Table[idx]
+			v2 := s.wavetable.Table[next]
 			s.buf[i] = v1 + f*(v2-v1)
 		}
 
