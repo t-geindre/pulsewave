@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"synth/assets"
 	"synth/dsp"
@@ -18,9 +19,27 @@ import (
 func main() {
 	const SampleRate = 44100
 
+	// Flags
+	helpF := flag.Bool("help", false, "show help")
+	debugF := flag.Bool("debug", false, "enable debug mode")
+	fullsF := flag.Bool("full-screen", false, "enable full screen mode")
+	buffF := flag.Int("buffer", 25, "disable gui")
+	flag.Parse()
+
+	// Help
+	if *helpF {
+		flag.Usage()
+		os.Exit(0)
+	}
+
 	// Debug mode
-	if len(os.Args) > 1 && os.Args[1] == "--debug" { // Todo implement flag parsing + buffer size option + device selection
+	if *debugF {
 		debugMode = true
+	}
+
+	// Full screen
+	if *fullsF {
+		ebiten.SetFullscreen(true)
 	}
 
 	// Messaging : Midi
@@ -70,7 +89,7 @@ func main() {
 	player, err := ctx.NewPlayerF32(dsp.NewStream(clean))
 	onError(err, "failed to create player")
 
-	player.SetBufferSize(time.Millisecond * 25)
+	player.SetBufferSize(time.Millisecond * time.Duration(*buffF))
 	player.Play()
 
 	// UI

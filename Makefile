@@ -49,6 +49,6 @@ dist-assets:
 	cp assets/assets.json dist/assets/assets.json
 
 .PHONY:
-dist-pi5: dist-assets
-	GOOS=linux GOARCH=arm64 CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/pulsewave ./cmd/pulsewave
+dist: dist-assets
+	CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/pulsewave ./cmd/pulsewave
 
