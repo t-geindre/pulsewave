@@ -1,6 +1,9 @@
 package ui
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
+)
 
 type playKey struct {
 	key  ebiten.Key
@@ -11,12 +14,13 @@ type playKey struct {
 type PlayControls struct {
 	keys      []*playKey
 	messenger *Messenger
+	oct       uint8
 }
 
 func NewPlayControls(messenger *Messenger) *PlayControls {
 	return &PlayControls{
 		keys: []*playKey{
-			{key: ebiten.KeyA, note: 60},         // Caaaaaaaaaaza4
+			{key: ebiten.KeyA, note: 60},         // C4
 			{key: ebiten.KeyS, note: 62},         // D4
 			{key: ebiten.KeyD, note: 64},         // E4
 			{key: ebiten.KeyF, note: 65},         // F4
@@ -49,16 +53,22 @@ func NewPlayControls(messenger *Messenger) *PlayControls {
 }
 
 func (p *PlayControls) Update() (horDelta, vertDelta int) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyPageUp) {
+		p.oct++
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyPageDown) {
+		p.oct--
+	}
 	for _, pk := range p.keys {
 		if pk.down {
 			if !ebiten.IsKeyPressed(pk.key) {
-				p.messenger.NoteOff(0, pk.note)
+				p.messenger.NoteOff(0, pk.note+p.oct*12)
 				pk.down = false
 			}
 			continue
 		}
 		if ebiten.IsKeyPressed(pk.key) {
-			p.messenger.NoteOn(0, pk.note, 100)
+			p.messenger.NoteOn(0, pk.note+p.oct*12, 100)
 			pk.down = true
 		}
 	}
