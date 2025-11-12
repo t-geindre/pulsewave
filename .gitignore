@@ -4,3 +4,6 @@ assets/presets/*.txtpb
 
 # Ignore benchmark results
 bench
+
+# Ignore build artifacts
+dist

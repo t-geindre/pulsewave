@@ -39,3 +39,16 @@ tests:
 .PHONY: proto
 proto:
 	protoc --go_out=. preset/preset.proto
+
+.PHONY: dist-assets
+dist-assets:
+	mkdir -p dist/assets
+	cp -r assets/fonts dist/assets/fonts
+	cp -r assets/imgs dist/assets/imgs
+	cp -r assets/presets dist/assets/presets
+	cp assets/assets.json dist/assets/assets.json
+
+.PHONY:
+dist-pi5: dist-assets
+	GOOS=linux GOARCH=arm64 CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/pulsewave ./cmd/pulsewave
+
