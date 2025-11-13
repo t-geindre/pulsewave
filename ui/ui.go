@@ -57,6 +57,7 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue, logger zerolog.Logger) (*U
 	ctrls := NewMultiControls(
 		NewPlayControls(messenger),
 		NewKeyboardControls(),
+		NewTouchControls(),
 		midiCtrls,
 	)
 

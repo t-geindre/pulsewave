@@ -114,6 +114,13 @@ func (s *Selector) Scroll(delta int) {
 		return
 	}
 
+	delta = -delta
+	if delta > 1 {
+		delta = 1
+	} else if delta < -1 {
+		delta = -1
+	}
+
 	prev := int(s.node.Val())
 	v := prev + delta
 	for v < 0 {
