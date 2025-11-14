@@ -1,19 +1,21 @@
 package ui
 
 import (
+	"fmt"
 	"synth/assets"
 	"synth/msg"
 	"synth/preset"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/rs/zerolog"
 )
 
 // Todo get it fron config
 const (
-	BodyWidth  = 376
+	BodyWidth  = 375
 	BodyHeight = 211
-	BodyStartX = 51
+	BodyStartX = 52
 	BodyStartY = 70
 	SlideSpeed = .08
 )
@@ -35,9 +37,11 @@ type Ui struct {
 	transLeft    *ebiten.Image
 	transRight   *ebiten.Image
 	bodyClipMask *ebiten.Image
+
+	debug bool
 }
 
-func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue, logger zerolog.Logger) (*Ui, error) {
+func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue, audiQ *AudioQueue, logger zerolog.Logger, debug bool) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
@@ -82,9 +86,10 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue, logger zerolog.Logger) (*U
 		bodyClipMask: ebiten.NewImage(BodyWidth, BodyHeight),
 		transLeft:    ebiten.NewImage(BodyWidth, BodyHeight),
 		transRight:   ebiten.NewImage(BodyWidth, BodyHeight),
+		debug:        debug,
 	}
 
-	err = ui.buildComponents(asts, ui.current)
+	err = ui.buildComponents(asts, ui.current, audiQ)
 	if err != nil {
 		return nil, err
 	}
@@ -170,13 +175,21 @@ func (u *Ui) Draw(screen *ebiten.Image) {
 	ops := &ebiten.DrawImageOptions{}
 	ops.GeoM.Translate(BodyStartX, BodyStartY)
 	screen.DrawImage(u.bodyClipMask, ops)
+
+	if u.debug {
+		ebitenutil.DebugPrintAt(
+			screen,
+			fmt.Sprintf("FPS %.0f TPS %.0f", ebiten.ActualFPS(), ebiten.ActualTPS()),
+			2, 2,
+		)
+	}
 }
 
 func (u *Ui) Layout(_, _ int) (int, int) {
 	return u.w, u.h
 }
 
-func (u *Ui) buildComponents(asts *assets.Loader, n preset.Node) error {
+func (u *Ui) buildComponents(asts *assets.Loader, n preset.Node, aq *AudioQueue) error {
 	switch node := n.(type) {
 	case *preset.SliderNode:
 		comp, err := NewSlider(asts, node)
@@ -185,8 +198,20 @@ func (u *Ui) buildComponents(asts *assets.Loader, n preset.Node) error {
 		}
 		u.components[node] = comp
 	case *preset.ListNode:
+		// todo length condition should eventually be removed
+		// invalid node should make ui creation fail
 		if len(node.Children()) > 0 {
 			comp, err := NewList(asts, node)
+			if err != nil {
+				return err
+			}
+			u.components[node] = comp
+		}
+		// todo temporary hack:
+		// the tree/menu code should be moved from preset package to its own
+		// allowing nodes for all purposes, not only preset
+		if node.Label() == "Oscilloscope" {
+			comp, err := NewOscilloscope(aq, 16384)
 			if err != nil {
 				return err
 			}
@@ -201,7 +226,7 @@ func (u *Ui) buildComponents(asts *assets.Loader, n preset.Node) error {
 	}
 
 	for _, child := range n.Children() {
-		err := u.buildComponents(asts, child)
+		err := u.buildComponents(asts, child, aq)
 		if err != nil {
 			return err
 		}

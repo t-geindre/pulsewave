@@ -66,9 +66,14 @@ func main() {
 
 	go router.Route()
 
-	// Signal Chain
+	// Main signal + audio tap	for UI
 	synth := preset.NewPolysynth(SampleRate, audioOutQ, audioInQ)
-	headroom := dsp.NewVca(synth, dsp.NewParam(0.9))
+
+	uiAudioQueue := ui.NewAudioQueue(32) // 32 blocks x 256 samples
+	synthTap := ui.NewAudioPuller(synth, uiAudioQueue)
+
+	// Clean signal
+	headroom := dsp.NewVca(synthTap, dsp.NewParam(0.9))
 	clean := dsp.NewLowPassSVF(SampleRate, headroom, dsp.NewParam(18000), dsp.NewParam(0.5))
 
 	// Midi setup
@@ -92,7 +97,7 @@ func main() {
 	err = asts.Load()
 	onError(err, "failed to load assets")
 
-	gui, err := ui.NewUi(asts, uiOutQ, uiInQ, logger())
+	gui, err := ui.NewUi(asts, uiOutQ, uiInQ, uiAudioQueue, logger(), debugMode)
 	onError(err, "failed to create gui")
 
 	err = ebiten.RunGame(gui)
