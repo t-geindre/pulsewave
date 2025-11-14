@@ -72,22 +72,15 @@ func main() {
 	clean := dsp.NewLowPassSVF(SampleRate, headroom, dsp.NewParam(18000), dsp.NewParam(0.5))
 
 	// Midi setup
-	midiListener := midi.NewListener(logger())
-	defer midiListener.Close()
-
-	device, err := midiListener.FindDevice()
-	if err != nil {
-		l := logger()
-		l.Warn().Err(err).Msg("failed to find midiListener device")
-	} else {
-		err = midiListener.Listen(device, midiInQ)
-		onError(err, "failed to listen to device")
-	}
+	mdi := midi.NewListener(logger(), midiInQ)
+	defer mdi.Close()
+	go mdi.ListenAll()
 
 	// Player
 	ctx := audio.NewContext(SampleRate)
 	player, err := ctx.NewPlayerF32(dsp.NewStream(clean))
 	onError(err, "failed to create player")
+	defer player.Close()
 
 	player.SetBufferSize(time.Millisecond * time.Duration(*buffF))
 	player.Play()

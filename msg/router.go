@@ -35,6 +35,8 @@ func (r *Router) AddOutput(cap int) *Queue {
 	return NewQueue(cap)
 }
 
+// AddRoute adds a routing rule from an input queue and message kind to an output queue.
+// If in is nil, the route applies to all inputs.
 func (r *Router) AddRoute(in *Queue, kind Kind, out *Queue) {
 	r.routes = append(r.routes, route{
 		in:   in,
@@ -65,7 +67,7 @@ func (r *Router) doRoute() bool {
 		handled = true
 
 		for _, rt := range r.routes {
-			if rt.in != input {
+			if rt.in != nil && rt.in != input {
 				continue
 			}
 			if rt.kind != msg.Kind {
