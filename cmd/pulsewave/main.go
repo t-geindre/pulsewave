@@ -58,7 +58,6 @@ func main() {
 	router.AddRoute(midiInQ, midi.ControlChangeKind, uiOutQ)
 
 	router.AddRoute(uiInQ, preset.ParamUpdateKind, audioOutQ)
-	router.AddRoute(uiInQ, preset.ParamPullAllKind, audioOutQ)
 	router.AddRoute(uiInQ, midi.NoteOnKind, audioOutQ)
 	router.AddRoute(uiInQ, midi.NoteOffKind, audioOutQ)
 

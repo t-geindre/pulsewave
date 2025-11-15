@@ -149,22 +149,9 @@ func (p *Polysynth) SetPitchBend(semiTones float32) {
 }
 
 func (p *Polysynth) HandleMessage(m msg.Message) {
-	switch m.Kind {
-	case ParamPullAllKind:
-		p.PublishParameters()
-	case ParamUpdateKind:
+	if m.Kind == ParamUpdateKind {
 		if param, ok := p.parameters[m.Key]; ok {
 			param.SetBase(m.ValF)
 		}
-	}
-}
-
-func (p *Polysynth) PublishParameters() {
-	for key, param := range p.parameters {
-		p.messenger.SendMessage(msg.Message{
-			Kind: ParamUpdateKind,
-			Key:  key,
-			ValF: param.GetBase(),
-		})
 	}
 }

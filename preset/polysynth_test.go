@@ -7,13 +7,9 @@ import (
 )
 
 func TestPolysynth_ProcessNoAlloc(t *testing.T) {
-	// Poll all parameters
-	qIn, qOut := msg.NewQueue(64), msg.NewQueue(64)
-	qIn.TryWrite(msg.Message{
-		Kind: ParamPullAllKind,
-	})
-
-	synth := NewPolysynth(44100, qIn, qOut)
+	messenger := msg.NewMessenger(msg.NewQueue(1), msg.NewQueue(1), 0)
+	synth := NewPolysynth(44100, messenger)
+	
 	for i := 0; i < 16; i++ {
 		synth.voice.NoteOn(10+i, 1.0)
 	}
