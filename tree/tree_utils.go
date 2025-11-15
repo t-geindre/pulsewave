@@ -1,4 +1,4 @@
-package preset
+package tree
 
 import (
 	"path/filepath"
@@ -19,7 +19,7 @@ func waveFormNode(key uint8) Node {
 }
 
 func adsrNode(label string, att, dec, sus, rel uint8, children ...Node) Node {
-	n := NewListNode(label,
+	n := NewNode(label,
 		NewSliderNode("Attack", att, 0, 10, .001, formatMillisecond),
 		NewSliderNode("Decay", dec, 0, 10, .001, formatMillisecond),
 		NewSliderNode("Sustain", sus, 0, 1, .01, nil),

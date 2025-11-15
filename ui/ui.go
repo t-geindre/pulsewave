@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"synth/assets"
 	"synth/msg"
-	"synth/preset"
+	"synth/tree"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -27,12 +27,12 @@ type Ui struct {
 
 	messenger *Messenger
 
-	components map[preset.Node]Component
-	current    preset.Node
-	next       preset.Node
+	components map[tree.Node]Component
+	current    tree.Node
+	next       tree.Node
 	nextTrans  float64
 	transDir   float64
-	tree       *preset.Tree
+	tree       *tree.Tree
 
 	transLeft    *ebiten.Image
 	transRight   *ebiten.Image
@@ -54,9 +54,9 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue, audiQ *AudioQueue, logger 
 
 	// Menu tree + controls
 	midiCtrls := NewMidiControls()
-	tree := preset.NewTree(logger)
+	menu := tree.NewTree(logger)
 
-	messenger := NewMessenger(tree, midiCtrls, inQ, outQ)
+	messenger := NewMessenger(menu, midiCtrls, inQ, outQ)
 
 	ctrls := NewMultiControls(
 		NewPlayControls(messenger),
@@ -66,22 +66,22 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue, audiQ *AudioQueue, logger 
 	)
 
 	// Load first preset
-	presets := tree.Query(func(n preset.Node) bool {
-		_, ok := n.(*preset.PresetNode)
+	presets := menu.Query(func(n tree.Node) bool {
+		_, ok := n.(*tree.PresetNode)
 		return ok
 	})
 	if len(presets) > 0 {
-		presets[0].(*preset.PresetNode).Load()
+		presets[0].(*tree.PresetNode).Load()
 	}
 
 	ui := &Ui{
 		background:   bg,
 		w:            bds.Dx(),
 		h:            bds.Dy(),
-		components:   make(map[preset.Node]Component),
+		components:   make(map[tree.Node]Component),
 		messenger:    messenger,
-		current:      tree.Node,
-		tree:         tree,
+		current:      menu.Node,
+		tree:         menu,
 		controls:     ctrls,
 		bodyClipMask: ebiten.NewImage(BodyWidth, BodyHeight),
 		transLeft:    ebiten.NewImage(BodyWidth, BodyHeight),
@@ -190,40 +190,40 @@ func (u *Ui) Layout(_, _ int) (int, int) {
 	return u.w, u.h
 }
 
-func (u *Ui) buildComponents(asts *assets.Loader, n preset.Node, aq *AudioQueue) error {
+func (u *Ui) buildComponents(asts *assets.Loader, n tree.Node, aq *AudioQueue) error {
 	switch node := n.(type) {
-	case *preset.SliderNode:
+	case tree.SliderNode:
 		comp, err := NewSlider(asts, node)
 		if err != nil {
 			return err
 		}
 		u.components[node] = comp
-	case *preset.ListNode:
-		// todo length condition should eventually be removed
-		// invalid node should make ui creation fail
+	case tree.SelectorNode:
+		comp, err := NewSelector(asts, node)
+		if err != nil {
+			return err
+		}
+		u.components[node] = comp
+	case tree.FeatureNode:
+		switch node.Feature() {
+		case tree.FeatureOscilloscope:
+			comp, err := NewOscilloscope(aq, 16384)
+			if err != nil {
+				return err
+			}
+			u.components[node] = comp
+			// todo add default case that errors out
+		}
+	default:
 		if len(node.Children()) > 0 {
 			comp, err := NewList(asts, node)
 			if err != nil {
 				return err
 			}
 			u.components[node] = comp
+			break
 		}
-		// todo temporary hack:
-		// the tree/menu code should be moved from preset package to its own
-		// allowing nodes for all purposes, not only preset
-		if node.Label() == "Oscilloscope" {
-			comp, err := NewOscilloscope(aq, 16384)
-			if err != nil {
-				return err
-			}
-			u.components[node] = comp
-		}
-	case preset.OptionNode:
-		comp, err := NewSelector(asts, node)
-		if err != nil {
-			return err
-		}
-		u.components[node] = comp
+		// todo Unknown leaf node type
 	}
 
 	for _, child := range n.Children() {

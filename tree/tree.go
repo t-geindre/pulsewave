@@ -1,7 +1,8 @@
-package preset
+package tree
 
 import (
 	"synth/dsp"
+	"synth/preset"
 
 	"github.com/rs/zerolog"
 )
@@ -43,14 +44,14 @@ func (t *Tree) attachNodes(n Node, f func(key uint8, val float32)) {
 	}
 }
 
-func (t *Tree) LoadPreset(p *Preset) {
+func (t *Tree) LoadPreset(p *preset.Preset) {
 	for key, param := range p.Params {
 		t.SetParam(key, param.GetBase())
 	}
 }
 
-func (t *Tree) GetPreset() *Preset {
-	p := NewPreset()
+func (t *Tree) GetPreset() *preset.Preset {
+	p := preset.NewPreset()
 
 	for key, pn := range t.parameters {
 		p.Params[key] = dsp.NewParam(pn.Val())

@@ -1,8 +1,9 @@
-package preset
+package tree
 
 import (
 	"errors"
 	"os"
+	preset2 "synth/preset"
 
 	"github.com/rs/zerolog"
 	"google.golang.org/protobuf/proto"
@@ -11,11 +12,11 @@ import (
 var ErrRootIsNotTree = errors.New("cannot load preset, root is not *Tree")
 
 type PresetNode struct {
-	preset *Preset
+	preset *preset2.Preset
 	val    float32
 	file   string
 	logger zerolog.Logger
-	*SelectorNode
+	SelectorNode
 }
 
 func NewPresetNode(file string, logger zerolog.Logger) *PresetNode {
@@ -25,7 +26,7 @@ func NewPresetNode(file string, logger zerolog.Logger) *PresetNode {
 	if err != nil {
 		logger.Warn().Err(err).Msg("cannot load preset")
 	}
-	pp := &ProtoPreset{}
+	pp := &preset2.ProtoPreset{}
 	err = proto.Unmarshal(data, pp)
 	if err != nil {
 		logger.Err(err).Msg("cannot load preset")
@@ -33,13 +34,13 @@ func NewPresetNode(file string, logger zerolog.Logger) *PresetNode {
 
 	logger = logger.With().Str("preset", pp.Name).Logger()
 
-	preset := NewPresetFromProto(pp)
+	preset := preset2.NewPresetFromProto(pp)
 	if preset.Name == "" {
 		preset.Name = "Unknown"
 	}
 
 	return &PresetNode{
-		SelectorNode: NewSelectorNode(preset.Name, NONE,
+		SelectorNode: NewSelectorNode(preset.Name, preset2.NONE,
 			NewSelectorOption("Load", "", 0),
 			NewSelectorOption("Save", "", 1),
 		),
@@ -55,6 +56,10 @@ func (pn *PresetNode) Val() float32 {
 
 func (pn *PresetNode) SetVal(v float32) {
 	pn.val = v
+}
+
+func (pn *PresetNode) RequiresValidation() bool {
+	return true
 }
 
 func (pn *PresetNode) Validate() {

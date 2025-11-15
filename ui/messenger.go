@@ -4,15 +4,16 @@ import (
 	"synth/midi"
 	"synth/msg"
 	"synth/preset"
+	"synth/tree"
 )
 
 type Messenger struct {
-	tree      *preset.Tree
+	tree      *tree.Tree
 	ctrls     *MidiControls
 	inQ, outQ *msg.Queue
 }
 
-func NewMessenger(tree *preset.Tree, ctrls *MidiControls, inQ, outQ *msg.Queue) *Messenger {
+func NewMessenger(tree *tree.Tree, ctrls *MidiControls, inQ, outQ *msg.Queue) *Messenger {
 	m := &Messenger{
 		tree:  tree,
 		ctrls: ctrls,

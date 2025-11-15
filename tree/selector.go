@@ -1,22 +1,37 @@
-package preset
+package tree
 
-type SelectorNode struct {
-	options []*SelectorOption
+type SelectorNode interface {
+	Node
+	ValueNode
 
-	*ListNode
-	*ParamNode
+	Options() []*SelectorOption
+	RequiresValidation() bool
+	Validate()
 }
 
-func NewSelectorNode(label string, key uint8, options ...*SelectorOption) *SelectorNode {
-	return &SelectorNode{
+type selectorNode struct {
+	options []*SelectorOption
+
+	ValueNode
+}
+
+func NewSelectorNode(label string, key uint8, options ...*SelectorOption) SelectorNode {
+	return &selectorNode{
 		options:   options,
-		ListNode:  NewListNode(label),
-		ParamNode: NewParamNode(key),
+		ValueNode: NewValueNode(label, key),
 	}
 }
 
-func (s *SelectorNode) Options() []*SelectorOption {
+func (s *selectorNode) Options() []*SelectorOption {
 	return s.options
+}
+
+func (s *selectorNode) RequiresValidation() bool {
+	return false
+}
+
+func (s *selectorNode) Validate() {
+	// no-op
 }
 
 type SelectorOption struct {

@@ -1,14 +1,28 @@
-package preset
+package tree
+
+type AttachFunc func(uint8, float32)
+
+type ValueNode interface {
+	Node
+
+	Val() float32
+	SetVal(float32)
+	Key() uint8
+	Attach(AttachFunc)
+}
 
 type ParamNode struct {
 	val     float32
 	key     uint8
 	publish AttachFunc
+
+	Node
 }
 
-func NewParamNode(key uint8) *ParamNode {
+func NewValueNode(label string, key uint8) *ParamNode {
 	return &ParamNode{
-		key: key,
+		key:  key,
+		Node: NewNode(label),
 	}
 }
 
@@ -31,4 +45,8 @@ func (p *ParamNode) Key() uint8 {
 
 func (p *ParamNode) Attach(publish AttachFunc) {
 	p.publish = publish
+}
+
+type OptionValidateNode interface {
+	Validate()
 }

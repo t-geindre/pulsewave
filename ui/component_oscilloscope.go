@@ -3,7 +3,7 @@ package ui
 import (
 	"image/color"
 	"synth/dsp"
-	"synth/preset"
+	"synth/tree"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -206,6 +206,6 @@ func (o *Oscilloscope) Scroll(delta int) {
 	}
 }
 
-func (o *Oscilloscope) CurrentTarget() preset.Node {
+func (o *Oscilloscope) CurrentTarget() tree.Node {
 	return nil
 }

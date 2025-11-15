@@ -2,7 +2,7 @@ package ui
 
 import (
 	"synth/assets"
-	"synth/preset"
+	"synth/tree"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -22,7 +22,7 @@ const (
 
 type Selector struct {
 	bg          *ebiten.Image
-	node        preset.OptionNode
+	node        tree.SelectorNode
 	faceBack    text.Face
 	faceOption  text.Face
 	icons       map[float32]*ebiten.Image
@@ -37,7 +37,7 @@ type Selector struct {
 	currentOffset float64
 }
 
-func NewSelector(asts *assets.Loader, node preset.OptionNode) (*Selector, error) {
+func NewSelector(asts *assets.Loader, node tree.SelectorNode) (*Selector, error) {
 	bg, err := asts.GetImage("ui/selector/bg")
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func NewSelector(asts *assets.Loader, node preset.OptionNode) (*Selector, error)
 	}
 
 	var forward *ebiten.Image
-	if _, ok := node.(preset.OptionValidateNode); ok {
+	if node.RequiresValidation() {
 		forward, err = asts.GetImage("ui/arrow_froward")
 		if err != nil {
 			return nil, err
@@ -169,7 +169,7 @@ func (s *Selector) Draw(image *ebiten.Image) {
 	}
 }
 
-func (s *Selector) drawOption(dst *ebiten.Image, opt *preset.SelectorOption, y float64) {
+func (s *Selector) drawOption(dst *ebiten.Image, opt *tree.SelectorOption, y float64) {
 	icon, hasIcon := s.icons[opt.Value()]
 	tw, th := text.Measure(opt.Label(), s.faceOption, 0)
 
@@ -212,10 +212,11 @@ func (s *Selector) drawOption(dst *ebiten.Image, opt *preset.SelectorOption, y f
 	}
 }
 
-func (s *Selector) CurrentTarget() preset.Node {
-	if val, ok := s.node.(preset.OptionValidateNode); ok {
-		val.Validate()
+func (s *Selector) CurrentTarget() tree.Node {
+	if s.node.RequiresValidation() {
+		s.node.Validate()
 		return s.node.Parent()
 	}
+
 	return nil
 }
