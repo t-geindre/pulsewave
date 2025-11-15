@@ -3,7 +3,7 @@ package preset
 import "fmt"
 
 func formatSemiTon(v float32) string {
-	return fmt.Sprintf("%.1f st", v)
+	return fmt.Sprintf("%.2f st", v)
 }
 
 func formatMillisecond(v float32) string {

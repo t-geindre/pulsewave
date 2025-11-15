@@ -101,6 +101,7 @@ func (u *Ui) Update() error {
 	u.messenger.Update()
 
 	if u.next != nil {
+		u.components[u.next].Update()
 		u.nextTrans += SlideSpeed
 		if u.nextTrans > 1 {
 			u.current = u.next
