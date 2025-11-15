@@ -1,6 +1,9 @@
 package ui
 
 import (
+	"synth/midi"
+	"synth/msg"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
@@ -13,11 +16,11 @@ type playKey struct {
 
 type PlayControls struct {
 	keys      []*playKey
-	messenger *Messenger
+	messenger *msg.Messenger
 	oct       uint8
 }
 
-func NewPlayControls(messenger *Messenger) *PlayControls {
+func NewPlayControls(messenger *msg.Messenger) *PlayControls {
 	return &PlayControls{
 		keys: []*playKey{
 			{key: ebiten.KeyA, note: 60},         // C4
@@ -62,13 +65,20 @@ func (p *PlayControls) Update() (horDelta, vertDelta int) {
 	for _, pk := range p.keys {
 		if pk.down {
 			if !ebiten.IsKeyPressed(pk.key) {
-				p.messenger.NoteOff(0, pk.note+p.oct*12)
+				p.messenger.SendMessage(msg.Message{
+					Kind: midi.NoteOffKind,
+					Key:  pk.note + p.oct*12,
+				})
 				pk.down = false
 			}
 			continue
 		}
 		if ebiten.IsKeyPressed(pk.key) {
-			p.messenger.NoteOn(0, pk.note+p.oct*12, 100)
+			p.messenger.SendMessage(msg.Message{
+				Kind: midi.NoteOnKind,
+				Key:  pk.note + p.oct*12,
+				Val8: 255, // velocity
+			})
 			pk.down = true
 		}
 	}

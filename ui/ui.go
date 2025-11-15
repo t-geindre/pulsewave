@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"synth/assets"
 	"synth/msg"
+	"synth/preset"
 	"synth/tree"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -25,7 +26,7 @@ type Ui struct {
 	w, h       int
 	controls   Controls
 
-	messenger *Messenger
+	messenger *msg.Messenger
 
 	components map[tree.Node]Component
 	current    tree.Node
@@ -41,7 +42,7 @@ type Ui struct {
 	debug bool
 }
 
-func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue, audiQ *AudioQueue, logger zerolog.Logger, debug bool) (*Ui, error) {
+func NewUi(asts *assets.Loader, messenger *msg.Messenger, audiQ *AudioQueue, logger zerolog.Logger, debug bool) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
@@ -53,16 +54,20 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue, audiQ *AudioQueue, logger 
 	ebiten.SetWindowTitle("Pulsewave")
 
 	// Menu tree + controls
-	midiCtrls := NewMidiControls()
 	menu := tree.NewTree(logger)
-
-	messenger := NewMessenger(menu, midiCtrls, inQ, outQ)
+	messenger.RegisterHandler(menu)
+	menu.AttachUpdater(func(key uint8, val float32) {
+		messenger.SendMessage(msg.Message{
+			Kind: preset.ParamUpdateKind,
+			Key:  key,
+			ValF: val,
+		})
+	})
 
 	ctrls := NewMultiControls(
 		NewPlayControls(messenger),
 		NewKeyboardControls(),
 		NewTouchControls(),
-		midiCtrls,
 	)
 
 	// Load first preset
@@ -98,7 +103,7 @@ func NewUi(asts *assets.Loader, inQ, outQ *msg.Queue, audiQ *AudioQueue, logger 
 }
 
 func (u *Ui) Update() error {
-	u.messenger.Update()
+	u.messenger.Process()
 
 	if u.next != nil {
 		u.components[u.next].Update()

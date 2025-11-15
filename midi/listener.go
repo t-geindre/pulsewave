@@ -150,6 +150,7 @@ func (l *Listener) handleMessage(message midi.Message, _ int32) {
 			Kind: NoteOffKind,
 			Key:  key,
 			Val8: val8,
+			Chan: ch,
 		})
 		l.logger.Debug().Uint8("channel", ch).Uint8("key", key).Uint8("val8", val8).Msg("Note OFF")
 	case message.GetControlChange(&ch, &key, &val8):

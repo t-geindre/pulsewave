@@ -2,7 +2,6 @@ package preset
 
 import (
 	"synth/dsp"
-	"synth/midi"
 	"synth/msg"
 )
 
@@ -10,11 +9,11 @@ type Polysynth struct {
 	dsp.Node
 	voice      *dsp.PolyVoice
 	pitch      dsp.Param
-	outQ, inQ  *msg.Queue
 	parameters map[uint8]dsp.Param
+	messenger  *msg.Messenger
 }
 
-func NewPolysynth(SampleRate float64, inQ, outQ *msg.Queue) *Polysynth {
+func NewPolysynth(SampleRate float64, messenger *msg.Messenger) *Polysynth {
 	// Parameters map
 	preset := NewPreset()
 	constZero := dsp.NewConstParam(0)
@@ -132,8 +131,7 @@ func NewPolysynth(SampleRate float64, inQ, outQ *msg.Queue) *Polysynth {
 		Node:       delaySkip,
 		voice:      poly,
 		pitch:      pitchBend,
-		inQ:        inQ,
-		outQ:       outQ,
+		messenger:  messenger,
 		parameters: preset.Params,
 	}
 }
@@ -150,11 +148,6 @@ func (p *Polysynth) SetPitchBend(semiTones float32) {
 	p.pitch.SetBase(semiTones)
 }
 
-func (p *Polysynth) Process(b *dsp.Block) {
-	p.inQ.Drain(10, p.HandleMessage)
-	p.Node.Process(b)
-}
-
 func (p *Polysynth) HandleMessage(m msg.Message) {
 	switch m.Kind {
 	case ParamPullAllKind:
@@ -163,23 +156,12 @@ func (p *Polysynth) HandleMessage(m msg.Message) {
 		if param, ok := p.parameters[m.Key]; ok {
 			param.SetBase(m.ValF)
 		}
-	case midi.NoteOnKind:
-		// Todo handle vel properly with LUT (precalculated curve)
-		p.voice.NoteOn(int(m.Key), float32(m.Val8)/127)
-	case midi.NoteOffKind:
-		p.voice.NoteOff(int(m.Key))
-	case midi.PitchBendKind:
-		rel := float32(0)
-		if m.Val16 >= 128 || m.Val16 <= -128 {
-			rel = float32(m.Val16) / 8192.0 * 2.0 // 2 semitones range
-		}
-		p.pitch.SetBase(rel)
 	}
 }
 
 func (p *Polysynth) PublishParameters() {
 	for key, param := range p.parameters {
-		p.outQ.TryWrite(msg.Message{
+		p.messenger.SendMessage(msg.Message{
 			Kind: ParamUpdateKind,
 			Key:  key,
 			ValF: param.GetBase(),

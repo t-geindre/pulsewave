@@ -42,7 +42,7 @@ func main() {
 		ebiten.SetFullscreen(true)
 	}
 
-	// Messaging : Midi
+	// Messaging
 	router := msg.NewRouter(logger())
 	midiInQ := router.AddInput(1024)
 	audioOutQ := router.AddOutput(1024)
@@ -66,11 +66,21 @@ func main() {
 
 	go router.Route()
 
-	// Main signal + audio tap	for UI
-	synth := preset.NewPolysynth(SampleRate, audioOutQ, audioInQ)
+	// Audio messenger
+	audioMessenger := msg.NewMessenger(audioOutQ, audioInQ, 10)
 
+	// Main signal + messenger process injection
+	synth := preset.NewPolysynth(SampleRate, audioMessenger)
+	withMessenger := dsp.NewCallback(func(block *dsp.Block) {
+		audioMessenger.Process()
+	}, synth)
+
+	audioMessenger.RegisterHandler(midi.NewPlayer(synth))
+	audioMessenger.RegisterHandler(synth)
+
+	// Audio tap
 	uiAudioQueue := ui.NewAudioQueue(32) // 32 blocks x 256 samples
-	synthTap := ui.NewAudioPuller(synth, uiAudioQueue)
+	synthTap := ui.NewAudioPuller(withMessenger, uiAudioQueue)
 
 	// Clean signal
 	headroom := dsp.NewVca(synthTap, dsp.NewParam(0.9))
@@ -97,7 +107,8 @@ func main() {
 	err = asts.Load()
 	onError(err, "failed to load assets")
 
-	gui, err := ui.NewUi(asts, uiOutQ, uiInQ, uiAudioQueue, logger(), debugMode)
+	uiMessenger := msg.NewMessenger(uiOutQ, uiInQ, 0)
+	gui, err := ui.NewUi(asts, uiMessenger, uiAudioQueue, logger(), debugMode)
 	onError(err, "failed to create gui")
 
 	err = ebiten.RunGame(gui)

@@ -1,7 +1,6 @@
 package midi
 
 import (
-	"synth/dsp"
 	"synth/msg"
 )
 
@@ -12,33 +11,16 @@ type Instrument interface {
 }
 
 type Player struct {
-	dsp.Node
-	inst  Instrument
-	queue *msg.Queue
-	msg   msg.Message
+	inst Instrument
 }
 
-func NewPlayer(src dsp.Node, inst Instrument, queue *msg.Queue) *Player {
+func NewPlayer(inst Instrument) *Player {
 	return &Player{
-		Node:  src,
-		inst:  inst,
-		queue: queue,
+		inst: inst,
 	}
 }
 
-func (p *Player) Process(block *dsp.Block) {
-	for p.queue.TryRead(&p.msg) {
-		p.processMessage(p.msg)
-	}
-
-	p.Node.Process(block)
-}
-
-func (p *Player) Reset(soft bool) {
-	p.Node.Reset(soft)
-}
-
-func (p *Player) processMessage(m msg.Message) {
+func (p *Player) HandleMessage(m msg.Message) {
 	switch m.Kind {
 	case NoteOnKind:
 		// Todo handle vel properly with LUT (precalculated curve)

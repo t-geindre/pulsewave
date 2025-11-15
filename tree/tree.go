@@ -2,6 +2,7 @@ package tree
 
 import (
 	"synth/dsp"
+	"synth/msg"
 	"synth/preset"
 
 	"github.com/rs/zerolog"
@@ -26,6 +27,12 @@ func NewTree(logger zerolog.Logger) *Tree {
 func (t *Tree) SetParam(key uint8, val float32) {
 	if pn, ok := t.parameters[key]; ok {
 		pn.SetVal(val)
+	}
+}
+
+func (t *Tree) HandleMessage(msg msg.Message) {
+	if msg.Kind == preset.ParamUpdateKind {
+		t.SetParam(msg.Key, msg.ValF)
 	}
 }
 
