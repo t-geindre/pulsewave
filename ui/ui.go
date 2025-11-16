@@ -7,7 +7,6 @@ import (
 	"synth/tree"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 var ErrorUnknownNodeType = fmt.Errorf("unknown node type")
@@ -39,7 +38,7 @@ type Ui struct {
 	transRight   *ebiten.Image
 	bodyClipMask *ebiten.Image
 
-	drawFtps bool
+	ftps *Ftps
 }
 
 func NewUi(asts *assets.Loader, messenger *msg.Messenger, audiQ *AudioQueue, presets []string) (*Ui, error) {
@@ -165,12 +164,8 @@ func (u *Ui) Draw(screen *ebiten.Image) {
 	ops.GeoM.Translate(BodyStartX, BodyStartY)
 	screen.DrawImage(u.bodyClipMask, ops)
 
-	if u.drawFtps {
-		ebitenutil.DebugPrintAt(
-			screen,
-			fmt.Sprintf("FPS %.0f TPS %.0f", ebiten.ActualFPS(), ebiten.ActualTPS()),
-			2, 2,
-		)
+	if u.ftps != nil {
+		u.ftps.Draw(screen)
 	}
 }
 
@@ -225,5 +220,9 @@ func (u *Ui) buildComponents(asts *assets.Loader, n tree.Node, aq *AudioQueue) e
 }
 
 func (u *Ui) ToggleFpsDisplay() {
-	u.drawFtps = !u.drawFtps
+	if u.ftps == nil {
+		u.ftps = NewFtps()
+		return
+	}
+	u.ftps = nil
 }
