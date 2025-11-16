@@ -2,6 +2,7 @@ package preset
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -106,23 +107,25 @@ func (m *Manager) savePreset(p int) {
 	preset := m.voices[p].preset
 	m.voices[p].voice.HydratePreset(preset)
 
+	logger := m.logger.With().
+		Str("preset", preset.Name).
+		Str("file", m.voices[p].file).
+		Logger()
+
 	prt := preset.ToProto()
 	raw, err := proto.Marshal(prt)
 	if err != nil {
-		m.logger.Error().Err(err).Msg("failed to marshal preset")
+		logger.Error().Err(err).Msg("failed to marshal preset")
 		return
 	}
 
 	err = os.WriteFile(m.voices[p].file, raw, 0644)
 	if err != nil {
-		m.logger.Error().Err(err).Msg("failed to write preset file")
+		logger.Error().Err(err).Msg("failed to write preset file")
 		return
 	}
 
-	m.logger.Info().
-		Str("preset", preset.Name).
-		Str("file", m.voices[p].file).
-		Msg("preset saved")
+	logger.Info().Msg("preset saved")
 }
 
 func (m *Manager) buildFromPath(sr float64, pth string) {
@@ -147,7 +150,7 @@ func (m *Manager) buildFromPath(sr float64, pth string) {
 		}
 
 		preset := NewPresetFromProto(prt)
-		m.addVoice(preset, sr)
+		m.addVoice(preset, sr, f)
 
 		m.logger.Info().
 			Str("preset", preset.Name).
@@ -164,13 +167,14 @@ func (m *Manager) buildFromPath(sr float64, pth string) {
 	}
 
 	m.logger.Warn().Msg("no presets loaded, creating a default one")
-	m.addVoice(NewPreset(), sr)
+	m.addVoice(NewPreset(), sr, path.Join(pth, "default.preset"))
 }
 
-func (m *Manager) addVoice(preset *Preset, sr float64) {
+func (m *Manager) addVoice(preset *Preset, sr float64, file string) {
 	voice := &presetVoice{
 		preset: preset,
 		voice:  NewPolysynth(sr),
+		file:   file,
 	}
 	voice.voice.LoadPreset(preset)
 	m.Mixer.Add(dsp.NewInput(voice.voice, nil, nil))

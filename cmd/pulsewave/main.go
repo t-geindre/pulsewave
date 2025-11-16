@@ -88,8 +88,7 @@ func main() {
 	synthTap := ui.NewAudioPuller(withMessenger, uiAudioQueue)
 
 	// Clean presetManager
-	headroom := dsp.NewVca(synthTap, dsp.NewParam(0.9))
-	clean := dsp.NewLowPassSVF(SampleRate, headroom, dsp.NewParam(18000), dsp.NewParam(0.5))
+	clean := dsp.NewLowPassSVF(SampleRate, synthTap, dsp.NewParam(18000), dsp.NewParam(0.5))
 
 	// Midi setup
 	mdi := midi.NewListener(

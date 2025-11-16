@@ -29,19 +29,16 @@ type ADSR struct {
 
 	buf       [BlockSize]float32
 	stampedAt uint64
-
-	needRecalc bool
 }
 
 func NewADSR(sr float64, atk, dec, sus, rel Param) *ADSR {
 	a := &ADSR{
-		sr:         sr,
-		Atk:        atk,
-		Dec:        dec,
-		Sus:        sus,
-		Rel:        rel,
-		needRecalc: true,
-		state:      EnvIdle,
+		sr:    sr,
+		Atk:   atk,
+		Dec:   dec,
+		Sus:   sus,
+		Rel:   rel,
+		state: EnvIdle,
 	}
 
 	return a
@@ -76,24 +73,12 @@ func (a *ADSR) setState(s State) {
 	}
 
 	a.state = s
-	a.needRecalc = true
-
 }
 
 func (a *ADSR) recalc(cycle uint64) {
-	if !a.needRecalc {
-		return
-	}
-	a.needRecalc = false
-
-	switch a.state {
-	case EnvAttack:
-		a.aCoef = coefFromTime(a.Atk.Resolve(cycle)[0], a.sr)
-	case EnvDecay:
-		a.dCoef = coefFromTime(a.Dec.Resolve(cycle)[0], a.sr)
-	case EnvRelease:
-		a.rCoef = coefFromTime(a.Rel.Resolve(cycle)[0], a.sr)
-	}
+	a.aCoef = coefFromTime(a.Atk.Resolve(cycle)[0], a.sr)
+	a.dCoef = coefFromTime(a.Dec.Resolve(cycle)[0], a.sr)
+	a.rCoef = coefFromTime(a.Rel.Resolve(cycle)[0], a.sr)
 }
 
 func (a *ADSR) Resolve(cycle uint64) []float32 {
