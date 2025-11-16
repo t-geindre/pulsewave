@@ -40,7 +40,7 @@ func NewOscilloscope(in *AudioQueue, ringSize int) (*Oscilloscope, error) {
 		mask:          n - 1,
 		tmpMono:       make([]float32, dsp.BlockSize),
 		zoom:          1.0,
-		gain:          0.9,
+		gain:          1.8,
 		trigger:       true,
 		triggerRising: true,
 	}, nil
