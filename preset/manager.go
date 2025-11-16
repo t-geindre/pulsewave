@@ -80,8 +80,9 @@ func (m *Manager) loadPreset(p int) {
 		return
 	}
 
-	// todo if not the current preset, silence notes from previous preset
-	// todo send parameters updates to UI for the new preset
+	if m.current != p {
+		m.voices[m.current].voice.AllNotesOff()
+	}
 
 	m.voices[p].voice.LoadPreset(m.voices[p].preset) // reload preset
 	m.current = p

@@ -44,29 +44,44 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 			dsp.NewModInput(pitchAdsr, NewParamSkipper(preset.Params[PitchAdsrAmount], constZero, preset.Params[PitchAdsrOnOff]), nil),
 		)
 
-		// Oscillator factory todo implement phase
+		// Oscillator factory
 		oscFact := func(ph, dt dsp.Param) dsp.Node {
 			// Mixer, registry
 			mixer := dsp.NewMixer(dsp.NewParam(1), false)
 			ft := dsp.NewTunerParam(pitch, dt)
 
 			// 0
+			ph0 := dsp.NewParam(0)
+			*ph0.ModInputs() = append(*ph0.ModInputs(),
+				dsp.NewModInput(ph, dsp.NewConstParam(1), nil),
+				dsp.NewModInput(preset.Params[Osc0Phase], dsp.NewConstParam(1), nil),
+			)
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc0Shape], dsp.NewTunerParam(ft, preset.Params[Osc0Detune]), ph, preset.Params[Osc0Pw]),
+				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc0Shape], dsp.NewTunerParam(ft, preset.Params[Osc0Detune]), ph0, preset.Params[Osc0Pw]),
 				preset.Params[Osc0Gain],
 				dsp.NewParam(0),
 			))
 
 			// 1
+			ph1 := dsp.NewParam(0)
+			*ph1.ModInputs() = append(*ph1.ModInputs(),
+				dsp.NewModInput(ph, dsp.NewConstParam(1), nil),
+				dsp.NewModInput(preset.Params[Osc1Phase], dsp.NewConstParam(1), nil),
+			)
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc1Shape], dsp.NewTunerParam(ft, preset.Params[Osc1Detune]), ph, preset.Params[Osc1Pw]),
+				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc1Shape], dsp.NewTunerParam(ft, preset.Params[Osc1Detune]), ph1, preset.Params[Osc1Pw]),
 				preset.Params[Osc1Gain],
 				dsp.NewParam(0),
 			))
 
 			// 2
+			ph2 := dsp.NewParam(0)
+			*ph2.ModInputs() = append(*ph2.ModInputs(),
+				dsp.NewModInput(ph, dsp.NewConstParam(1), nil),
+				dsp.NewModInput(preset.Params[Osc2Phase], dsp.NewConstParam(1), nil),
+			)
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc2Shape], dsp.NewTunerParam(ft, preset.Params[Osc2Detune]), ph, preset.Params[Osc2Pw]),
+				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc2Shape], dsp.NewTunerParam(ft, preset.Params[Osc2Detune]), ph2, preset.Params[Osc2Pw]),
 				preset.Params[Osc2Gain],
 				dsp.NewParam(0),
 			))
@@ -165,4 +180,8 @@ func (p *Polysynth) HydratePreset(preset *Preset) *Preset {
 	}
 
 	return preset
+}
+
+func (p *Polysynth) AllNotesOff() {
+	p.voice.AllNotesOff()
 }

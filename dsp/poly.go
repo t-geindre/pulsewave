@@ -82,3 +82,9 @@ func (p *PolyVoice) Process(b *Block) {
 	}
 	p.Mixer.Process(b)
 }
+
+func (p *PolyVoice) AllNotesOff() {
+	for _, s := range p.voices {
+		s.voice.NoteOff()
+	}
+}

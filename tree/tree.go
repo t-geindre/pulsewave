@@ -82,12 +82,13 @@ func NewTree(presets []string) Node {
 			),
 		),
 		NewNode("Visualizer",
-			NewFeatureNode("Spectrum", 0),
+			NewFeatureNode("Spectrum", 0), // todo implement spectrum analyzer
 			NewFeatureNode("Oscilloscope", FeatureOscilloscope),
 		),
 		NewNode("Presets",
 			allPresetsNodes(presets)...,
 		),
+		// todo add settings
 		//NewNode("Settings",
 		//	NewNode("General"),
 		//	NewNode("Master gain"),
