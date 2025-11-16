@@ -28,20 +28,16 @@ type Manager struct {
 	logger    zerolog.Logger
 }
 
-func NewManager(sr float64, logger zerolog.Logger, messenger *msg.Messenger, path string) (*Manager, error) {
+func NewManager(sr float64, logger zerolog.Logger, messenger *msg.Messenger, path string) *Manager {
 	m := &Manager{
 		Mixer:     dsp.NewMixer(dsp.NewParam(1), false),
 		messenger: messenger,
 		logger:    logger,
 	}
 
-	err := m.buildFromPath(sr, path)
+	m.buildFromPath(sr, path)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return m, nil
+	return m
 }
 
 func (m *Manager) NoteOn(key int, vel float32) {
@@ -127,49 +123,54 @@ func (m *Manager) SavePreset(p int) {
 		Msg("preset saved")
 }
 
-func (m *Manager) buildFromPath(sr float64, pth string) error {
+func (m *Manager) buildFromPath(sr float64, pth string) {
 	files, err := filepath.Glob(filepath.Join(pth, "*.preset"))
 	if err != nil {
-		return err
+		m.logger.Error().Err(err).Msg("failed to glob preset files")
+		return
 	}
 
-	voices := make([]*presetVoice, 0)
 	for _, f := range files {
 		raw, err := os.ReadFile(f)
 		if err != nil {
-			return err
+			m.logger.Error().Err(err).Str("file", f).Msg("failed to read preset file")
+			continue
 		}
 
 		prt := &ProtoPreset{}
 		err = proto.Unmarshal(raw, prt)
 		if err != nil {
-			return err
+			m.logger.Error().Err(err).Str("file", f).Msg("failed to unmarshal preset file")
+			continue
 		}
 
-		voice := &presetVoice{
-			preset: NewPresetFromProto(prt),
-			voice:  NewPolysynth(sr),
-			file:   f,
-		}
-
-		voice.voice.LoadPreset(voice.preset)
-		m.Mixer.Add(dsp.NewInput(voice.voice, nil, nil))
-
-		voices = append(voices, voice)
+		preset := NewPresetFromProto(prt)
+		m.addVoice(preset, sr)
 
 		m.logger.Info().
-			Str("preset", voice.preset.Name).
+			Str("preset", preset.Name).
 			Str("file", f).
 			Msg("preset loaded")
 	}
 
-	slices.SortFunc(voices, func(a, b *presetVoice) int {
+	slices.SortFunc(m.voices, func(a, b *presetVoice) int {
 		return strings.Compare(a.preset.Name, b.preset.Name)
 	})
 
-	m.voices = voices
+	if len(m.voices) > 0 {
+		return
+	}
 
-	// todo if no presets found, create a default one
+	m.logger.Warn().Msg("no presets loaded, creating a default one")
+	m.addVoice(NewPreset(), sr)
+}
 
-	return nil
+func (m *Manager) addVoice(preset *Preset, sr float64) {
+	voice := &presetVoice{
+		preset: preset,
+		voice:  NewPolysynth(sr),
+	}
+	voice.voice.LoadPreset(preset)
+	m.Mixer.Add(dsp.NewInput(voice.voice, nil, nil))
+	m.voices = append(m.voices, voice)
 }

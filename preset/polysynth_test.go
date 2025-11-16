@@ -2,14 +2,12 @@ package preset
 
 import (
 	"synth/dsp"
-	"synth/msg"
 	"testing"
 )
 
 func TestPolysynth_ProcessNoAlloc(t *testing.T) {
-	messenger := msg.NewMessenger(msg.NewQueue(1), msg.NewQueue(1), 0)
-	synth := NewPolysynth(44100, messenger)
-	
+	synth := NewPolysynth(44100)
+
 	for i := 0; i < 16; i++ {
 		synth.voice.NoteOn(10+i, 1.0)
 	}

@@ -10,6 +10,7 @@ type Preset struct {
 func NewPreset() *Preset {
 	p := &Preset{
 		Params: make(map[uint8]dsp.Param),
+		Name:   "01 Default",
 	}
 	p.setDefaults()
 
@@ -54,9 +55,9 @@ func (p *Preset) setDefaults() {
 	p.Params[Osc1Phase] = dsp.NewParam(0)
 	p.Params[Osc2Phase] = dsp.NewParam(0)
 
-	p.Params[Osc0Pw] = dsp.NewParam(0)
-	p.Params[Osc1Pw] = dsp.NewParam(0)
-	p.Params[Osc2Pw] = dsp.NewParam(0)
+	p.Params[Osc0Pw] = dsp.NewParam(0.5)
+	p.Params[Osc1Pw] = dsp.NewParam(0.5)
+	p.Params[Osc2Pw] = dsp.NewParam(0.5)
 
 	// Pitch mod
 	p.Params[PitchLfoOnOff] = dsp.NewParam(0)

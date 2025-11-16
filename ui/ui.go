@@ -10,6 +10,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+var ErrorUnknownNodeType = fmt.Errorf("unknown node type")
+
 // Todo get it fron config
 const (
 	BodyWidth  = 375
@@ -209,7 +211,7 @@ func (u *Ui) buildComponents(asts *assets.Loader, n tree.Node, aq *AudioQueue) e
 			u.components[node] = comp
 			break
 		}
-		// todo Unknown leaf node type
+		// return ErrorUnknownNodeType todo decide if we want to error out here
 	}
 
 	for _, child := range n.Children() {

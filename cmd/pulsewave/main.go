@@ -68,13 +68,12 @@ func main() {
 
 	// Main signal
 	audioMessenger := msg.NewMessenger(audioOutQ, audioInQ, 10)
-	presetManager, err := preset.NewManager(
+	presetManager := preset.NewManager(
 		SampleRate,
 		logger().With().Str("component", "preset-manager").Logger(),
 		audioMessenger,
 		"assets/presets",
 	)
-	onError(err, "failed to create preset manager")
 
 	// Audio messenger injection
 	withMessenger := dsp.NewCallback(func(block *dsp.Block) {
