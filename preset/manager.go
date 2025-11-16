@@ -36,6 +36,7 @@ func NewManager(sr float64, logger zerolog.Logger, messenger *msg.Messenger, pat
 	}
 
 	m.buildFromPath(sr, path)
+	m.loadPreset(0) // force publish
 
 	return m
 }
@@ -67,14 +68,14 @@ func (m *Manager) HandleMessage(msg msg.Message) {
 	case LoadSavePresetKind:
 		p := int(msg.Key)
 		if msg.ValF == 0 {
-			m.LoadPreset(p)
+			m.loadPreset(p)
 		} else if msg.ValF == 1 {
-			m.SavePreset(p)
+			m.savePreset(p)
 		}
 	}
 }
 
-func (m *Manager) LoadPreset(p int) {
+func (m *Manager) loadPreset(p int) {
 	if p < 0 || p >= len(m.voices) {
 		return
 	}
@@ -94,7 +95,7 @@ func (m *Manager) LoadPreset(p int) {
 	}
 }
 
-func (m *Manager) SavePreset(p int) {
+func (m *Manager) savePreset(p int) {
 	// Todo this may need to be done asynchronously to avoid blocking the audio thread
 
 	if p < 0 || p >= len(m.voices) {
