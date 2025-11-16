@@ -1,5 +1,9 @@
 package tree
 
+import "synth/msg"
+
+type AttachFunc func(msg.Kind, uint8, float32)
+
 type Node interface {
 	Label() string
 	Children() []Node
@@ -8,15 +12,13 @@ type Node interface {
 	Append(Node)
 	Prepend(Node)
 	Remove(Node)
-	SetRoot(Node)
-	Root() Node
+	Attach(*msg.Messenger)
 }
 
 type node struct {
 	label    string
 	children []Node
 	parent   Node
-	root     Node
 }
 
 func NewNode(label string, children ...Node) Node {
@@ -56,13 +58,6 @@ func (n *node) Prepend(child Node) {
 	n.children = append([]Node{child}, n.children...)
 }
 
-func (n *node) SetRoot(r Node) {
-	n.root = r
-	for _, c := range n.children {
-		c.SetRoot(r)
-	}
-}
-
 func (n *node) Remove(child Node) {
 	for i, c := range n.children {
 		if c == child {
@@ -73,6 +68,8 @@ func (n *node) Remove(child Node) {
 	}
 }
 
-func (n *node) Root() Node {
-	return n.root
+func (n *node) Attach(m *msg.Messenger) {
+	for _, c := range n.children {
+		c.Attach(m)
+	}
 }

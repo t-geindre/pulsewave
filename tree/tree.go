@@ -1,84 +1,99 @@
 package tree
 
 import (
-	"synth/dsp"
-	"synth/msg"
+	"fmt"
 	"synth/preset"
-
-	"github.com/rs/zerolog"
 )
 
-type Tree struct {
-	Node
-	parameters map[uint8]ValueNode
-}
-
-func NewTree(logger zerolog.Logger) *Tree {
-	t := &Tree{
-		Node:       buildTree(logger),
-		parameters: make(map[uint8]ValueNode),
-	}
-
-	t.SetRoot(t)
-
-	return t
-}
-
-func (t *Tree) SetParam(key uint8, val float32) {
-	if pn, ok := t.parameters[key]; ok {
-		pn.SetVal(val)
-	}
-}
-
-func (t *Tree) HandleMessage(msg msg.Message) {
-	if msg.Kind == preset.ParamUpdateKind {
-		t.SetParam(msg.Key, msg.ValF)
-	}
-}
-
-func (t *Tree) AttachUpdater(publish func(key uint8, val float32)) {
-	t.attachNodes(t.Node, publish)
-}
-
-func (t *Tree) attachNodes(n Node, f func(key uint8, val float32)) {
-	if pn, ok := n.(ValueNode); ok {
-		t.parameters[pn.Key()] = pn
-		pn.Attach(f)
-	}
-
-	for _, c := range n.Children() {
-		t.attachNodes(c, f)
-	}
-}
-
-func (t *Tree) LoadPreset(p *preset.Preset) {
-	for key, param := range p.Params {
-		t.SetParam(key, param.GetBase())
-	}
-}
-
-func (t *Tree) GetPreset() *preset.Preset {
-	p := preset.NewPreset()
-
-	for key, pn := range t.parameters {
-		p.Params[key] = dsp.NewParam(pn.Val())
-	}
-
-	return p
-}
-
-func (t *Tree) Query(f func(n Node) bool) []Node {
-	var result []Node
-	t.queryNodes(t.Node, f, &result)
-	return result
-}
-
-func (t *Tree) queryNodes(n Node, f func(n Node) bool, result *[]Node) {
-	if f(n) {
-		*result = append(*result, n)
-	}
-
-	for _, c := range n.Children() {
-		t.queryNodes(c, f, result)
-	}
+func NewTree(presets []string) Node {
+	return NewNode("",
+		NewNode("Oscillators",
+			NewNode("Oscillator 1",
+				waveFormNode(preset.Osc0Shape),
+				NewSliderNode("Detune", preset.ParamUpdateKind, preset.Osc0Detune, -100, 100, .01, formatSemiTon),
+				NewSliderNode("Gain", preset.ParamUpdateKind, preset.Osc0Gain, 0, 1, .01, nil),
+				NewSliderNode("Phase", preset.ParamUpdateKind, preset.Osc0Phase, 0, 1, .01, formatCycle),
+				NewSliderNode("Pulse width", preset.ParamUpdateKind, preset.Osc0Pw, 0.01, 0.5, .01, nil),
+			),
+			NewNode("Oscillator 2",
+				waveFormNode(preset.Osc1Shape),
+				NewSliderNode("Detune", preset.ParamUpdateKind, preset.Osc1Detune, -100, 100, .01, formatSemiTon),
+				NewSliderNode("Gain", preset.ParamUpdateKind, preset.Osc1Gain, 0, 1, .01, nil),
+				NewSliderNode("Phase", preset.ParamUpdateKind, preset.Osc1Phase, 0, 1, .01, formatCycle),
+				NewSliderNode("Pulse width", preset.ParamUpdateKind, preset.Osc1Pw, 0.01, 0.5, .01, nil),
+			),
+			NewNode("Oscillator 3",
+				waveFormNode(preset.Osc2Shape),
+				NewSliderNode("Detune", preset.ParamUpdateKind, preset.Osc2Detune, -100, 100, .01, formatSemiTon),
+				NewSliderNode("Gain", preset.ParamUpdateKind, preset.Osc2Gain, 0, 1, .01, nil),
+				NewSliderNode("Phase", preset.ParamUpdateKind, preset.Osc2Phase, 0, 1, .01, formatCycle),
+				NewSliderNode("Pulse width", preset.ParamUpdateKind, preset.Osc2Pw, 0.01, 0.5, .01, nil),
+			),
+		),
+		NewNode("Modulation",
+			adsrNode("Amplitude", preset.AmpEnvAttack, preset.AmpEnvDecay, preset.AmpEnvSustain, preset.AmpEnvRelease),
+			NewNode("Cutoff",
+				NewNode("LFO",
+					onOffNode(preset.LpfLfoOnOff),
+					NewSliderNode("Amount", preset.ParamUpdateKind, preset.LpfLfoAmount, 20, 20000, 1, formatHertz),
+					waveFormNode(preset.LpfLfoShape),
+					NewSliderNode("Rate", preset.ParamUpdateKind, preset.LpfLfoFreq, 0.01, 20, .01, formatLowHertz),
+					NewSliderNode("Phase", preset.ParamUpdateKind, preset.LpfLfoPhase, 0, 1, .01, formatCycle),
+				),
+				adsrNodeWithToggle("ADSR", preset.LpfAdsrOnOff, preset.LpfAdsrAttack, preset.LpfAdsrDecay, preset.LpfAdsrSustain, preset.LpfAdsrRelease,
+					NewSliderNode("Amount", preset.ParamUpdateKind, preset.LpfAdsrAmount, -20000, 20000, 1, formatHertz),
+				),
+			),
+			NewNode("Pitch",
+				NewNode("LFO",
+					onOffNode(preset.PitchLfoOnOff),
+					NewSliderNode("Amount", preset.ParamUpdateKind, preset.PitchLfoAmount, -1000, 1000, .01, formatSemiTon),
+					waveFormNode(preset.PitchLfoShape),
+					NewSliderNode("Rate", preset.ParamUpdateKind, preset.PitchLfoFreq, 0.01, 20, .01, formatLowHertz),
+					NewSliderNode("Phase", preset.ParamUpdateKind, preset.PitchLfoPhase, 0, 1, .01, formatCycle),
+				),
+				adsrNodeWithToggle("ADSR", preset.PitchAdsrOnOff, preset.PitchAdsrAttack, preset.PitchAdsrDecay, preset.PitchAdsrSustain, preset.PitchAdsrRelease,
+					NewSliderNode("Amount", preset.ParamUpdateKind, preset.PitchAdsrAmount, -1000, 1000, .01, formatSemiTon),
+				),
+			),
+		),
+		NewNode("Effects",
+			NewNode("Feedback delay",
+				onOffNode(preset.FBOnOff),
+				NewSliderNode("Delay", preset.ParamUpdateKind, preset.FBDelayParam, 0, 2, .001, formatMillisecond),
+				NewSliderNode("Feedback", preset.ParamUpdateKind, preset.FBFeedBack, 0, 0.95, .01, nil),
+				NewSliderNode("Mix", preset.ParamUpdateKind, preset.FBMix, 0, 1, .01, nil),
+				NewSliderNode("Tone", preset.ParamUpdateKind, preset.FBTone, 200, 8000, 1, formatHertz),
+			),
+			NewNode("Low pass filter",
+				onOffNode(preset.LPFOnOff),
+				NewSliderNode("Cutoff", preset.ParamUpdateKind, preset.LPFCutoff, 20, 20000, 1, formatHertz),
+				NewSliderNode("Resonance", preset.ParamUpdateKind, preset.LPFResonance, 0.01, 10, .01, nil),
+			),
+			NewNode("Unison",
+				onOffNode(preset.UnisonOnOff),
+				NewSliderNode("Voices", preset.ParamUpdateKind, preset.UnisonVoices, 1, 16, 1, func(v float32) string {
+					return fmt.Sprintf("%.0f voices", v)
+				}),
+				NewSliderNode("Pan spread", preset.ParamUpdateKind, preset.UnisonPanSpread, 0, 1, .01, nil),
+				NewSliderNode("Phase spread", preset.ParamUpdateKind, preset.UnisonPhaseSpread, 0, 1, .01, formatCycle),
+				NewSliderNode("Detune spread", preset.ParamUpdateKind, preset.UnisonDetuneSpread, 0, 100, .1, formatCent),
+				NewSliderNode("Curve gamma", preset.ParamUpdateKind, preset.UnisonCurveGamma, 0.1, 4, .1, nil),
+			),
+		),
+		NewNode("Visualizer",
+			NewFeatureNode("Spectrum", 0),
+			NewFeatureNode("Oscilloscope", FeatureOscilloscope),
+		),
+		NewNode("Presets",
+			allPresetsNodes(presets)...,
+		),
+		NewNode("Settings",
+			NewNode("General"),
+			NewNode("Master gain"),
+			NewNode("MIDI controllers"),
+			NewNode("Pitch bend"),
+			NewNode("About"),
+		),
+	)
 }

@@ -27,7 +27,7 @@ type Listener struct {
 
 func NewListener(log zerolog.Logger, out *msg.Queue) *Listener {
 	return &Listener{
-		logger: log.With().Str("component", "MIDI listener").Logger(),
+		logger: log,
 		out:    out,
 		msgs:   make(chan msg.Message, 1024),
 		done:   make(chan struct{}),
@@ -51,6 +51,8 @@ func (l *Listener) ListenAll() {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 
+	l.scanDevices()
+
 	for {
 		select {
 		case <-l.done:
@@ -60,31 +62,7 @@ func (l *Listener) ListenAll() {
 			}
 			return
 		case <-ticker.C:
-			// Mark all devices as not found
-			for _, dev := range l.devices {
-				dev.found = false
-			}
-
-			// Check for new devices
-			for _, in := range midi.GetInPorts() {
-				dev := l.findDevice(in)
-				if dev == nil {
-					l.listenDevice(in)
-					continue
-				}
-				dev.found = true
-			}
-
-			// Remove devices that are no longer connected
-			var activeDevices []*device
-			for _, dev := range l.devices {
-				if !dev.found {
-					dev.stop()
-				} else {
-					activeDevices = append(activeDevices, dev)
-				}
-			}
-			l.devices = activeDevices
+			l.scanDevices()
 		}
 	}
 }
@@ -94,6 +72,34 @@ func (l *Listener) Close() {
 	l.once.Do(func() {
 		close(l.done)
 	})
+}
+
+func (l *Listener) scanDevices() {
+	// Mark all devices as not found
+	for _, dev := range l.devices {
+		dev.found = false
+	}
+
+	// Check for new devices
+	for _, in := range midi.GetInPorts() {
+		dev := l.findDevice(in)
+		if dev == nil {
+			l.listenDevice(in)
+			continue
+		}
+		dev.found = true
+	}
+
+	// Remove devices that are no longer connected
+	var activeDevices []*device
+	for _, dev := range l.devices {
+		if !dev.found {
+			dev.stop()
+		} else {
+			activeDevices = append(activeDevices, dev)
+		}
+	}
+	l.devices = activeDevices
 }
 
 func (l *Listener) findDevice(in drivers.In) *device {

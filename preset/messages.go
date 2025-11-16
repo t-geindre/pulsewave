@@ -3,6 +3,7 @@ package preset
 import "synth/msg"
 
 const ParamUpdateKind msg.Kind = 20
+const LoadSavePresetKind msg.Kind = 21
 
 const (
 	// Unison parameters

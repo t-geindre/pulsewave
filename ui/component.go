@@ -11,5 +11,7 @@ type Component interface {
 	Update()
 	Scroll(delta int)
 	CurrentTarget() tree.Node // tree node
-	// CurrentScroll() (node, max int) // node == -1 : no scroll bar
+	// todo CurrentScroll() (node, max int) // node == -1 : no scroll bar
+	// todo implement a focus function, especially for the preset node to be able to reset to load option
+	// preventing accidental save
 }

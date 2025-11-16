@@ -21,7 +21,7 @@ func NewRouter(log zerolog.Logger) *Router {
 	return &Router{
 		inputs: make([]*Queue, 0),
 		routes: make([]route, 0),
-		logger: log.With().Str("component", "router").Logger(),
+		logger: log,
 	}
 }
 

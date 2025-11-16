@@ -43,7 +43,7 @@ func main() {
 	}
 
 	// Messaging
-	router := msg.NewRouter(logger())
+	router := msg.NewRouter(logger().With().Str("component", "router").Logger())
 	midiInQ := router.AddInput(1024)
 	audioOutQ := router.AddOutput(1024)
 	audioInQ := router.AddInput(1024)
@@ -57,6 +57,7 @@ func main() {
 
 	router.AddRoute(midiInQ, midi.ControlChangeKind, uiOutQ)
 
+	router.AddRoute(uiInQ, preset.LoadSavePresetKind, audioOutQ)
 	router.AddRoute(uiInQ, preset.ParamUpdateKind, audioOutQ)
 	router.AddRoute(uiInQ, midi.NoteOnKind, audioOutQ)
 	router.AddRoute(uiInQ, midi.NoteOffKind, audioOutQ)
@@ -65,28 +66,37 @@ func main() {
 
 	go router.Route()
 
-	// Audio messenger
+	// Main signal
 	audioMessenger := msg.NewMessenger(audioOutQ, audioInQ, 10)
+	presetManager, err := preset.NewManager(
+		SampleRate,
+		logger().With().Str("component", "preset-manager").Logger(),
+		audioMessenger,
+		"assets/presets",
+	)
+	onError(err, "failed to create preset manager")
 
-	// Main signal + messenger process injection
-	synth := preset.NewPolysynth(SampleRate, audioMessenger)
+	// Audio messenger injection
 	withMessenger := dsp.NewCallback(func(block *dsp.Block) {
 		audioMessenger.Process()
-	}, synth)
+	}, presetManager)
 
-	audioMessenger.RegisterHandler(midi.NewPlayer(synth))
-	audioMessenger.RegisterHandler(synth)
+	audioMessenger.RegisterHandler(midi.NewPlayer(presetManager))
+	audioMessenger.RegisterHandler(presetManager)
 
 	// Audio tap
 	uiAudioQueue := ui.NewAudioQueue(32) // 32 blocks x 256 samples
 	synthTap := ui.NewAudioPuller(withMessenger, uiAudioQueue)
 
-	// Clean signal
+	// Clean presetManager
 	headroom := dsp.NewVca(synthTap, dsp.NewParam(0.9))
 	clean := dsp.NewLowPassSVF(SampleRate, headroom, dsp.NewParam(18000), dsp.NewParam(0.5))
 
 	// Midi setup
-	mdi := midi.NewListener(logger(), midiInQ)
+	mdi := midi.NewListener(
+		logger().With().Str("component", "midi-listener").Logger(),
+		midiInQ,
+	)
 	defer mdi.Close()
 	go mdi.ListenAll()
 
@@ -107,16 +117,20 @@ func main() {
 	onError(err, "failed to load assets")
 
 	uiMessenger := msg.NewMessenger(uiOutQ, uiInQ, 0)
-	gui, err := ui.NewUi(asts, uiMessenger, uiAudioQueue, logger(), debugMode)
+	gui, err := ui.NewUi(asts, uiMessenger, uiAudioQueue, presetManager.GetPresets())
 	onError(err, "failed to create gui")
+
+	if debugMode {
+		gui.ToggleFpsDisplay()
+	}
 
 	err = ebiten.RunGame(gui)
 	onError(err, "failed to run gui")
 }
 
 func onError(err error, msg string) {
-	l := logger()
 	if err != nil {
+		l := logger().With().Str("component", "main").Logger()
 		if debugMode {
 			l.Panic().Err(err).Msg(msg)
 		} else {

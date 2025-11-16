@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"synth/assets"
 	"synth/msg"
-	"synth/preset"
 	"synth/tree"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/rs/zerolog"
 )
 
 // Todo get it fron config
@@ -33,16 +31,16 @@ type Ui struct {
 	next       tree.Node
 	nextTrans  float64
 	transDir   float64
-	tree       *tree.Tree
+	tree       tree.Node
 
 	transLeft    *ebiten.Image
 	transRight   *ebiten.Image
 	bodyClipMask *ebiten.Image
 
-	debug bool
+	drawFtps bool
 }
 
-func NewUi(asts *assets.Loader, messenger *msg.Messenger, audiQ *AudioQueue, logger zerolog.Logger, debug bool) (*Ui, error) {
+func NewUi(asts *assets.Loader, messenger *msg.Messenger, audiQ *AudioQueue, presets []string) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
@@ -54,15 +52,8 @@ func NewUi(asts *assets.Loader, messenger *msg.Messenger, audiQ *AudioQueue, log
 	ebiten.SetWindowTitle("Pulsewave")
 
 	// Menu tree + controls
-	menu := tree.NewTree(logger)
-	messenger.RegisterHandler(menu)
-	menu.AttachUpdater(func(key uint8, val float32) {
-		messenger.SendMessage(msg.Message{
-			Kind: preset.ParamUpdateKind,
-			Key:  key,
-			ValF: val,
-		})
-	})
+	menu := tree.NewTree(presets)
+	menu.Attach(messenger)
 
 	ctrls := NewMultiControls(
 		NewPlayControls(messenger),
@@ -70,28 +61,18 @@ func NewUi(asts *assets.Loader, messenger *msg.Messenger, audiQ *AudioQueue, log
 		NewTouchControls(),
 	)
 
-	// Load first preset
-	presets := menu.Query(func(n tree.Node) bool {
-		_, ok := n.(*tree.PresetNode)
-		return ok
-	})
-	if len(presets) > 0 {
-		presets[0].(*tree.PresetNode).Load()
-	}
-
 	ui := &Ui{
 		background:   bg,
 		w:            bds.Dx(),
 		h:            bds.Dy(),
 		components:   make(map[tree.Node]Component),
 		messenger:    messenger,
-		current:      menu.Node,
+		current:      menu,
 		tree:         menu,
 		controls:     ctrls,
 		bodyClipMask: ebiten.NewImage(BodyWidth, BodyHeight),
 		transLeft:    ebiten.NewImage(BodyWidth, BodyHeight),
 		transRight:   ebiten.NewImage(BodyWidth, BodyHeight),
-		debug:        debug,
 	}
 
 	err = ui.buildComponents(asts, ui.current, audiQ)
@@ -182,7 +163,7 @@ func (u *Ui) Draw(screen *ebiten.Image) {
 	ops.GeoM.Translate(BodyStartX, BodyStartY)
 	screen.DrawImage(u.bodyClipMask, ops)
 
-	if u.debug {
+	if u.drawFtps {
 		ebitenutil.DebugPrintAt(
 			screen,
 			fmt.Sprintf("FPS %.0f TPS %.0f", ebiten.ActualFPS(), ebiten.ActualTPS()),
@@ -239,4 +220,8 @@ func (u *Ui) buildComponents(asts *assets.Loader, n tree.Node, aq *AudioQueue) e
 	}
 
 	return nil
+}
+
+func (u *Ui) ToggleFpsDisplay() {
+	u.drawFtps = !u.drawFtps
 }

@@ -1,15 +1,11 @@
 package tree
 
 import (
-	"path/filepath"
-	"slices"
-	"strings"
-
-	"github.com/rs/zerolog"
+	"synth/preset"
 )
 
 func waveFormNode(key uint8) Node {
-	return NewSelectorNode("Waveform", key,
+	return NewSelectorNode("Waveform", preset.ParamUpdateKind, key,
 		NewSelectorOption("Sine", "ui/icons/sine_wave", 0),
 		NewSelectorOption("Square", "ui/icons/square_wave", 1),
 		NewSelectorOption("Sawtooth", "ui/icons/saw_wave", 2),
@@ -20,10 +16,10 @@ func waveFormNode(key uint8) Node {
 
 func adsrNode(label string, att, dec, sus, rel uint8, children ...Node) Node {
 	n := NewNode(label,
-		NewSliderNode("Attack", att, 0, 10, .001, formatMillisecond),
-		NewSliderNode("Decay", dec, 0, 10, .001, formatMillisecond),
-		NewSliderNode("Sustain", sus, 0, 1, .01, nil),
-		NewSliderNode("Release", rel, 0, 10, .001, formatMillisecond),
+		NewSliderNode("Attack", preset.ParamUpdateKind, att, 0, 10, .001, formatMillisecond),
+		NewSliderNode("Decay", preset.ParamUpdateKind, dec, 0, 10, .001, formatMillisecond),
+		NewSliderNode("Sustain", preset.ParamUpdateKind, sus, 0, 1, .01, nil),
+		NewSliderNode("Release", preset.ParamUpdateKind, rel, 0, 10, .001, formatMillisecond),
 	)
 
 	for _, c := range children {
@@ -41,25 +37,20 @@ func adsrNodeWithToggle(label string, toggle, att, dec, sus, rel uint8, children
 }
 
 func onOffNode(key uint8) Node {
-	return NewSelectorNode("ON/OFF", key,
+	return NewSelectorNode("ON/OFF", preset.ParamUpdateKind, key,
 		NewSelectorOption("OFF", "", 0),
 		NewSelectorOption("ON", "", 1),
 	)
 }
 
-func allPresetsNodes(pth string, logger zerolog.Logger) []Node {
-	files, err := filepath.Glob(filepath.Join(pth, "*.preset"))
-	if err != nil {
-		logger.Error().Err(err).Str("path", pth).Msg("failed to read presets directory")
-	}
-	var presets []Node
-	for _, f := range files {
-		presets = append(presets, NewPresetNode(f, logger))
+func allPresetsNodes(presets []string) []Node {
+	nodes := make([]Node, len(presets))
+	for i, p := range presets {
+		nodes[i] = NewValidatingSelectorNode(p, preset.LoadSavePresetKind, uint8(i),
+			NewSelectorOption("Load", "", 0),
+			NewSelectorOption("Save", "", 1),
+		)
 	}
 
-	slices.SortFunc(presets, func(a, b Node) int {
-		return strings.Compare(a.Label(), b.Label())
-	})
-
-	return presets
+	return nodes
 }

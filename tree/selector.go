@@ -1,5 +1,7 @@
 package tree
 
+import "synth/msg"
+
 type SelectorNode interface {
 	Node
 	ValueNode
@@ -10,15 +12,25 @@ type SelectorNode interface {
 }
 
 type selectorNode struct {
-	options []*SelectorOption
+	options            []*SelectorOption
+	requiresValidation bool
+	val                float32
 
 	ValueNode
 }
 
-func NewSelectorNode(label string, key uint8, options ...*SelectorOption) SelectorNode {
+func NewSelectorNode(label string, kind msg.Kind, key uint8, options ...*SelectorOption) SelectorNode {
 	return &selectorNode{
 		options:   options,
-		ValueNode: NewValueNode(label, key),
+		ValueNode: NewValueNode(label, kind, key),
+	}
+}
+
+func NewValidatingSelectorNode(label string, kind msg.Kind, key uint8, options ...*SelectorOption) SelectorNode {
+	return &selectorNode{
+		options:            options,
+		requiresValidation: true,
+		ValueNode:          NewValueNode(label, kind, key),
 	}
 }
 
@@ -27,11 +39,28 @@ func (s *selectorNode) Options() []*SelectorOption {
 }
 
 func (s *selectorNode) RequiresValidation() bool {
-	return false
+	return s.requiresValidation
 }
 
 func (s *selectorNode) Validate() {
-	// no-op
+	if s.requiresValidation {
+		s.ValueNode.SetValAndPublish(s.val)
+	}
+}
+
+func (s *selectorNode) SetVal(f float32) {
+	if s.requiresValidation {
+		s.val = f
+	} else {
+		s.ValueNode.SetVal(f)
+	}
+}
+
+func (s *selectorNode) Val() float32 {
+	if s.requiresValidation {
+		return s.val
+	}
+	return s.ValueNode.Val()
 }
 
 type SelectorOption struct {

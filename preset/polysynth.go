@@ -13,7 +13,7 @@ type Polysynth struct {
 	messenger  *msg.Messenger
 }
 
-func NewPolysynth(SampleRate float64, messenger *msg.Messenger) *Polysynth {
+func NewPolysynth(SampleRate float64) *Polysynth {
 	// Parameters map
 	preset := NewPreset()
 	constZero := dsp.NewConstParam(0)
@@ -131,7 +131,6 @@ func NewPolysynth(SampleRate float64, messenger *msg.Messenger) *Polysynth {
 		Node:       delaySkip,
 		voice:      poly,
 		pitch:      pitchBend,
-		messenger:  messenger,
 		parameters: preset.Params,
 	}
 }
@@ -148,10 +147,22 @@ func (p *Polysynth) SetPitchBend(semiTones float32) {
 	p.pitch.SetBase(semiTones)
 }
 
-func (p *Polysynth) HandleMessage(m msg.Message) {
-	if m.Kind == ParamUpdateKind {
-		if param, ok := p.parameters[m.Key]; ok {
-			param.SetBase(m.ValF)
-		}
+func (p *Polysynth) SetParam(key uint8, val float32) {
+	if param, ok := p.parameters[key]; ok {
+		param.SetBase(val)
 	}
+}
+
+func (p *Polysynth) LoadPreset(preset *Preset) {
+	for key, param := range preset.Params {
+		p.SetParam(key, param.GetBase())
+	}
+}
+
+func (p *Polysynth) HydratePreset(preset *Preset) *Preset {
+	for key, param := range p.parameters {
+		preset.Params[key] = dsp.NewParam(param.GetBase())
+	}
+
+	return preset
 }

@@ -1,6 +1,9 @@
 package tree
 
-import "fmt"
+import (
+	"fmt"
+	"synth/msg"
+)
 
 type SliderNode interface {
 	ValueNode
@@ -17,14 +20,14 @@ type sliderNode struct {
 	ValueNode
 }
 
-func NewSliderNode(label string, key uint8, min, max, step float32, format func(float32) string) SliderNode {
+func NewSliderNode(label string, kind msg.Kind, key uint8, min, max, step float32, format func(float32) string) SliderNode {
 	return &sliderNode{
 		min:    min,
 		max:    max,
 		step:   step,
 		format: format,
 
-		ValueNode: NewValueNode(label, key),
+		ValueNode: NewValueNode(label, kind, key),
 	}
 }
 
