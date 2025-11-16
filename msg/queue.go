@@ -38,14 +38,6 @@ func NewQueue(cap int) *Queue {
 	return q
 }
 
-func (q *Queue) Cap() int { return len(q.buf) }
-
-func (q *Queue) Len() int {
-	h := q.head.Load()
-	t := q.tail.Load()
-	return int(h - t)
-}
-
 // TryWrite writes a message, returning false if the queue is full.
 func (q *Queue) TryWrite(m Message) bool {
 	h := q.head.Load()
@@ -55,29 +47,6 @@ func (q *Queue) TryWrite(m Message) bool {
 	}
 	q.buf[h&q.mask] = m
 	q.head.Store(h + 1)
-	return true
-}
-
-// WriteOverwrite writes a message, overwriting the oldest message if the queue is full.
-func (q *Queue) WriteOverwrite(m Message) {
-	h := q.head.Load()
-	t := q.tail.Load()
-	if (h - t) >= uint64(len(q.buf)) {
-		q.tail.Store(t + 1)
-	}
-	q.buf[h&q.mask] = m
-	q.head.Store(h + 1)
-}
-
-// TryRead reads a message, returning false if the queue is empty.
-func (q *Queue) TryRead(out *Message) bool {
-	t := q.tail.Load()
-	h := q.head.Load()
-	if t == h {
-		return false // vide
-	}
-	*out = q.buf[t&q.mask]
-	q.tail.Store(t + 1)
 	return true
 }
 

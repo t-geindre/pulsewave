@@ -1,15 +1,12 @@
 package ui
 
 import (
-	"fmt"
 	"synth/assets"
 	"synth/msg"
 	"synth/tree"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
-
-var ErrorUnknownNodeType = fmt.Errorf("unknown node type")
 
 // Todo get it fron config
 const (
@@ -27,12 +24,12 @@ type Ui struct {
 
 	messenger *msg.Messenger
 
-	components map[tree.Node]Component
+	components Components
 	current    tree.Node
 	next       tree.Node
-	nextTrans  float64
-	transDir   float64
-	tree       tree.Node
+
+	nextTrans float64
+	transDir  float64
 
 	transLeft    *ebiten.Image
 	transRight   *ebiten.Image
@@ -41,52 +38,40 @@ type Ui struct {
 	ftps *Ftps
 }
 
-func NewUi(asts *assets.Loader, messenger *msg.Messenger, audiQ *AudioQueue, presets []string) (*Ui, error) {
+func NewUi(
+	asts *assets.Loader,
+	messenger *msg.Messenger,
+	ctrls Controls,
+	cmps Components,
+	root tree.Node,
+) (*Ui, error) {
 	// BG + window size accordingly
 	bg, err := asts.GetImage("ui/background")
 	if err != nil {
 		return nil, err
 	}
+
 	bds := bg.Bounds()
-
 	ebiten.SetWindowSize(bds.Dx(), bds.Dy())
-	ebiten.SetWindowTitle("Pulsewave")
 
-	// Menu tree + controls
-	menu := tree.NewTree(presets)
-	menu.Attach(messenger)
-
-	ctrls := NewMultiControls(
-		NewPlayControls(messenger),
-		NewKeyboardControls(),
-		NewTouchControls(),
-	)
-
-	ui := &Ui{
+	return &Ui{
 		background:   bg,
 		w:            bds.Dx(),
 		h:            bds.Dy(),
-		components:   make(map[tree.Node]Component),
+		components:   cmps,
 		messenger:    messenger,
-		current:      menu,
-		tree:         menu,
+		current:      root,
 		controls:     ctrls,
 		bodyClipMask: ebiten.NewImage(BodyWidth, BodyHeight),
 		transLeft:    ebiten.NewImage(BodyWidth, BodyHeight),
 		transRight:   ebiten.NewImage(BodyWidth, BodyHeight),
-	}
-
-	err = ui.buildComponents(asts, ui.current, audiQ)
-	if err != nil {
-		return nil, err
-	}
-
-	return ui, nil
+	}, nil
 }
 
 func (u *Ui) Update() error {
 	u.messenger.Process()
 
+	// Transitioning
 	if u.next != nil {
 		u.components[u.next].Update()
 		u.nextTrans += SlideSpeed
@@ -100,6 +85,7 @@ func (u *Ui) Update() error {
 
 	hDelta, vDelta := u.controls.Update()
 
+	// Forward
 	if hDelta > 0 {
 		tr := u.components[u.current].CurrentTarget()
 		if tr != nil {
@@ -113,12 +99,15 @@ func (u *Ui) Update() error {
 		return nil
 
 	}
+
+	// Backward
 	if hDelta < 0 && u.current.Parent() != nil {
 		u.next = u.current.Parent()
 		u.transDir = -1
 		return nil
 	}
 
+	// Vertical scroll
 	if vDelta != 0 {
 		u.components[u.current].Scroll(vDelta)
 	}
@@ -129,9 +118,10 @@ func (u *Ui) Update() error {
 
 func (u *Ui) Draw(screen *ebiten.Image) {
 	screen.DrawImage(u.background, nil)
-
 	u.bodyClipMask.Clear()
+
 	if u.next != nil {
+		// Transitioning
 		ease := easeOutCubic(u.nextTrans)
 		if u.transDir == -1 {
 			ease = 1 - ease
@@ -157,6 +147,7 @@ func (u *Ui) Draw(screen *ebiten.Image) {
 			u.bodyClipMask.DrawImage(u.transRight, &lOpts)
 		}
 	} else {
+		// Normal draw
 		u.components[u.current].Draw(u.bodyClipMask)
 	}
 
@@ -173,53 +164,7 @@ func (u *Ui) Layout(_, _ int) (int, int) {
 	return u.w, u.h
 }
 
-func (u *Ui) buildComponents(asts *assets.Loader, n tree.Node, aq *AudioQueue) error {
-	switch node := n.(type) {
-	case tree.SliderNode:
-		comp, err := NewSlider(asts, node)
-		if err != nil {
-			return err
-		}
-		u.components[node] = comp
-	case tree.SelectorNode:
-		comp, err := NewSelector(asts, node)
-		if err != nil {
-			return err
-		}
-		u.components[node] = comp
-	case tree.FeatureNode:
-		switch node.Feature() {
-		case tree.FeatureOscilloscope:
-			comp, err := NewOscilloscope(aq, 16384)
-			if err != nil {
-				return err
-			}
-			u.components[node] = comp
-			// todo add default case that errors out
-		}
-	default:
-		if len(node.Children()) > 0 {
-			comp, err := NewList(asts, node)
-			if err != nil {
-				return err
-			}
-			u.components[node] = comp
-			break
-		}
-		// return ErrorUnknownNodeType todo decide if we want to error out here
-	}
-
-	for _, child := range n.Children() {
-		err := u.buildComponents(asts, child, aq)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (u *Ui) ToggleFpsDisplay() {
+func (u *Ui) ToggleFtpsDisplay() {
 	if u.ftps == nil {
 		u.ftps = NewFtps()
 		return

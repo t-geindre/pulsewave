@@ -39,14 +39,6 @@ func NewAudioQueue(cap int) *AudioQueue {
 	return q
 }
 
-func (q *AudioQueue) Cap() int { return len(q.buf) }
-
-func (q *AudioQueue) Len() int {
-	h := q.head.Load()
-	t := q.tail.Load()
-	return int(h - t)
-}
-
 func (q *AudioQueue) TryWrite(m dsp.Block) bool {
 	h := q.head.Load()
 	t := q.tail.Load()
@@ -55,27 +47,6 @@ func (q *AudioQueue) TryWrite(m dsp.Block) bool {
 	}
 	q.buf[h&q.mask] = m
 	q.head.Store(h + 1)
-	return true
-}
-
-func (q *AudioQueue) WriteOverwrite(m dsp.Block) {
-	h := q.head.Load()
-	t := q.tail.Load()
-	if (h - t) >= uint64(len(q.buf)) {
-		q.tail.Store(t + 1)
-	}
-	q.buf[h&q.mask] = m
-	q.head.Store(h + 1)
-}
-
-func (q *AudioQueue) TryRead(out *dsp.Block) bool {
-	t := q.tail.Load()
-	h := q.head.Load()
-	if t == h {
-		return false // vide
-	}
-	*out = q.buf[t&q.mask]
-	q.tail.Store(t + 1)
 	return true
 }
 

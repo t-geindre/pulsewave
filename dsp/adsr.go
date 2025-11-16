@@ -14,6 +14,8 @@ const (
 	EnvRelease
 )
 
+// todo there is something wrong with retriggering, double check envelope behavior
+
 type ADSR struct {
 	sr float64
 

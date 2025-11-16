@@ -8,6 +8,7 @@ import (
 	"synth/midi"
 	"synth/msg"
 	"synth/preset"
+	"synth/tree"
 	"synth/ui"
 	"time"
 
@@ -37,10 +38,11 @@ func main() {
 		debugMode = true
 	}
 
-	// Full screen
+	// Full screen + window tilte
 	if *fullsF {
 		ebiten.SetFullscreen(true)
 	}
+	ebiten.SetWindowTitle("Pulsewave")
 
 	// Messaging
 	router := msg.NewRouter(logger().With().Str("component", "router").Logger())
@@ -54,8 +56,6 @@ func main() {
 	router.AddRoute(midiInQ, midi.NoteOnKind, audioOutQ)
 	router.AddRoute(midiInQ, midi.NoteOffKind, audioOutQ)
 	router.AddRoute(midiInQ, midi.PitchBendKind, audioOutQ)
-
-	router.AddRoute(midiInQ, midi.ControlChangeKind, uiOutQ)
 
 	router.AddRoute(uiInQ, preset.LoadSavePresetKind, audioOutQ)
 	router.AddRoute(uiInQ, preset.ParamUpdateKind, audioOutQ)
@@ -108,21 +108,41 @@ func main() {
 	player.SetBufferSize(time.Millisecond * time.Duration(*buffF))
 	player.Play()
 
-	// UI
+	// Assets
 	asts, err := assets.NewFromJson("assets/assets.json")
 	onError(err, "failed to create assets loader")
 
 	err = asts.Load()
 	onError(err, "failed to load assets")
 
+	// UI Messenger
 	uiMessenger := msg.NewMessenger(uiOutQ, uiInQ, 0)
-	gui, err := ui.NewUi(asts, uiMessenger, uiAudioQueue, presetManager.GetPresets())
+
+	// Menu tree
+	menuTree := tree.NewTree(presetManager.GetPresets())
+	menuTree.Attach(uiMessenger)
+
+	// UI Components
+	components, err := ui.NewComponents(asts, menuTree, uiAudioQueue)
+	onError(err, "failed to create ui components")
+
+	// Controls
+	controls := ui.NewMultiControls(
+		ui.NewPlayControls(uiMessenger),
+		ui.NewKeyboardControls(),
+		ui.NewTouchControls(),
+	)
+
+	// GUI
+	gui, err := ui.NewUi(asts, uiMessenger, controls, components, menuTree)
 	onError(err, "failed to create gui")
 
+	// Debug FTPS display
 	if debugMode {
-		gui.ToggleFpsDisplay()
+		gui.ToggleFtpsDisplay()
 	}
 
+	// Run UI, blocking
 	err = ebiten.RunGame(gui)
 	onError(err, "failed to run gui")
 }

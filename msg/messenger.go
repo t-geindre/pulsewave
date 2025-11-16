@@ -16,8 +16,9 @@ type Messenger struct {
 // drainRate is the maximum number of messages to process per Process call.
 func NewMessenger(in, out *Queue, drainRate int) *Messenger {
 	return &Messenger{
-		in:  in,
-		out: out,
+		in:        in,
+		out:       out,
+		drainRate: drainRate,
 	}
 }
 

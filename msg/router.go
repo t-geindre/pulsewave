@@ -56,26 +56,23 @@ func (r *Router) Route() {
 }
 
 func (r *Router) doRoute() bool {
-	var msg Message
 	var handled bool
 
 	for _, input := range r.inputs {
-		if !input.TryRead(&msg) {
-			continue
-		}
+		input.Drain(0, func(msg Message) {
+			handled = true
 
-		handled = true
+			for _, rt := range r.routes {
+				if rt.in != nil && rt.in != input {
+					continue
+				}
+				if rt.kind != msg.Kind {
+					continue
+				}
 
-		for _, rt := range r.routes {
-			if rt.in != nil && rt.in != input {
-				continue
+				rt.out.TryWrite(msg)
 			}
-			if rt.kind != msg.Kind {
-				continue
-			}
-
-			rt.out.TryWrite(msg)
-		}
+		})
 	}
 
 	return handled
