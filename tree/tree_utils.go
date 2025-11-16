@@ -5,7 +5,7 @@ import (
 )
 
 func waveFormNode(key uint8) Node {
-	return NewSelectorNode("Waveform", preset.ParamUpdateKind, key,
+	return NewSelectorNode("Waveform", preset.PresetUpdateKind, key,
 		NewSelectorOption("Sine", "ui/icons/sine_wave", 0),
 		NewSelectorOption("Square", "ui/icons/square_wave", 1),
 		NewSelectorOption("Sawtooth", "ui/icons/saw_wave", 2),
@@ -16,10 +16,10 @@ func waveFormNode(key uint8) Node {
 
 func adsrNode(label string, att, dec, sus, rel uint8, children ...Node) Node {
 	n := NewNode(label,
-		NewSliderNode("Attack", preset.ParamUpdateKind, att, 0, 10, .001, formatMillisecond),
-		NewSliderNode("Decay", preset.ParamUpdateKind, dec, 0, 10, .001, formatMillisecond),
-		NewSliderNode("Sustain", preset.ParamUpdateKind, sus, 0, 1, .01, nil),
-		NewSliderNode("Release", preset.ParamUpdateKind, rel, 0, 10, .001, formatMillisecond),
+		NewSliderNode("Attack", preset.PresetUpdateKind, att, 0, 10, .001, formatMillisecond),
+		NewSliderNode("Decay", preset.PresetUpdateKind, dec, 0, 10, .001, formatMillisecond),
+		NewSliderNode("Sustain", preset.PresetUpdateKind, sus, 0, 1, .01, nil),
+		NewSliderNode("Release", preset.PresetUpdateKind, rel, 0, 10, .001, formatMillisecond),
 	)
 
 	for _, c := range children {
@@ -37,7 +37,7 @@ func adsrNodeWithToggle(label string, toggle, att, dec, sus, rel uint8, children
 }
 
 func onOffNode(key uint8) Node {
-	return NewSelectorNode("ON/OFF", preset.ParamUpdateKind, key,
+	return NewSelectorNode("ON/OFF", preset.PresetUpdateKind, key,
 		NewSelectorOption("OFF", "", 0),
 		NewSelectorOption("ON", "", 1),
 	)

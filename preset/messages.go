@@ -2,7 +2,7 @@ package preset
 
 import "synth/msg"
 
-const ParamUpdateKind msg.Kind = 20
+const PresetUpdateKind msg.Kind = 20
 const LoadSavePresetKind msg.Kind = 21
 
 const (
@@ -84,7 +84,7 @@ const (
 /*
 Message
 	Source Source AudioSource
-	Kind   Kind   ParamUpdateKind
+	Kind   Kind   PresetUpdateKind
 	key    uint8  0-255 parameter ID
 	ValF  float32
 }

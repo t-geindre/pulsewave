@@ -63,7 +63,7 @@ func (m *Manager) GetPresets() []string {
 
 func (m *Manager) HandleMessage(msg msg.Message) {
 	switch msg.Kind {
-	case ParamUpdateKind:
+	case PresetUpdateKind:
 		m.voices[m.current].voice.SetParam(msg.Key, msg.ValF)
 	case LoadSavePresetKind:
 		p := int(msg.Key)
@@ -88,7 +88,7 @@ func (m *Manager) loadPreset(p int) {
 
 	for key, param := range m.voices[p].preset.Params {
 		m.messenger.SendMessage(msg.Message{
-			Kind: ParamUpdateKind,
+			Kind: PresetUpdateKind,
 			Key:  key,
 			ValF: param.GetBase(),
 		})

@@ -58,11 +58,11 @@ func main() {
 	router.AddRoute(midiInQ, midi.PitchBendKind, audioOutQ)
 
 	router.AddRoute(uiInQ, preset.LoadSavePresetKind, audioOutQ)
-	router.AddRoute(uiInQ, preset.ParamUpdateKind, audioOutQ)
+	router.AddRoute(uiInQ, preset.PresetUpdateKind, audioOutQ)
 	router.AddRoute(uiInQ, midi.NoteOnKind, audioOutQ)
 	router.AddRoute(uiInQ, midi.NoteOffKind, audioOutQ)
 
-	router.AddRoute(audioInQ, preset.ParamUpdateKind, uiOutQ)
+	router.AddRoute(audioInQ, preset.PresetUpdateKind, uiOutQ)
 
 	go router.Route()
 
