@@ -57,9 +57,11 @@ func NewPlayControls(messenger *msg.Messenger) *PlayControls {
 
 func (p *PlayControls) Update() (horDelta, vertDelta int) {
 	if inpututil.IsKeyJustPressed(ebiten.KeyPageUp) {
+		p.AllOff()
 		p.oct++
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyPageDown) {
+		p.AllOff()
 		p.oct--
 	}
 	for _, pk := range p.keys {
@@ -84,4 +86,16 @@ func (p *PlayControls) Update() (horDelta, vertDelta int) {
 	}
 
 	return 0, 0
+}
+
+func (p *PlayControls) AllOff() {
+	for _, pk := range p.keys {
+		if pk.down {
+			p.messenger.SendMessage(msg.Message{
+				Kind: midi.NoteOffKind,
+				Key:  pk.note + p.oct*12,
+			})
+			pk.down = false
+		}
+	}
 }
