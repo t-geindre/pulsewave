@@ -1,13 +1,13 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="run+debug" type="GoApplicationRunConfiguration" factoryName="Go Application">
-    <module name="br-academy" />
-    <working_directory value="$PROJECT_DIR$/synth" />
+    <module name="pulsewave" />
+    <working_directory value="$PROJECT_DIR$/" />
     <go_parameters value="-tags debug" />
     <parameters value="--debug" />
     <kind value="PACKAGE" />
     <package value="synth/cmd/pulsewave" />
     <directory value="$PROJECT_DIR$" />
-    <filePath value="$PROJECT_DIR$/synth/cmd/test/main.go" />
+    <filePath value="$PROJECT_DIR$/cmd/test/main.go" />
     <method v="2" />
   </configuration>
 </component>

@@ -1,12 +1,12 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="preset+decode" type="GoApplicationRunConfiguration" factoryName="Go Application">
-    <module name="br-academy" />
-    <working_directory value="$PROJECT_DIR$/synth" />
+    <module name="pulsewave" />
+    <working_directory value="$PROJECT_DIR$/" />
     <parameters value="--decode" />
     <kind value="PACKAGE" />
     <package value="synth/cmd/preset" />
     <directory value="$PROJECT_DIR$" />
-    <filePath value="$PROJECT_DIR$/synth/cmd/preset/main.go" />
+    <filePath value="$PROJECT_DIR$/cmd/preset/main.go" />
     <method v="2" />
   </configuration>
 </component>
