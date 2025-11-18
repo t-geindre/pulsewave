@@ -8,6 +8,7 @@ import (
 	"synth/midi"
 	"synth/msg"
 	"synth/preset"
+	"synth/settings"
 	"synth/tree"
 	"synth/ui"
 	"time"
@@ -47,22 +48,34 @@ func main() {
 	// Messaging
 	router := msg.NewRouter(logger().With().Str("component", "router").Logger())
 	midiInQ := router.AddInput(1024)
+
 	audioOutQ := router.AddOutput(1024)
 	audioInQ := router.AddInput(1024)
 
 	uiOutQ := router.AddOutput(1024)
 	uiInQ := router.AddInput(1024)
 
+	setsInQ := router.AddInput(1024)
+	setsOutQ := router.AddOutput(1024)
+
+	// Routing: MIDI to audio
 	router.AddRoute(midiInQ, midi.NoteOnKind, audioOutQ)
 	router.AddRoute(midiInQ, midi.NoteOffKind, audioOutQ)
 	router.AddRoute(midiInQ, midi.PitchBendKind, audioOutQ)
 
+	// Routing: UI to audio
 	router.AddRoute(uiInQ, preset.LoadSavePresetKind, audioOutQ)
 	router.AddRoute(uiInQ, preset.PresetUpdateKind, audioOutQ)
 	router.AddRoute(uiInQ, midi.NoteOnKind, audioOutQ)
 	router.AddRoute(uiInQ, midi.NoteOffKind, audioOutQ)
 
+	// Routing: audio to UI
 	router.AddRoute(audioInQ, preset.PresetUpdateKind, uiOutQ)
+
+	// Routing: settings to audio/UI + ui to settings
+	router.AddRoute(uiInQ, settings.SettingUpdateKind, setsOutQ)
+	router.AddRoute(setsInQ, settings.SettingUpdateKind, audioOutQ)
+	router.AddRoute(setsInQ, settings.SettingUpdateKind, uiOutQ)
 
 	go router.Route()
 
@@ -70,7 +83,7 @@ func main() {
 	audioMessenger := msg.NewMessenger(audioOutQ, audioInQ, 10)
 	presetManager := preset.NewManager(
 		SampleRate,
-		logger().With().Str("component", "preset-manager").Logger(),
+		logger().With().Str("component", "presets").Logger(),
 		audioMessenger,
 		"assets/presets",
 	)
@@ -92,7 +105,7 @@ func main() {
 
 	// Midi setup
 	mdi := midi.NewListener(
-		logger().With().Str("component", "midi-listener").Logger(),
+		logger().With().Str("component", "midi").Logger(),
 		midiInQ,
 	)
 	defer mdi.Close()
@@ -106,6 +119,16 @@ func main() {
 
 	player.SetBufferSize(time.Millisecond * time.Duration(*buffF))
 	player.Play()
+
+	// Settings
+	sets := settings.NewSettings(
+		"assets/settings.cfg",
+		msg.NewMessenger(setsOutQ, setsInQ, 0),
+		logger().With().Str("component", "settings").Logger(),
+	)
+
+	defer sets.Close()
+	defer sets.Persist()
 
 	// Assets
 	asts, err := assets.NewFromJson("assets/assets.json")

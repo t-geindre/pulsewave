@@ -3,6 +3,7 @@ package tree
 import (
 	"fmt"
 	"synth/preset"
+	"synth/settings"
 )
 
 func NewTree(presets []string) Node {
@@ -89,12 +90,12 @@ func NewTree(presets []string) Node {
 			allPresetsNodes(presets)...,
 		),
 		// todo add settings
-		//NewNode("Settings",
-		//	NewNode("General"),
-		//	NewNode("Master gain"),
-		//	NewNode("MIDI controllers"),
-		//	NewNode("Pitch bend"),
-		//	NewNode("About"),
-		//),
+		NewNode("Settings",
+			//	NewNode("General"),
+			NewSliderNode("Master gain", settings.SettingUpdateKind, settings.SettingsMasterGain, 0, 2, .01, nil),
+			//	NewNode("MIDI controllers"),
+			//	NewNode("Pitch bend"),
+			//	NewNode("About"),
+		),
 	)
 }

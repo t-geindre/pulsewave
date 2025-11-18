@@ -38,7 +38,7 @@ tests:
 
 .PHONY: proto
 proto:
-	protoc --go_out=. preset/preset.proto
+	protoc --go_out=. preset/preset.proto settings/settings.proto
 
 .PHONY: dist-assets
 dist-assets:

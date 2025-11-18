@@ -8,6 +8,7 @@ import (
 	"strings"
 	"synth/dsp"
 	"synth/msg"
+	"synth/settings"
 
 	"github.com/rs/zerolog"
 	"google.golang.org/protobuf/proto"
@@ -27,13 +28,18 @@ type Manager struct {
 	current   int
 	voices    []*presetVoice
 	logger    zerolog.Logger
+	settings  map[uint8]dsp.Param
 }
 
 func NewManager(sr float64, logger zerolog.Logger, messenger *msg.Messenger, path string) *Manager {
+	sets := make(map[uint8]dsp.Param)
+	sets[settings.SettingsMasterGain] = dsp.NewSmoothedParam(sr, 1, 0.01)
+
 	m := &Manager{
-		Mixer:     dsp.NewMixer(dsp.NewParam(1), false),
+		Mixer:     dsp.NewMixer(sets[settings.SettingsMasterGain], false),
 		messenger: messenger,
 		logger:    logger,
+		settings:  sets,
 	}
 
 	m.buildFromPath(sr, path)
@@ -72,6 +78,10 @@ func (m *Manager) HandleMessage(msg msg.Message) {
 			m.loadPreset(p)
 		} else if msg.ValF == 1 {
 			m.savePreset(p)
+		}
+	case settings.SettingUpdateKind:
+		if param, ok := m.settings[msg.Key]; ok {
+			param.SetBase(msg.ValF)
 		}
 	}
 }
