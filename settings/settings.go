@@ -47,8 +47,12 @@ func (s *Settings) Set(id uint8, value float32) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	s.settings[id] = value
-	s.dirty = true
+	if setting, ok := s.settings[id]; ok {
+		if setting != value {
+			s.settings[id] = value
+			s.dirty = true
+		}
+	}
 
 	s.messenger.SendMessage(msg.Message{
 		Kind: SettingUpdateKind,
@@ -133,6 +137,7 @@ func (s *Settings) load() {
 		}
 	}
 
+	s.dirty = false // avoid useless persist right after load
 	s.logger.Info().Msg("settings loaded")
 }
 
