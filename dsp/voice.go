@@ -62,10 +62,5 @@ func (v *Voice) NoteOff() {
 }
 
 func (v *Voice) IsIdle() bool {
-	for _, env := range v.envs {
-		if !env.IsIdle() {
-			return false
-		}
-	}
-	return true
+	return v.envs[0].IsIdle()
 }

@@ -1,7 +1,7 @@
 package tree
 
 import (
-	"fmt"
+	"synth/dsp"
 	"synth/preset"
 	"synth/settings"
 )
@@ -73,14 +73,20 @@ func NewTree(presets []string) Node {
 			),
 			NewNode("Unison",
 				onOffNode(preset.UnisonOnOff),
-				NewSliderNode("Voices", preset.PresetUpdateKind, preset.UnisonVoices, 1, 16, 1, func(v float32) string {
-					return fmt.Sprintf("%.0f voices", v)
-				}),
+				NewSliderNode("Voices", preset.PresetUpdateKind, preset.UnisonVoices, 1, 16, 1, formatVoice),
 				NewSliderNode("Pan spread", preset.PresetUpdateKind, preset.UnisonPanSpread, 0, 1, .01, nil),
 				NewSliderNode("Phase spread", preset.PresetUpdateKind, preset.UnisonPhaseSpread, 0, 1, .01, formatCycle),
 				NewSliderNode("Detune spread", preset.PresetUpdateKind, preset.UnisonDetuneSpread, 0, 100, .1, formatCent),
 				NewSliderNode("Curve gamma", preset.PresetUpdateKind, preset.UnisonCurveGamma, 0.1, 4, .1, nil),
 			),
+		),
+		NewNode("Voices",
+			NewSelectorNode("Voice steal mode", preset.PresetUpdateKind, preset.VoicesStealMode,
+				NewSelectorOption("Steal oldest", "", dsp.PolyStealOldest),
+				NewSelectorOption("Steal lowest pitch", "", dsp.PolyStealLowest),
+				NewSelectorOption("Steal highest pitch", "", dsp.PolyStealHighest),
+			),
+			NewSliderNode("Max active voices", preset.PresetUpdateKind, preset.VoicesActive, 1, 16, 1, formatVoice),
 		),
 		NewNode("Visualizer",
 			NewFeatureNode("Spectrum", 0), // todo implement spectrum analyzer

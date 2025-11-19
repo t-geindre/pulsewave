@@ -77,8 +77,9 @@ const (
 	LpfAdsrSustain = 53
 	LpfAdsrRelease = 54
 
-	// None, assigned to nothing
-	NONE = 255
+	// Voices
+	VoicesStealMode = 55
+	VoicesActive    = 56
 )
 
 /*

@@ -111,4 +111,8 @@ func (p *Preset) setDefaults() {
 	p.Params[LpfAdsrDecay] = dsp.NewParam(0)
 	p.Params[LpfAdsrSustain] = dsp.NewParam(0)
 	p.Params[LpfAdsrRelease] = dsp.NewParam(0)
+
+	// Voices
+	p.Params[VoicesStealMode] = dsp.NewParam(dsp.PolyStealOldest)
+	p.Params[VoicesActive] = dsp.NewParam(8)
 }

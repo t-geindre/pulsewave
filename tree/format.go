@@ -26,9 +26,6 @@ func formatCent(v float32) string {
 	return fmt.Sprintf("%.1f cent", v)
 }
 
-func formatOnOff(v float32) string {
-	if v < 0.5 {
-		return "OFF"
-	}
-	return "ON"
+func formatVoice(v float32) string {
+	return fmt.Sprintf("%.0f voices", v)
 }

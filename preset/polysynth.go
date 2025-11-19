@@ -19,7 +19,7 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	constZero := dsp.NewConstParam(0)
 
 	// Global pitch bend
-	pitchBend := dsp.NewParam(0)
+	pitchBend := dsp.NewSmoothedParam(SampleRate, 0, .01)
 
 	// Shape registry (uniq for all voices)
 	reg := dsp.NewShapeRegistry()
@@ -136,7 +136,7 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	}
 
 	// Polyphonic voice
-	poly := dsp.NewPolyVoice(8, voiceFact)
+	poly := dsp.NewPolyVoice(16, preset.Params[VoicesActive], preset.Params[VoicesStealMode], voiceFact)
 
 	// Delay with skipper
 	delay := dsp.NewFeedbackDelay(SampleRate, 2.0, poly, preset.Params[FBDelayParam], preset.Params[FBFeedBack], preset.Params[FBMix], preset.Params[FBTone])
