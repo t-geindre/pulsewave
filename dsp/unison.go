@@ -94,8 +94,8 @@ func (u *Unison) rebuild(n int) {
 			x = 2*float64(i)/float64(n-1) - 1
 		}
 
-		ph := NewSmoothedParam(u.sr, 0.5, 0.002) // center 0.5
-		dt := NewSmoothedParam(u.sr, 0.0, 0.002) // semitones
+		ph := NewSmoothedParam(u.sr, 0.5, NewConstParam(0.002)) // center 0.5
+		dt := NewSmoothedParam(u.sr, 0.0, NewConstParam(0.002)) // semitones
 
 		v := u.factory(ph, dt)
 

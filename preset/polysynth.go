@@ -19,7 +19,7 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	constZero := dsp.NewConstParam(0)
 
 	// Global pitch bend
-	pitchBend := dsp.NewSmoothedParam(SampleRate, 0, .01)
+	pitchBend := dsp.NewSmoothedParam(SampleRate, 0, dsp.NewConstParam(.01))
 
 	// Shape registry (uniq for all voices)
 	reg := dsp.NewShapeRegistry()
@@ -32,7 +32,7 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	// Voice factory
 	voiceFact := func() *dsp.Voice {
 		// Base frequency param (uniq per voice)
-		freq := dsp.NewSmoothedParam(SampleRate, 440, .001)
+		freq := dsp.NewSmoothedParam(SampleRate, 440, preset.Params[VoicesPitchGlide])
 		pitchMod := dsp.NewParam(0)
 		pitch := dsp.NewTunerParam(dsp.NewTunerParam(freq, pitchBend), pitchMod)
 

@@ -116,6 +116,35 @@ func fastExpSemi(semi float32) float32 {
 	return float32(math.Ldexp(float64(rFrac), oct))
 }
 
+// fastSmoothAlpha computes the smoothing coefficient alpha for a 1-pole
+// smoother with time constant tc (in seconds) at sample rate sr.
+// Uses the expNegLUT for performance: alpha = 1 - exp(-1/(tc*sr)).
+func fastSmoothAlpha(tc, sr float64) float32 {
+	if tc <= 0 {
+		// Pas de smoothing : on suit la cible immédiatement.
+		return 1
+	}
+
+	x := 1.0 / (tc * sr) // argument de exp(-x)
+
+	if x <= 0 {
+		return 0
+	}
+	if x >= expNegXMax {
+		// exp(-x) ≈ 0 → alpha ≈ 1
+		return 1
+	}
+
+	u := x * (4096.0 / expNegXMax)
+	i := int(u)
+	f := float32(u - float64(i))
+
+	// e^{-x} approx par LUT + interpolation linéaire
+	en := expNegLUT[i] + f*(expNegLUT[i+1]-expNegLUT[i])
+
+	return 1 - en
+}
+
 const expNegXMax = math.Pi // ~2π*fc/sr at fc≈sr/2
 var expNegLUT [4097]float32
 

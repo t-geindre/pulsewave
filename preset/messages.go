@@ -78,8 +78,9 @@ const (
 	LpfAdsrRelease = 54
 
 	// Voices
-	VoicesStealMode = 55
-	VoicesActive    = 56
+	VoicesStealMode  = 55
+	VoicesActive     = 56
+	VoicesPitchGlide = 57
 )
 
 /*

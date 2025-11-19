@@ -33,7 +33,7 @@ type Manager struct {
 
 func NewManager(sr float64, logger zerolog.Logger, messenger *msg.Messenger, path string) *Manager {
 	sets := make(map[uint8]dsp.Param)
-	sets[settings.MasterGain] = dsp.NewSmoothedParam(sr, 1, 0.01)
+	sets[settings.MasterGain] = dsp.NewSmoothedParam(sr, 1, dsp.NewConstParam(0.01))
 
 	m := &Manager{
 		Mixer:     dsp.NewMixer(sets[settings.MasterGain], false),

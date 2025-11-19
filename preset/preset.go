@@ -115,4 +115,5 @@ func (p *Preset) setDefaults() {
 	// Voices
 	p.Params[VoicesStealMode] = dsp.NewParam(dsp.PolyStealOldest)
 	p.Params[VoicesActive] = dsp.NewParam(8)
+	p.Params[VoicesPitchGlide] = dsp.NewParam(0.000)
 }
