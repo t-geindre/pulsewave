@@ -5,6 +5,7 @@ type polyVoice struct {
 	voice *Voice
 	input *Input
 	index uint64
+	gate  bool
 }
 
 const (
@@ -13,12 +14,18 @@ const (
 	PolyStealHighest
 )
 
+const MaxStolenRetain = 16
+
 type PolyVoice struct {
 	*Mixer
 	voices       []*polyVoice
 	index        uint64
 	stealMode    Param
 	activeVoices Param
+
+	stolen     [MaxStolenRetain]int
+	stolenHead int
+	stolenSize int
 }
 
 func NewPolyVoice(maxVoices int, activeVoices Param, stealMode Param, factory func() *Voice) *PolyVoice {
@@ -52,6 +59,7 @@ func (p *PolyVoice) NoteOn(key int, vel float32) {
 			v.index = p.index
 			v.voice.NoteOn(key, vel)
 			v.input.Mute = false
+			v.gate = true
 			return
 		}
 	}
@@ -64,6 +72,7 @@ func (p *PolyVoice) NoteOn(key int, vel float32) {
 			v.index = p.index
 			v.voice.NoteOn(key, vel)
 			v.input.Mute = false
+			v.gate = true
 			return
 		}
 	}
@@ -79,20 +88,39 @@ func (p *PolyVoice) NoteOn(key int, vel float32) {
 		lru = p.stealOldest(av)
 	}
 
+	if lru.gate {
+		p.enqueueStolen(lru.key)
+	}
+
 	lru.key = key
 	lru.index = p.index
 	lru.voice.NoteOff()
 	lru.voice.NoteOn(key, vel)
 	lru.input.Mute = false
+	lru.gate = true
 }
 
 func (p *PolyVoice) NoteOff(key int) {
+	if p.dropStolen(key) {
+		return
+	}
+
 	for _, s := range p.voices {
 		if s.key == key {
 			s.voice.NoteOff()
 			s.input.Mute = true
 			s.key = 0
 			s.index = 0
+			s.gate = false
+
+			// Re-trigger stolen note if any
+			if stolenKey, found := p.dequeueStolen(); found {
+				s.key = stolenKey
+				s.index = p.index
+				s.voice.NoteOn(stolenKey, 1.0) // velocity hardcoded to 1.0
+				s.input.Mute = false
+				s.gate = true
+			}
 			break
 		}
 	}
@@ -145,4 +173,41 @@ func (p *PolyVoice) stealHighest(av int) *polyVoice {
 		}
 	}
 	return lru
+}
+
+func (p *PolyVoice) enqueueStolen(key int) {
+	if p.stolenSize >= MaxStolenRetain {
+		return
+	}
+	pos := (p.stolenHead + p.stolenSize) % MaxStolenRetain
+	p.stolen[pos] = key
+	p.stolenSize++
+}
+
+func (p *PolyVoice) dequeueStolen() (int, bool) {
+	if p.stolenSize == 0 {
+		return 0, false
+	}
+
+	top := (p.stolenHead + p.stolenSize - 1 + MaxStolenRetain) % MaxStolenRetain
+	key := p.stolen[top]
+	p.stolenSize--
+
+	return key, true
+}
+
+func (p *PolyVoice) dropStolen(key int) bool {
+	for i := 0; i < p.stolenSize; i++ {
+		idx := (p.stolenHead + i) % MaxStolenRetain
+		if p.stolen[idx] == key {
+			for j := i; j < p.stolenSize-1; j++ {
+				from := (p.stolenHead + j + 1) % MaxStolenRetain
+				to := (p.stolenHead + j) % MaxStolenRetain
+				p.stolen[to] = p.stolen[from]
+			}
+			p.stolenSize--
+			return true
+		}
+	}
+	return false
 }
