@@ -2,6 +2,7 @@ package midi
 
 import (
 	"synth/msg"
+	"synth/settings"
 )
 
 type Instrument interface {
@@ -11,7 +12,8 @@ type Instrument interface {
 }
 
 type Player struct {
-	inst Instrument
+	inst        Instrument
+	pitchBendSt float32
 }
 
 func NewPlayer(inst Instrument) *Player {
@@ -30,8 +32,12 @@ func (p *Player) HandleMessage(m msg.Message) {
 	case PitchBendKind:
 		rel := float32(0)
 		if m.Val16 >= 128 || m.Val16 <= -128 {
-			rel = float32(m.Val16) / 8192.0 * 4.0 // 4 semitones range
+			rel = float32(m.Val16) / 8192.0 * p.pitchBendSt
 		}
 		p.inst.SetPitchBend(rel)
+	case settings.SettingUpdateKind:
+		if m.Key == settings.PitchBendRange {
+			p.pitchBendSt = m.ValF
+		}
 	}
 }

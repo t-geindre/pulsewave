@@ -33,10 +33,10 @@ type Manager struct {
 
 func NewManager(sr float64, logger zerolog.Logger, messenger *msg.Messenger, path string) *Manager {
 	sets := make(map[uint8]dsp.Param)
-	sets[settings.SettingsMasterGain] = dsp.NewSmoothedParam(sr, 1, 0.01)
+	sets[settings.MasterGain] = dsp.NewSmoothedParam(sr, 1, 0.01)
 
 	m := &Manager{
-		Mixer:     dsp.NewMixer(sets[settings.SettingsMasterGain], false),
+		Mixer:     dsp.NewMixer(sets[settings.MasterGain], false),
 		messenger: messenger,
 		logger:    logger,
 		settings:  sets,
@@ -72,7 +72,7 @@ func (m *Manager) HandleMessage(msg msg.Message) {
 	switch msg.Kind {
 	case PresetUpdateKind:
 		m.voices[m.current].voice.SetParam(msg.Key, msg.ValF)
-	case LoadSavePresetKind:
+	case PresetLoadSaveKind:
 		p := int(msg.Key)
 		if msg.ValF == 0 {
 			m.loadPreset(p)

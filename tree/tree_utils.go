@@ -46,7 +46,7 @@ func onOffNode(key uint8) Node {
 func allPresetsNodes(presets []string) []Node {
 	nodes := make([]Node, len(presets))
 	for i, p := range presets {
-		nodes[i] = NewValidatingSelectorNode(p, preset.LoadSavePresetKind, uint8(i),
+		nodes[i] = NewValidatingSelectorNode(p, preset.PresetLoadSaveKind, uint8(i),
 			NewSelectorOption("Load", "", 0),
 			NewSelectorOption("Save", "", 1),
 		)

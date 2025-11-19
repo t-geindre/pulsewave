@@ -89,13 +89,9 @@ func NewTree(presets []string) Node {
 		NewNode("Presets",
 			allPresetsNodes(presets)...,
 		),
-		// todo add settings
 		NewNode("Settings",
-			//	NewNode("General"),
-			NewSliderNode("Master gain", settings.SettingUpdateKind, settings.SettingsMasterGain, 0, 2, .01, nil),
-			//	NewNode("MIDI controllers"),
-			//	NewNode("Pitch bend"),
-			//	NewNode("About"),
+			NewSliderNode("Master gain", settings.SettingUpdateKind, settings.MasterGain, 0, 2, .01, nil),
+			NewSliderNode("Pitch bend range", settings.SettingUpdateKind, settings.PitchBendRange, 1, 24, 1, formatSemiTon),
 		),
 	)
 }

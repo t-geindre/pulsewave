@@ -119,8 +119,18 @@ func (s *Settings) load() {
 		return
 	}
 
-	for _, setting := range prt.Settings {
-		s.Set(uint8(setting.Id), setting.Value)
+	for id, value := range s.settings {
+		found := false
+		for _, setting := range prt.Settings {
+			if uint8(setting.Id) == id {
+				s.Set(uint8(setting.Id), setting.Value)
+				found = true
+				break
+			}
+		}
+		if !found {
+			s.Set(id, value)
+		}
 	}
 
 	s.logger.Info().Msg("settings loaded")
@@ -129,7 +139,9 @@ func (s *Settings) load() {
 func (s *Settings) loadDefaults() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.settings[SettingsMasterGain] = 1.0
+
+	s.settings[MasterGain] = 1.0
+	s.settings[PitchBendRange] = 4.0
 }
 
 func (s *Settings) periodicPersist() {

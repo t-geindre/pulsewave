@@ -2,4 +2,7 @@ package settings
 
 const SettingUpdateKind = 30
 
-const SettingsMasterGain = 1
+const (
+	MasterGain     = 1
+	PitchBendRange = 2
+)
