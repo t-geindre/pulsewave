@@ -109,10 +109,24 @@ func (s *Settings) Close() {
 	close(s.closed)
 }
 
+func (s *Settings) publishAll() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	for id, value := range s.settings {
+		s.messenger.SendMessage(msg.Message{
+			Kind: SettingUpdateKind,
+			Key:  id,
+			ValF: value,
+		})
+	}
+}
+
 func (s *Settings) load() {
 	raw, err := os.ReadFile(s.path)
 	if err != nil {
 		s.logger.Warn().Err(err).Msg("failed to read settings file, using default settings")
+		s.publishAll()
 		return
 	}
 
@@ -120,6 +134,7 @@ func (s *Settings) load() {
 	err = proto.Unmarshal(raw, prt)
 	if err != nil {
 		s.logger.Warn().Err(err).Msg("failed to unmarshal settings file, using default settings")
+		s.publishAll()
 		return
 	}
 
