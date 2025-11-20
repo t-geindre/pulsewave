@@ -81,6 +81,14 @@ const (
 	VoicesStealMode  = 55
 	VoicesActive     = 56
 	VoicesPitchGlide = 57
+
+	// Noise oscillator
+	NoiseGain = 58
+
+	// Sub oscillator
+	SubOscShape     = 59
+	SubOscGain      = 60
+	SubOscTranspose = 61
 )
 
 /*

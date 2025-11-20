@@ -27,9 +27,8 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	reg.Add(dsp.ShapeSquare)
 	reg.Add(dsp.ShapeSaw)
 	reg.Add(dsp.ShapeTriangle)
-	reg.Add(dsp.ShapeNoise)
 
-	// Voice factory
+	// Voice factory / 3 osc
 	voiceFact := func() *dsp.Voice {
 		// Base frequency param (uniq per voice)
 		freq := dsp.NewSmoothedParam(SampleRate, 440, preset.Params[VoicesPitchGlide])
@@ -47,7 +46,7 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 		// Oscillator factory
 		oscFact := func(ph, dt dsp.Param) dsp.Node {
 			// Mixer, registry
-			mixer := dsp.NewMixer(dsp.NewParam(1), false)
+			mixer := dsp.NewMixer(nil, false)
 			ft := dsp.NewTunerParam(pitch, dt)
 
 			// 0
@@ -105,6 +104,18 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 			preset.Params[UnisonOnOff],
 		)
 
+		// Global mixer
+		globalMix := dsp.NewMixer(nil, false)
+		globalMix.Add(dsp.NewInput(unisonSkip, nil, nil))
+
+		// Noise oscillator
+		noiseOsc := dsp.NewNoise()
+		globalMix.Add(dsp.NewInput(noiseOsc, preset.Params[NoiseGain], nil))
+
+		// Sub oscillator
+		subOsc := dsp.NewRegOscillator(SampleRate, reg, preset.Params[SubOscShape], dsp.NewTunerParam(pitch, preset.Params[SubOscTranspose]), nil, nil)
+		globalMix.Add(dsp.NewInput(subOsc, preset.Params[SubOscGain], nil))
+
 		// LPF
 		cutoffLfo := dsp.NewRegOscillator(SampleRate, reg, preset.Params[LpfLfoShape], preset.Params[LpfLfoFreq], preset.Params[LpfLfoPhase], nil)
 		cutoffAdsr := dsp.NewADSR(SampleRate, preset.Params[LpfAdsrAttack], preset.Params[LpfAdsrDecay], preset.Params[LpfAdsrSustain], preset.Params[LpfAdsrRelease])
@@ -116,8 +127,8 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 			dsp.NewModInput(cutoffAdsr, NewParamSkipper(preset.Params[LpfAdsrAmount], constZero, preset.Params[LpfAdsrOnOff]), nil),
 		)
 
-		lpf := dsp.NewLowPassSVF(SampleRate, unisonSkip, cutoff, preset.Params[LPFResonance])
-		lpfSkip := NewNodeSkipper(lpf, unisonSkip, preset.Params[LPFOnOff])
+		lpf := dsp.NewLowPassSVF(SampleRate, globalMix, cutoff, preset.Params[LPFResonance])
+		lpfSkip := NewNodeSkipper(lpf, globalMix, preset.Params[LPFOnOff])
 
 		// Amplitude envelope
 		gainAdsr := dsp.NewADSR(SampleRate, preset.Params[AmpEnvAttack], preset.Params[AmpEnvDecay], preset.Params[AmpEnvSustain], preset.Params[AmpEnvRelease])

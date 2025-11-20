@@ -20,7 +20,6 @@ func NewWaveFormNode(key uint8) Node {
 		NewSelectorOption("Square", "ui/icons/square_wave", 1),
 		NewSelectorOption("Sawtooth", "ui/icons/saw_wave", 2),
 		NewSelectorOption("Triangle", "ui/icons/triangle_wave", 3),
-		NewSelectorOption("Noise", "ui/icons/noise_wave", 4),
 	)
 }
 

@@ -19,8 +19,6 @@ type Oscillator struct {
 	phase float64
 	sr    float64
 
-	rng uint32 // ShapeNoise only
-
 	buf       [BlockSize]float32
 	stampedAt uint64
 }
@@ -55,8 +53,7 @@ func NewRegOscillator(
 		freq:          freq,
 		phaseShift:    phaseShift,
 		width:         sqrWidth,
-		rng:           0x9E3779B9, // arbitrary non-zero seed
-		shapeIdx:      -1,         // force load shape on first Process
+		shapeIdx:      -1, // force load shape on first Process
 	}
 }
 
@@ -86,16 +83,6 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 		s.shape = shape
 		s.wavetable = wavetable
 		s.shapeIdx = sIdx
-	}
-
-	if s.shape == ShapeNoise {
-		for i := 0; i < BlockSize; i++ {
-			x := s.xorShift32()
-			u := float32(x) * (1.0 / 4294967296.0)
-			s.buf[i] = 2*u - 1
-		}
-		s.stampedAt = cycle
-		return s.buf[:]
 	}
 
 	fb := s.freq.Resolve(cycle)
@@ -190,13 +177,4 @@ func (s *Oscillator) Resolve(cycle uint64) []float32 {
 
 	s.stampedAt = cycle
 	return s.buf[:]
-}
-
-func (s *Oscillator) xorShift32() uint32 {
-	x := s.rng
-	x ^= x << 13
-	x ^= x >> 17
-	x ^= x << 5
-	s.rng = x
-	return x
 }

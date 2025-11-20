@@ -6,6 +6,10 @@ func formatSemiTon(v float32) string {
 	return fmt.Sprintf("%.2f st", v)
 }
 
+func formatOctave(v float32) string {
+	return fmt.Sprintf("%.0f oct", v/12)
+}
+
 func formatMillisecond(v float32) string {
 	return fmt.Sprintf("%.0f ms", v*1000)
 }

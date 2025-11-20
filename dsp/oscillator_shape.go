@@ -6,7 +6,6 @@ const (
 	ShapeSaw OscShape = iota
 	ShapeTriangle
 	ShapeSquare
-	ShapeNoise
 	ShapeTableWave
 )
 

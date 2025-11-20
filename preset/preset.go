@@ -116,4 +116,12 @@ func (p *Preset) setDefaults() {
 	p.Params[VoicesStealMode] = dsp.NewParam(dsp.PolyStealOldest)
 	p.Params[VoicesActive] = dsp.NewParam(8)
 	p.Params[VoicesPitchGlide] = dsp.NewParam(0.000)
+
+	// Noise oscillator
+	p.Params[NoiseGain] = dsp.NewParam(0)
+
+	// Sub oscillator
+	p.Params[SubOscGain] = dsp.NewParam(0)
+	p.Params[SubOscShape] = dsp.NewParam(0)
+	p.Params[SubOscTranspose] = dsp.NewParam(0)
 }
