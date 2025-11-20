@@ -21,3 +21,5 @@
  - [ ] **Feedback delay**: Suppress click on delay modulation
  - [ ] **ADSR shapes**: Linear, exponential, ...
  - [ ] **Use const param**: Where applicable, apply fast path if possible
+ - [ ] **Sub+Noise osc**: Add sub oscillator and noise generator
+ - [ ] **Osc**: Smooth gain
