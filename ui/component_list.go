@@ -22,13 +22,12 @@ type List struct {
 	node    tree.Node
 	entries map[tree.Node]*ListEntry
 
-	listWindow []int
+	firstIndex int
+	visible    int
 	cursorPos  int
 
 	cursorImg            *ebiten.Image
 	cursorXSh, cursorYSh float64
-
-	loop bool
 
 	cursorY         float64
 	targetCursorY   float64
@@ -61,30 +60,20 @@ func NewList(asts *assets.Loader, node tree.Node) (*List, error) {
 	}
 
 	// Cursor alignment
+	children := node.Children()
 	sbds := l.cursorImg.Bounds()
-	ebds := l.entries[node.Children()[0]].Bounds() // arbitrary entry
+	ebds := l.entries[children[0]].Bounds() // arbitrary entry
 
 	l.cursorXSh = -float64(sbds.Dx()-ebds.Dx()) / 2
 	l.cursorYSh = float64(sbds.Dy()-ebds.Dy()) / 2
 
-	// List window + Loop mode
-	l.loop = true
-	ws := ListVisibleItems + 2
-	if len(node.Children()) < ListVisibleItems {
-		ws = len(node.Children())
-		l.loop = false
+	total := len(children)
+	visible := ListVisibleItems
+	if total < visible {
+		visible = total
 	}
-	l.listWindow = make([]int, ws)
-	for i := range l.listWindow {
-		s := i
-		if l.loop {
-			s--
-			if s < 0 {
-				s = len(l.listWindow) - 1
-			}
-		}
-		l.listWindow[i] = s % len(node.Children())
-	}
+	l.visible = visible
+	l.firstIndex = 0
 
 	// Init pos
 	l.cursorPos = 0
@@ -109,18 +98,36 @@ func (l *List) Update() {
 }
 
 func (l *List) Draw(screen *ebiten.Image) {
-	// Entries
-	for i, idx := range l.listWindow {
-		entry := l.entries[l.node.Children()[idx]]
-		startIndex := 0
-		if l.loop {
-			startIndex = -1
-		}
-		y := float64(i+startIndex)*ListEntrySpacing + l.windowOffset + ListPaddingTop
+	total := len(l.node.Children())
 
-		opts := &ebiten.DrawImageOptions{}
-		opts.GeoM.Translate(ListPaddingLeft, y)
-		screen.DrawImage(entry.Image, opts)
+	for i := 0; i < l.visible; i++ {
+		idx := l.firstIndex + i
+		if idx >= total {
+			break
+		}
+		y := float64(i)*ListEntrySpacing + l.windowOffset + ListPaddingTop
+		l.drawEntry(screen, idx, y)
+	}
+
+	if l.animatingWin {
+		first := l.firstIndex
+
+		if l.scrollingDown {
+			bottomIdx := first + l.visible - 1
+			if bottomIdx < total-1 {
+				nextIdx := bottomIdx + 1
+				y := float64(l.visible)*ListEntrySpacing + l.windowOffset + ListPaddingTop
+				l.drawEntry(screen, nextIdx, y)
+			}
+		}
+
+		if l.scrollingUp {
+			if first > 0 {
+				prevIdx := first - 1
+				y := -1*ListEntrySpacing + l.windowOffset + ListPaddingTop
+				l.drawEntry(screen, prevIdx, y)
+			}
+		}
 	}
 
 	// Cursor
@@ -131,54 +138,69 @@ func (l *List) Draw(screen *ebiten.Image) {
 }
 
 func (l *List) Scroll(delta int) {
-	if l.animatingWin {
+	if l.animatingWin || delta == 0 {
 		return
 	}
 
-	if !l.loop {
-		switch {
-		case delta < 0:
-			if l.cursorPos > 0 {
-				l.moveCursor(-1)
-			}
-		default:
-			if l.cursorPos < len(l.listWindow)-1 {
-				l.moveCursor(1)
-			}
+	children := l.node.Children()
+	total := len(children)
+	if total == 0 || l.visible == 0 {
+		return
+	}
+
+	first := l.firstIndex
+	window := l.visible
+	globalCursor := first + l.cursorPos
+	lastGlobal := total - 1
+
+	if delta < 0 {
+		if globalCursor == 0 {
+			return
 		}
-		return
-	}
 
-	total := len(l.node.Children())
-
-	switch {
-	case delta < 0:
 		if l.cursorPos > 0 {
 			l.moveCursor(-1)
-		} else {
+			return
+		}
+
+		if first > 0 {
 			l.startScroll(+ListEntrySpacing, true)
 		}
-	default:
-		if l.cursorPos < ListVisibleItems-1 {
-			l.moveCursor(+1)
-		} else {
-			l.startScroll(-ListEntrySpacing, false)
-		}
+		return
 	}
 
-	l.cursorPos = (l.cursorPos + total) % total
+	if globalCursor == lastGlobal {
+		return
+	}
+
+	if l.cursorPos < window-1 && first+l.cursorPos+1 < total {
+		l.moveCursor(+1)
+		return
+	}
+
+	bottomIndex := first + window - 1
+	if bottomIndex < lastGlobal {
+		l.startScroll(-ListEntrySpacing, false)
+	}
 }
 
 func (l *List) CurrentTarget() tree.Node {
-	pos := l.cursorPos
-	if l.loop {
-		pos++
+	children := l.node.Children()
+	idx := l.firstIndex + l.cursorPos
+	if idx < 0 || idx >= len(children) {
+		return nil
 	}
-	return l.node.Children()[l.listWindow[pos]]
+	return children[idx]
 }
 
 func (l *List) moveCursor(dir int) {
 	l.cursorPos += dir
+	if l.cursorPos < 0 {
+		l.cursorPos = 0
+	}
+	if l.cursorPos >= l.visible {
+		l.cursorPos = l.visible - 1
+	}
 	l.targetCursorY = float64(l.cursorPos)*ListEntrySpacing + ListPaddingTop
 }
 
@@ -193,24 +215,51 @@ func (l *List) startScroll(offset float64, up bool) {
 func (l *List) finishScroll() {
 	l.windowOffset, l.animT, l.animatingWin = 0, 0, false
 
-	total := len(l.node.Children())
-	window := len(l.listWindow)
+	children := l.node.Children()
+	total := len(children)
+	window := l.visible
+	if window == 0 || total == 0 {
+		l.scrollingUp = false
+		l.scrollingDown = false
+		return
+	}
+
+	first := l.firstIndex
 
 	if l.scrollingDown {
-		for i := 0; i < window-1; i++ {
-			l.listWindow[i] = l.listWindow[i+1]
+		lastAllowedFirst := total - window
+		if first < lastAllowedFirst {
+			first++
+			l.firstIndex = first
 		}
-		l.listWindow[window-1] = (l.listWindow[window-1] + 1) % total
 		l.scrollingDown = false
 	}
+
 	if l.scrollingUp {
-		for i := window - 1; i > 0; i-- {
-			l.listWindow[i] = l.listWindow[i-1]
+		if first > 0 {
+			first--
+			l.firstIndex = first
 		}
-		l.listWindow[0] = (l.listWindow[0] - 1 + total) % total
 		l.scrollingUp = false
 	}
 }
+
+func (l *List) drawEntry(screen *ebiten.Image, idx int, y float64) {
+	children := l.node.Children()
+	if idx < 0 || idx >= len(children) {
+		return
+	}
+
+	entry := l.entries[children[idx]]
+	if entry == nil {
+		return
+	}
+
+	opts := &ebiten.DrawImageOptions{}
+	opts.GeoM.Translate(ListPaddingLeft, y)
+	screen.DrawImage(entry.Image, opts)
+}
+
 func (l *List) buildEntries(asts *assets.Loader, node tree.Node) error {
 	for _, ch := range node.Children() {
 		entry, err := NewListEntry(asts, ch.Label())
@@ -218,7 +267,6 @@ func (l *List) buildEntries(asts *assets.Loader, node tree.Node) error {
 			return err
 		}
 		l.entries[ch] = entry
-
 	}
 	return nil
 }
