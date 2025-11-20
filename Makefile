@@ -9,7 +9,7 @@ BENCH_TARGET := $(BENCH_DIR)/bench-$(BENCH_MASK_SAFE)-$(BENCH_TIMESTAMP).txt
 bench:
 	mkdir -p $(BENCH_DIR)
 	@echo "Running benchmarks (mask=$(BENCH_MASK)) → $(BENCH_TARGET)"
-	go test -benchmem -bench=$(BENCH_MASK) -count=$(BENCH_COUNT) ./... | tee $(BENCH_TARGET)
+	go test -benchmem -run=^$$ -bench=$(BENCH_MASK) -count=$(BENCH_COUNT) ./... | tee $(BENCH_TARGET)
 
 .PHONY: benchstat
 benchstat:
