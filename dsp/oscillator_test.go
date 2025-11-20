@@ -20,7 +20,6 @@ func getOscTestCases() []*oscillatorTestCase {
 		{"WT 64", ShapeTableWave, NewSineWavetable(64), nil},
 		{"Square", ShapeSquare, nil, nil},
 		{"Triangle", ShapeTriangle, nil, nil},
-		{"Noise", ShapeNoise, nil, nil},
 		{"Saw", ShapeSaw, nil, nil},
 	}
 

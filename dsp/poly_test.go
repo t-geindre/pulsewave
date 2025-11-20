@@ -14,13 +14,13 @@ var voiceFact = func() *Voice {
 		NewConstParam(0.8),
 		NewConstParam(100/1000),
 	)
-	src := NewOscillator(sr, ShapeNoise, freq, nil, nil) // Noise = fastest
+	src := NewNoise()
 
 	return NewVoice(src, freq, env)
 }
 
 func BenchmarkPoly_Process(b *testing.B) {
-	poly := NewPolyVoice(16, voiceFact)
+	poly := NewPolyVoice(16, NewConstParam(16), NewConstParam(PolyStealOldest), voiceFact)
 	for i := 0; i < 16; i++ {
 		poly.NoteOn(i, 1.0)
 	}
@@ -35,7 +35,7 @@ func BenchmarkPoly_Process(b *testing.B) {
 }
 
 func TestPoly_ProcessNoAlloc(t *testing.T) {
-	poly := NewPolyVoice(16, voiceFact)
+	poly := NewPolyVoice(16, NewConstParam(16), NewConstParam(PolyStealOldest), voiceFact)
 	for i := 0; i < 16; i++ {
 		poly.NoteOn(i, 1.0)
 	}

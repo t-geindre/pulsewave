@@ -29,7 +29,7 @@ func getMixerTestCases() []*mixerTestCase {
 		}
 
 		for i := 0; i < 16; i++ {
-			osc := NewOscillator(sr, ShapeNoise, NewConstParam(440), nil, nil) // Noise = fastest
+			osc := NewNoise()
 			in := NewInput(osc, gp, pp)
 			m.Add(in)
 		}
