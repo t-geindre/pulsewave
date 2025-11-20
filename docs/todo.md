@@ -1,0 +1,23 @@
+# TODOS
+
+ - [ ] **Key tracking on LPF**: Cutoff relative to played note
+ - [ ] **Mixer node**: All osc gains in one place
+ - [ ] **LPF drive**: Saturation/distortion on LPF
+ - [ ] **LFP bug**: High resonance with low cutoff
+ - [ ] **Node preview**: Display a value preview
+ - [ ] **More filter**: HP, BP, LP
+ - [ ] **Implement slider view in slider component**
+ - [ ] **Implement UI scrollbar**
+ - [ ] **Handle velocity**: Bind to amp, cutoff, ...
+ - [ ] **Settings**: Fine tune, transpose
+ - [ ] **Presets**: Save/load **user** presets
+ - [ ] **More effects**: Real reverb, chorus
+ - [ ] **Pitch glide**: Do not glide on IDLE voice
+ - [ ] **Modulation**: Link LFO/ADSR to any parameter
+ - [ ] **Looper**: Record and loop midi input
+ - [ ] **UI config**: Get UI parameters from JSON
+ - [ ] **List loop**: Disable looping mode
+ - [ ] **UI controls**: Improve it
+ - [ ] **Feedback delay**: Suppress click on delay modulation
+ - [ ] **ADSR shapes**: Linear, exponential, ...
+ - [ ] **Use const param**: Where applicable, apply fast path if possible
