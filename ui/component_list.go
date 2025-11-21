@@ -11,12 +11,13 @@ import (
 
 // Todo get it from config
 const (
-	ListVisibleItems = 4
-	ListPaddingTop   = 20
-	ListPaddingLeft  = 25
-	ListEntrySpacing = 50
-	ListEntryWidth   = 329.0
-	ListEntryHeight  = 24.0
+	ListVisibleItems   = 4
+	ListPaddingTop     = 20
+	ListHorPadding     = 25
+	ListEntrySpacing   = 50
+	ListEntryWidth     = 329.0
+	ListEntryHeight    = 24.0
+	ListPreviewSpacing = 10
 )
 
 var ErrEmptyList = errors.New("empty list")
@@ -144,7 +145,7 @@ func (l *List) Draw(screen *ebiten.Image) {
 	// Cursor
 	selOpts := &ebiten.DrawImageOptions{}
 	selY := l.cursorY - l.cursorYSh
-	selOpts.GeoM.Translate(l.cursorXSh+ListPaddingLeft, selY)
+	selOpts.GeoM.Translate(l.cursorXSh+ListHorPadding, selY)
 	screen.DrawImage(l.cursorImg, selOpts)
 }
 
@@ -265,12 +266,21 @@ func (l *List) drawEntry(screen *ebiten.Image, idx int, y float64) {
 
 	entry.Label()
 	opts := &text.DrawOptions{}
-	opts.GeoM.Translate(ListPaddingLeft, y+textCenterY)
+	opts.GeoM.Translate(ListHorPadding, y+textCenterY)
 	text.Draw(screen, entry.Label(), l.faceEntry, opts)
 
 	// Arrow
-	bds := l.arrowEntry.Bounds()
+	arrBds := l.arrowEntry.Bounds()
 	arrOpts := &ebiten.DrawImageOptions{}
-	arrOpts.GeoM.Translate(ListEntryWidth-float64(bds.Dx())+ListPaddingLeft, y+(ListEntryHeight-float64(bds.Dy()))/2)
+	arrOpts.GeoM.Translate(ListEntryWidth-float64(arrBds.Dx())+ListHorPadding, y+(ListEntryHeight-float64(arrBds.Dy()))/2)
 	screen.DrawImage(l.arrowEntry, arrOpts)
+
+	// Preview
+	preview := entry.Preview()
+	if preview != "" {
+		prewOpts := &text.DrawOptions{}
+		pw, _ := text.Measure(preview, l.faceEntry, 0)
+		prewOpts.GeoM.Translate(ListEntryWidth-pw-float64(arrBds.Dx())+ListHorPadding-ListPreviewSpacing, y+textCenterY)
+		text.Draw(screen, preview, l.faceEntry, prewOpts)
+	}
 }

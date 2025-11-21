@@ -31,5 +31,9 @@ func formatCent(v float32) string {
 }
 
 func formatVoice(v float32) string {
+	if v == 1 {
+		return "1 voice"
+	}
+
 	return fmt.Sprintf("%.0f voices", v)
 }

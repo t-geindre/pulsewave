@@ -21,7 +21,7 @@ type sliderNode struct {
 }
 
 func NewSliderNode(label string, kind msg.Kind, key uint8, min, max, step float32, format func(float32) string) SliderNode {
-	return &sliderNode{
+	s := &sliderNode{
 		min:    min,
 		max:    max,
 		step:   step,
@@ -29,6 +29,10 @@ func NewSliderNode(label string, kind msg.Kind, key uint8, min, max, step float3
 
 		ValueNode: NewValueNode(label, kind, key),
 	}
+
+	s.AttachPreview(s.Display)
+
+	return s
 }
 
 func (n *sliderNode) Step() float32 {

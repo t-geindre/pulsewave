@@ -46,7 +46,7 @@ func NewAdsrNodeWithToggle(label string, toggle, att, dec, sus, rel uint8, child
 }
 
 func NewOnOffNode(key uint8) Node {
-	return NewSelectorNode("ON/OFF", preset.PresetUpdateKind, key,
+	return NewSelectorNode("Status", preset.PresetUpdateKind, key,
 		NewSelectorOption("OFF", "", 0),
 		NewSelectorOption("ON", "", 1),
 	)

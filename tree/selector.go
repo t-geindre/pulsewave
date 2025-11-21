@@ -20,10 +20,15 @@ type selectorNode struct {
 }
 
 func NewSelectorNode(label string, kind msg.Kind, key uint8, options ...*SelectorOption) SelectorNode {
-	return &selectorNode{
+	s := &selectorNode{
 		options:   options,
 		ValueNode: NewValueNode(label, kind, key),
 	}
+	s.AttachPreview(func() string {
+		return s.Options()[int(s.Val())].Label()
+
+	})
+	return s
 }
 
 func NewValidatingSelectorNode(label string, kind msg.Kind, key uint8, options ...*SelectorOption) SelectorNode {

@@ -142,7 +142,7 @@ func main() {
 
 	// Menu tree
 	menuTree := tree.NewTree(presetManager.GetPresets())
-	menuTree.Attach(uiMessenger)
+	menuTree.AttachMessenger(uiMessenger)
 
 	// UI Components
 	components, err := ui.NewComponents(asts, menuTree, uiAudioQueue)

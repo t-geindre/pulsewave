@@ -4,7 +4,7 @@
  - [ ] **Mixer node**: All osc gains in one place
  - [ ] **LPF drive**: Saturation/distortion on LPF
  - [ ] **LFP bug**: High resonance with low cutoff
- - [ ] **Node preview**: Display a value preview
+ - [X] **Node preview**: Display a value preview
  - [ ] **More filter**: HP, BP
  - [ ] **Implement slider view in slider component**
  - [ ] **Implement UI scrollbar**

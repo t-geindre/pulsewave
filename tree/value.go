@@ -59,7 +59,7 @@ func (p *ParamNode) Key() uint8 {
 	return p.key
 }
 
-func (p *ParamNode) Attach(m *msg.Messenger) {
+func (p *ParamNode) AttachMessenger(m *msg.Messenger) {
 	p.messenger = m
 	m.RegisterHandler(p)
 }

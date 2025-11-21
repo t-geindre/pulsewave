@@ -7,13 +7,12 @@ import (
 )
 
 func NewTree(presets []string) Node {
-	return NewNode("",
+	tree := NewNode("",
 		NewNode("Oscillators",
-			NewOscillatorNode("Oscillator 1", preset.Osc0Shape, preset.Osc0Detune, preset.Osc0Gain, preset.Osc0Phase, preset.Osc0Pw),
-			NewOscillatorNode("Oscillator 2", preset.Osc1Shape, preset.Osc1Detune, preset.Osc1Gain, preset.Osc1Phase, preset.Osc1Pw),
-			NewOscillatorNode("Oscillator 3", preset.Osc2Shape, preset.Osc2Detune, preset.Osc2Gain, preset.Osc2Phase, preset.Osc2Pw),
-			NewNode("Noise oscillator",
-				NewSliderNode("Gain", preset.PresetUpdateKind, preset.NoiseGain, 0, 1, .01, nil),
+			NewOscillatorNode("Osc 01", preset.Osc0Shape, preset.Osc0Detune, preset.Osc0Gain, preset.Osc0Phase, preset.Osc0Pw),
+			NewOscillatorNode("Osc 02", preset.Osc1Shape, preset.Osc1Detune, preset.Osc1Gain, preset.Osc1Phase, preset.Osc1Pw),
+			NewOscillatorNode("Osc 03", preset.Osc2Shape, preset.Osc2Detune, preset.Osc2Gain, preset.Osc2Phase, preset.Osc2Pw),
+			NewNode("Noise",
 				NewSelectorNode("Type", preset.PresetUpdateKind, preset.NoiseType,
 					NewSelectorOption("White", "", dsp.NoiseWhite),
 					NewSelectorOption("Pink", "", dsp.NoisePink),
@@ -21,8 +20,9 @@ func NewTree(presets []string) Node {
 					NewSelectorOption("Blue", "", dsp.NoiseBlue),
 					NewSelectorOption("Gaussian", "", dsp.NoiseGaussian),
 				),
+				NewSliderNode("Gain", preset.PresetUpdateKind, preset.NoiseGain, 0, 1, .01, nil),
 			),
-			NewNode("Sub oscillator",
+			NewNode("Sub",
 				NewWaveFormNode(preset.SubOscShape),
 				NewSliderNode("Gain", preset.PresetUpdateKind, preset.SubOscGain, 0, 1, .01, nil),
 				NewSliderNode("Transpose", preset.PresetUpdateKind, preset.SubOscTranspose, -48, 48, 12, formatOctave),
@@ -98,4 +98,15 @@ func NewTree(presets []string) Node {
 			NewSliderNode("Pitch bend range", settings.SettingUpdateKind, settings.PitchBendRange, 1, 24, 1, formatSemiTon),
 		),
 	)
+
+	AttachOscPreviews(tree, "Osc 01", "Osc 02", "Osc 03", "Noise", "Sub")
+	AttachPreviewToParent(tree, "Status")
+	AttachNameIfSubNodeVal(tree, "Status", 1, " + ", "OFF", "Cutoff", "Pitch")
+
+	// For now, amp is modulated only by and ADSR
+	tree.QueryAll("Amplitude")[0].AttachPreview(func() string {
+		return "ADSR"
+	})
+
+	return tree
 }
