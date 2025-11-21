@@ -14,7 +14,7 @@ var voiceFact = func() *Voice {
 		NewConstParam(0.8),
 		NewConstParam(100/1000),
 	)
-	src := NewNoise()
+	src := NewNoise(NewConstParam(NoiseWhite))
 
 	return NewVoice(src, freq, env)
 }

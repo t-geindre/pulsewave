@@ -84,6 +84,7 @@ const (
 
 	// Noise oscillator
 	NoiseGain = 58
+	NoiseType = 62
 
 	// Sub oscillator
 	SubOscShape     = 59

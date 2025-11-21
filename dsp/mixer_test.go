@@ -29,7 +29,7 @@ func getMixerTestCases() []*mixerTestCase {
 		}
 
 		for i := 0; i < 16; i++ {
-			osc := NewNoise()
+			osc := NewNoise(NewConstParam(NoiseWhite))
 			in := NewInput(osc, gp, pp)
 			m.Add(in)
 		}

@@ -109,7 +109,7 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 		globalMix.Add(dsp.NewInput(unisonSkip, nil, nil))
 
 		// Noise oscillator
-		noiseOsc := dsp.NewNoise()
+		noiseOsc := dsp.NewNoise(preset.Params[NoiseType])
 		globalMix.Add(dsp.NewInput(noiseOsc, preset.Params[NoiseGain], nil))
 
 		// Sub oscillator

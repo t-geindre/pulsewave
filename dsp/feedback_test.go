@@ -4,7 +4,7 @@ import "testing"
 
 func TestFeedbackDelay_ProcessNoAlloc(t *testing.T) {
 	const sr = 44100.0
-	src := NewNoise()
+	src := NewNoise(NewConstParam(NoiseWhite))
 	fb := NewFeedbackDelay(
 		sr, 2.0, src,
 		NewConstParam(0.5), NewConstParam(0.5), NewConstParam(0.5), NewConstParam(0.5),

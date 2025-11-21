@@ -4,7 +4,7 @@ import "testing"
 
 func TestLowPassSVF_ProcessNoAlloc(t *testing.T) {
 	const sr = 44100.0
-	src := NewNoise()
+	src := NewNoise(NewConstParam(NoiseWhite))
 	filter := NewLowPassSVF(sr, src, NewConstParam(1000), NewConstParam(0.707))
 
 	var block Block

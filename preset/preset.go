@@ -119,6 +119,7 @@ func (p *Preset) setDefaults() {
 
 	// Noise oscillator
 	p.Params[NoiseGain] = dsp.NewParam(0)
+	p.Params[NoiseType] = dsp.NewParam(dsp.NoiseWhite)
 
 	// Sub oscillator
 	p.Params[SubOscGain] = dsp.NewParam(0)
