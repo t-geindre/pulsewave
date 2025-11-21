@@ -58,6 +58,6 @@ func (c Components) nodeComponent(asts *assets.Loader, node tree.Node, aq *Audio
 		if len(node.Children()) > 0 {
 			return NewList(asts, node)
 		}
-		return nil, fmt.Errorf("%w: %T %s", ErrorUnknownNodeType, node, node.Label())
+		return nil, nil
 	}
 }

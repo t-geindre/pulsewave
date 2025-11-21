@@ -63,3 +63,13 @@ func NewPresetsNodes(presets []string) []Node {
 
 	return nodes
 }
+
+func NewLfoNode(label string, onOff, shape, rate, phase, amount uint8) Node {
+	return NewNode(label,
+		NewOnOffNode(onOff),
+		NewSliderNode("Amount", preset.PresetUpdateKind, amount, 20, 20000, 1, formatHertz),
+		NewWaveFormNode(shape),
+		NewSliderNode("Rate", preset.PresetUpdateKind, rate, 0.01, 20, .01, formatLowHertz),
+		NewSliderNode("Phase", preset.PresetUpdateKind, phase, 0, 1, .01, formatCycle),
+	)
+}

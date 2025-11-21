@@ -29,3 +29,4 @@
  - [ ] **UI**: output level display
  - [ ] **UI**: spectrum analyzer
  - [ ] **UI**: Current preset display
+ - [ ] **UI**: LPF filter cutoff preview is wrong
