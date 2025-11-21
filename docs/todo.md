@@ -5,7 +5,7 @@
  - [ ] **LPF drive**: Saturation/distortion on LPF
  - [ ] **LFP bug**: High resonance with low cutoff
  - [ ] **Node preview**: Display a value preview
- - [ ] **More filter**: HP, BP, LP
+ - [ ] **More filter**: HP, BP
  - [ ] **Implement slider view in slider component**
  - [ ] **Implement UI scrollbar**
  - [ ] **Handle velocity**: Bind to amp, cutoff, ...
@@ -13,9 +13,10 @@
  - [ ] **Presets**: Save/load **user** presets
  - [ ] **More effects**: Real reverb, chorus
  - [ ] **Pitch glide**: Do not glide on IDLE voice
- - [ ] **Modulation**: Link LFO/ADSR to any parameter
+ - [ ] **Modulation**: Link LFO/ADSR to any parameter, matrix? 
  - [ ] **Looper**: Record and loop midi input
  - [ ] **UI config**: Get UI parameters from JSON
+ - [ ] **UI**: Constants to load assets should come from config
  - [ ] **List loop**: Disable looping mode
  - [ ] **UI controls**: Improve it
  - [ ] **Feedback delay**: Suppress click on delay modulation
@@ -23,3 +24,8 @@
  - [ ] **Use const param**: Where applicable, apply fast path if possible
  - [X] **Sub+Noise osc**: Add sub oscillator and noise generator
  - [ ] **Osc**: Smooth gain
+ - [ ] **Controls**: Implement quick preset switch + keep notes on
+ - [ ] **UI**: CPU load display
+ - [ ] **UI**: output level display
+ - [ ] **UI**: spectrum analyzer
+ - [ ] **UI**: Current preset display
