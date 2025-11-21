@@ -32,17 +32,19 @@ func getOscTestCases() []*oscillatorTestCase {
 	return cases
 }
 
-func BenchmarkOscillator_Resolve(b *testing.B) {
+func BenchmarkOscillator_Process(b *testing.B) {
 	const sr = 44100.0
 
 	for _, test := range getOscTestCases() {
 		b.Run(test.name, func(b *testing.B) {
 			s, m := uint64(0), uint64(b.N) // avoid cast in loop
 
+			var block Block
 			b.ResetTimer()
 
 			for n := s; n < m; n++ {
-				test.osc.Resolve(n)
+				test.osc.Process(&block)
+				block.Cycle++
 			}
 		})
 	}
