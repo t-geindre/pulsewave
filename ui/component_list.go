@@ -6,6 +6,7 @@ import (
 	"synth/tree"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 // Todo get it from config
@@ -14,13 +15,14 @@ const (
 	ListPaddingTop   = 20
 	ListPaddingLeft  = 25
 	ListEntrySpacing = 50
+	ListEntryWidth   = 329.0
+	ListEntryHeight  = 24.0
 )
 
 var ErrEmptyList = errors.New("empty list")
 
 type List struct {
-	node    tree.Node
-	entries map[tree.Node]*ListEntry
+	node tree.Node
 
 	firstIndex int
 	visible    int
@@ -28,6 +30,9 @@ type List struct {
 
 	cursorImg            *ebiten.Image
 	cursorXSh, cursorYSh float64
+
+	faceEntry  text.Face
+	arrowEntry *ebiten.Image
 
 	cursorY         float64
 	targetCursorY   float64
@@ -49,23 +54,29 @@ func NewList(asts *assets.Loader, node tree.Node) (*List, error) {
 		return nil, err
 	}
 
-	l := &List{
-		node:      node,
-		cursorImg: cursorImg,
-		entries:   make(map[tree.Node]*ListEntry),
+	faceEntry, err := asts.GetFace("ui/list/entry")
+	if err != nil {
+		return nil, err
 	}
 
-	if err = l.buildEntries(asts, node); err != nil {
+	arrowEntry, err := asts.GetImage("ui/arrow_froward")
+	if err != nil {
 		return nil, err
+	}
+
+	l := &List{
+		node:       node,
+		cursorImg:  cursorImg,
+		faceEntry:  faceEntry,
+		arrowEntry: arrowEntry,
 	}
 
 	// Cursor alignment
 	children := node.Children()
 	sbds := l.cursorImg.Bounds()
-	ebds := l.entries[children[0]].Bounds() // arbitrary entry
 
-	l.cursorXSh = -float64(sbds.Dx()-ebds.Dx()) / 2
-	l.cursorYSh = float64(sbds.Dy()-ebds.Dy()) / 2
+	l.cursorXSh = -float64(sbds.Dx()-ListEntryWidth) / 2
+	l.cursorYSh = float64(sbds.Dy()-ListEntryHeight) / 2
 
 	total := len(children)
 	visible := ListVisibleItems
@@ -245,28 +256,21 @@ func (l *List) finishScroll() {
 }
 
 func (l *List) drawEntry(screen *ebiten.Image, idx int, y float64) {
-	children := l.node.Children()
-	if idx < 0 || idx >= len(children) {
-		return
-	}
+	entry := l.node.Children()[idx]
 
-	entry := l.entries[children[idx]]
-	if entry == nil {
-		return
-	}
+	// Label
+	label := entry.Label()
+	_, th := text.Measure(label, l.faceEntry, 0)
+	textCenterY := (ListEntryHeight - th) / 2
 
-	opts := &ebiten.DrawImageOptions{}
-	opts.GeoM.Translate(ListPaddingLeft, y)
-	screen.DrawImage(entry.Image, opts)
-}
+	entry.Label()
+	opts := &text.DrawOptions{}
+	opts.GeoM.Translate(ListPaddingLeft, y+textCenterY)
+	text.Draw(screen, entry.Label(), l.faceEntry, opts)
 
-func (l *List) buildEntries(asts *assets.Loader, node tree.Node) error {
-	for _, ch := range node.Children() {
-		entry, err := NewListEntry(asts, ch.Label())
-		if err != nil {
-			return err
-		}
-		l.entries[ch] = entry
-	}
-	return nil
+	// Arrow
+	bds := l.arrowEntry.Bounds()
+	arrOpts := &ebiten.DrawImageOptions{}
+	arrOpts.GeoM.Translate(ListEntryWidth-float64(bds.Dx())+ListPaddingLeft, y+(ListEntryHeight-float64(bds.Dy()))/2)
+	screen.DrawImage(l.arrowEntry, arrOpts)
 }
