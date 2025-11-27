@@ -69,6 +69,22 @@ func (m *Manager) GetPresets() []string {
 	return names
 }
 
+func (m *Manager) UpdateModMatrix(slot int, param uint8, val float32) {
+	switch param {
+	case ModParamSrc:
+		m.voices[m.current].preset.ModSlots[slot].Source = uint8(val)
+	case ModParamDst:
+		m.voices[m.current].preset.ModSlots[slot].Destination = uint8(val)
+	case ModParamAmt:
+		m.voices[m.current].preset.ModSlots[slot].Amount = val
+	case ModParamShp:
+		m.voices[m.current].preset.ModSlots[slot].Shape = uint8(val)
+	default:
+		panic("unknown param")
+	}
+	fmt.Printf("Slot: %d Param: %d Value: %.2f\n", slot, param, val)
+}
+
 func (m *Manager) HandleMessage(msg msg.Message) {
 	switch msg.Kind {
 	case UpdateParameterKind:
@@ -81,9 +97,11 @@ func (m *Manager) HandleMessage(msg msg.Message) {
 			m.savePreset(p)
 		}
 	case ModulationUpdateKind:
-		slot := int(msg.Key / ModKeysSpacing)
-		param := int(msg.Key % ModKeysSpacing)
-		fmt.Printf("Slot: %d Param: %d Value: %.2f\n", slot, param, msg.ValF)
+		m.UpdateModMatrix(
+			int(msg.Key/ModKeysSpacing),
+			msg.Key%ModKeysSpacing,
+			msg.ValF,
+		)
 	case settings.SettingUpdateKind:
 		if param, ok := m.settings[msg.Key]; ok {
 			param.SetBase(msg.ValF)
@@ -103,11 +121,37 @@ func (m *Manager) loadPreset(p int) {
 	m.voices[p].voice.LoadPreset(m.voices[p].preset) // reload preset
 	m.current = p
 
+	// publish all parameters
 	for key, param := range m.voices[p].preset.Params {
 		m.messenger.SendMessage(msg.Message{
 			Kind: UpdateParameterKind,
 			Key:  key,
 			ValF: param.GetBase(),
+		})
+	}
+
+	// publish modulation slots
+	for i, slot := range m.voices[p].preset.ModSlots {
+		_ = slot
+		m.messenger.SendMessage(msg.Message{
+			Kind: ModulationUpdateKind,
+			Key:  uint8(ModKeysSpacing*i + ModParamSrc),
+			ValF: float32(slot.Source),
+		})
+		m.messenger.SendMessage(msg.Message{
+			Kind: ModulationUpdateKind,
+			Key:  uint8(ModKeysSpacing*i + ModParamDst),
+			ValF: float32(slot.Destination),
+		})
+		m.messenger.SendMessage(msg.Message{
+			Kind: ModulationUpdateKind,
+			Key:  uint8(ModKeysSpacing*i + ModParamAmt),
+			ValF: slot.Amount,
+		})
+		m.messenger.SendMessage(msg.Message{
+			Kind: ModulationUpdateKind,
+			Key:  uint8(ModKeysSpacing*i + ModParamShp),
+			ValF: float32(slot.Shape),
 		})
 	}
 }

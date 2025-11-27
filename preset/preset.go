@@ -25,21 +25,45 @@ func NewPreset() *Preset {
 func NewPresetFromProto(pb *ProtoPreset) *Preset {
 	p := NewPreset()
 	p.Name = pb.Name
+
 	for _, e := range pb.Params {
 		p.Params[uint8(e.Id)] = dsp.NewParam(e.Value)
 	}
+
+	for i := 0; i < ModSlots && i < len(pb.ModSlots); i++ {
+		slot := pb.ModSlots[i]
+		p.ModSlots[i] = modSlot{
+			Source:      uint8(slot.Source),
+			Destination: uint8(slot.Destination),
+			Amount:      slot.Amount,
+			Shape:       uint8(slot.Shape),
+		}
+	}
+
 	return p
 }
 
 func (p *Preset) ToProto() *ProtoPreset {
 	msg := &ProtoPreset{}
 	msg.Name = p.Name
+
 	for id, param := range p.Params {
 		msg.Params = append(msg.Params, &ProtoParamEntry{
 			Id:    uint32(id),
 			Value: param.GetBase(),
 		})
 	}
+
+	for i := 0; i < ModSlots; i++ {
+		slot := p.ModSlots[i]
+		msg.ModSlots = append(msg.ModSlots, &ProtoModSlot{
+			Source:      uint32(slot.Source),
+			Destination: uint32(slot.Destination),
+			Amount:      slot.Amount,
+			Shape:       uint32(slot.Shape),
+		})
+	}
+	
 	return msg
 }
 
@@ -161,4 +185,14 @@ func (p *Preset) setDefaults() {
 	p.Params[Adsr2Decay] = dsp.NewParam(0)
 	p.Params[Adsr2Sustain] = dsp.NewParam(0)
 	p.Params[Adsr2Release] = dsp.NewParam(0)
+
+	// Reset modulation slots
+	for i := 0; i < ModSlots; i++ {
+		p.ModSlots[i] = modSlot{
+			Source:      0,
+			Destination: 0,
+			Amount:      0,
+			Shape:       0,
+		}
+	}
 }

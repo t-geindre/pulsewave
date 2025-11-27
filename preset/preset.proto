@@ -4,6 +4,13 @@ package preset;
 
 option go_package = "/preset";
 
+message ProtoModSlot {
+	uint32 source = 1;
+	uint32 destination = 2;
+	float amount = 3;
+	uint32 shape = 4;
+}
+
 message ProtoParamEntry {
   uint32 id = 1;
   float value = 2;
@@ -12,4 +19,5 @@ message ProtoParamEntry {
 message ProtoPreset {
   repeated ProtoParamEntry params = 1;
   string name = 2;
+  repeated ProtoModSlot modSlots = 3;
 }
