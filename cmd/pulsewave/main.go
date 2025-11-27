@@ -64,13 +64,15 @@ func main() {
 	router.AddRoute(midiInQ, midi.PitchBendKind, audioOutQ)
 
 	// Routing: UI to audio
-	router.AddRoute(uiInQ, preset.PresetLoadSaveKind, audioOutQ)
-	router.AddRoute(uiInQ, preset.PresetUpdateKind, audioOutQ)
+	router.AddRoute(uiInQ, preset.LoadSavePresetKind, audioOutQ)
+	router.AddRoute(uiInQ, preset.UpdateParameterKind, audioOutQ)
+	router.AddRoute(uiInQ, preset.ModulationUpdateKind, audioOutQ)
 	router.AddRoute(uiInQ, midi.NoteOnKind, audioOutQ)
 	router.AddRoute(uiInQ, midi.NoteOffKind, audioOutQ)
 
 	// Routing: audio to UI
-	router.AddRoute(audioInQ, preset.PresetUpdateKind, uiOutQ)
+	router.AddRoute(audioInQ, preset.UpdateParameterKind, uiOutQ)
+	router.AddRoute(audioInQ, preset.ModulationUpdateKind, uiOutQ)
 
 	// Routing: settings to audio/UI + ui to settings
 	router.AddRoute(uiInQ, settings.SettingUpdateKind, setsOutQ)

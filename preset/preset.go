@@ -2,16 +2,21 @@ package preset
 
 import "synth/dsp"
 
+type modSlot struct {
+	Source      uint8
+	Destination uint8
+	Amount      float32
+	Shape       uint8
+}
+
 type Preset struct {
-	Params map[uint8]dsp.Param
-	Name   string
+	Params   map[uint8]dsp.Param
+	Name     string
+	ModSlots [ModSlots]modSlot
 }
 
 func NewPreset() *Preset {
-	p := &Preset{
-		Params: make(map[uint8]dsp.Param),
-		Name:   "01 Default",
-	}
+	p := &Preset{Params: make(map[uint8]dsp.Param)}
 	p.setDefaults()
 
 	return p
@@ -39,6 +44,8 @@ func (p *Preset) ToProto() *ProtoPreset {
 }
 
 func (p *Preset) setDefaults() {
+	p.Name = "01 Default"
+
 	p.Params[Osc0Shape] = dsp.NewParam(0)
 	p.Params[Osc1Shape] = dsp.NewParam(0)
 	p.Params[Osc2Shape] = dsp.NewParam(0)
@@ -125,4 +132,33 @@ func (p *Preset) setDefaults() {
 	p.Params[SubOscGain] = dsp.NewParam(0)
 	p.Params[SubOscShape] = dsp.NewParam(0)
 	p.Params[SubOscTranspose] = dsp.NewParam(0)
+
+	// LFOs
+	p.Params[Lfo0rate] = dsp.NewParam(0)
+	p.Params[Lfo0Phase] = dsp.NewParam(0)
+	p.Params[Lfo0Shape] = dsp.NewParam(0)
+
+	p.Params[Lfo1rate] = dsp.NewParam(0)
+	p.Params[Lfo1Phase] = dsp.NewParam(0)
+	p.Params[Lfo1Shape] = dsp.NewParam(0)
+
+	p.Params[Lfo2rate] = dsp.NewParam(0)
+	p.Params[Lfo2Phase] = dsp.NewParam(0)
+	p.Params[Lfo2Shape] = dsp.NewParam(0)
+
+	// ADSRs
+	p.Params[Adsr0Attack] = dsp.NewParam(0)
+	p.Params[Adsr0Decay] = dsp.NewParam(0)
+	p.Params[Adsr0Sustain] = dsp.NewParam(0)
+	p.Params[Adsr0Release] = dsp.NewParam(0)
+
+	p.Params[Adsr1Attack] = dsp.NewParam(0)
+	p.Params[Adsr1Decay] = dsp.NewParam(0)
+	p.Params[Adsr1Sustain] = dsp.NewParam(0)
+	p.Params[Adsr1Release] = dsp.NewParam(0)
+
+	p.Params[Adsr2Attack] = dsp.NewParam(0)
+	p.Params[Adsr2Decay] = dsp.NewParam(0)
+	p.Params[Adsr2Sustain] = dsp.NewParam(0)
+	p.Params[Adsr2Release] = dsp.NewParam(0)
 }

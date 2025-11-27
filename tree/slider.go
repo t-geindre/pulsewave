@@ -5,6 +5,8 @@ import (
 	"synth/msg"
 )
 
+type FormatFunc func(float32) string
+
 type SliderNode interface {
 	ValueNode
 
@@ -14,13 +16,13 @@ type SliderNode interface {
 
 type sliderNode struct {
 	min, max, step float32
-	format         func(float32) string
+	format         FormatFunc
 	publish        func(uint8, float32)
 
 	ValueNode
 }
 
-func NewSliderNode(label string, kind msg.Kind, key uint8, min, max, step float32, format func(float32) string) SliderNode {
+func NewSliderNode(label string, kind msg.Kind, key uint8, min, max, step float32, format FormatFunc) SliderNode {
 	s := &sliderNode{
 		min:    min,
 		max:    max,

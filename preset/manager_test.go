@@ -12,7 +12,7 @@ func TestManager_ProcessNoAlloc(t *testing.T) {
 	// Send a save message
 	inQueue := msg.NewQueue(1)
 	inQueue.TryWrite(msg.Message{
-		Kind: PresetLoadSaveKind,
+		Kind: LoadSavePresetKind,
 		Key:  0, // Default
 		ValF: 1, // Save
 	})

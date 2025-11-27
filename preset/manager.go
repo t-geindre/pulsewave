@@ -1,6 +1,7 @@
 package preset
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -70,15 +71,19 @@ func (m *Manager) GetPresets() []string {
 
 func (m *Manager) HandleMessage(msg msg.Message) {
 	switch msg.Kind {
-	case PresetUpdateKind:
+	case UpdateParameterKind:
 		m.voices[m.current].voice.SetParam(msg.Key, msg.ValF)
-	case PresetLoadSaveKind:
+	case LoadSavePresetKind:
 		p := int(msg.Key)
 		if msg.ValF == 0 {
 			m.loadPreset(p)
 		} else if msg.ValF == 1 {
 			m.savePreset(p)
 		}
+	case ModulationUpdateKind:
+		slot := int(msg.Key / ModKeysSpacing)
+		param := int(msg.Key % ModKeysSpacing)
+		fmt.Printf("Slot: %d Param: %d Value: %.2f\n", slot, param, msg.ValF)
 	case settings.SettingUpdateKind:
 		if param, ok := m.settings[msg.Key]; ok {
 			param.SetBase(msg.ValF)
@@ -100,7 +105,7 @@ func (m *Manager) loadPreset(p int) {
 
 	for key, param := range m.voices[p].preset.Params {
 		m.messenger.SendMessage(msg.Message{
-			Kind: PresetUpdateKind,
+			Kind: UpdateParameterKind,
 			Key:  key,
 			ValF: param.GetBase(),
 		})
