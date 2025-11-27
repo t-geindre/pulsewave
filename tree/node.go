@@ -7,6 +7,7 @@ type PreviewFunc func() string
 
 type Node interface {
 	Label() string
+	SetLabel(string)
 	Children() []Node
 	Parent() Node
 	SetParent(Node)
@@ -40,6 +41,10 @@ func NewNode(label string, children ...Node) Node {
 
 func (n *node) Label() string {
 	return n.label
+}
+
+func (n *node) SetLabel(l string) {
+	n.label = l
 }
 
 func (n *node) Children() []Node {

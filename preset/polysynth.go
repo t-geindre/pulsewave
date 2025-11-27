@@ -1,6 +1,7 @@
 package preset
 
 import (
+	"fmt"
 	"synth/dsp"
 	"synth/msg"
 )
@@ -11,6 +12,8 @@ type Polysynth struct {
 	pitch      dsp.Param
 	parameters map[uint8]dsp.Param
 	messenger  *msg.Messenger
+	modSlots   map[int]*ModSlot
+	modulators map[uint8]dsp.ParamModulator
 }
 
 func NewPolysynth(SampleRate float64) *Polysynth {
@@ -18,15 +21,35 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	preset := NewPreset()
 	constZero := dsp.NewConstParam(0)
 
-	// Global pitch bend
-	pitchBend := dsp.NewSmoothedParam(SampleRate, 0, dsp.NewConstParam(.01))
-
-	// Shape registry (uniq for all voices)
+	// Shape registry (uniq for all oscillators)
 	reg := dsp.NewShapeRegistry()
 	reg.Add(dsp.ShapeTableWave, dsp.NewSineWavetable(1024))
 	reg.Add(dsp.ShapeSquare)
 	reg.Add(dsp.ShapeSaw)
 	reg.Add(dsp.ShapeTriangle)
+
+	// Modulators
+	modulators := make(map[uint8]dsp.ParamModulator) // todo add pulse width on LFOs, add velocity
+	modulators[ModSrcLfo0] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo0Shape], preset.Params[Lfo0rate], preset.Params[Lfo0Phase], nil)
+	modulators[ModSrcLfo1] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo1Shape], preset.Params[Lfo1rate], preset.Params[Lfo1Phase], nil)
+	modulators[ModSrcLfo2] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo2Shape], preset.Params[Lfo2rate], preset.Params[Lfo2Phase], nil)
+	modulators[ModSrcAdsr0] = dsp.NewADSR(SampleRate, preset.Params[Adsr0Attack], preset.Params[Adsr0Decay], preset.Params[Adsr0Sustain], preset.Params[Adsr0Release])
+	modulators[ModSrcAdsr1] = dsp.NewADSR(SampleRate, preset.Params[Adsr1Attack], preset.Params[Adsr1Decay], preset.Params[Adsr1Sustain], preset.Params[Adsr1Release])
+	modulators[ModSrcAdsr2] = dsp.NewADSR(SampleRate, preset.Params[Adsr2Attack], preset.Params[Adsr2Decay], preset.Params[Adsr2Sustain], preset.Params[Adsr2Release])
+
+	// Modulation slots
+	modSlots := make(map[int]*ModSlot)
+	for i, slot := range preset.ModSlots {
+		modSlots[i] = &ModSlot{
+			Source:      slot.Source,
+			Destination: slot.Destination,
+			Amount:      slot.Amount,
+			Shape:       slot.Shape,
+		}
+	}
+
+	// Global pitch bend
+	pitchBend := dsp.NewSmoothedParam(SampleRate, 0, dsp.NewConstParam(.01))
 
 	// Voice factory / 3 osc
 	voiceFact := func() *dsp.Voice {
@@ -135,7 +158,7 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 
 		gain := dsp.NewParam(0)
 		*gain.ModInputs() = append(*gain.ModInputs(),
-			dsp.NewModInput(gainAdsr, dsp.NewConstParam(1.0), nil),
+			dsp.NewModInput(gainAdsr, preset.Params[VoicesGain], nil),
 		)
 
 		vca := dsp.NewVca(lpfSkip, gain)
@@ -158,6 +181,8 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 		voice:      poly,
 		pitch:      pitchBend,
 		parameters: preset.Params,
+		modulators: modulators,
+		modSlots:   modSlots,
 	}
 }
 
@@ -179,15 +204,100 @@ func (p *Polysynth) SetParam(key uint8, val float32) {
 	}
 }
 
+func (p *Polysynth) UpdateModMatrix(slot int, key uint8, val float32) {
+	switch key {
+	case ModParamSrc:
+		p.UpdateModSource(slot, uint8(val))
+	case ModParamDst:
+		p.UpdateModDestination(slot, uint8(val))
+	case ModParamAmt:
+		p.UpdateModAmount(slot, val)
+	case ModParamShp:
+		fmt.Printf("Update mod slot %d shape to %d\n", slot, int(val))
+	default:
+		panic("unknown param")
+	}
+}
+
+func (p *Polysynth) UpdateModSource(s int, src uint8) {
+	slot := p.modSlots[s]
+
+	if slot.Source == src {
+		return
+	}
+
+	dest := slot.Destination
+	p.UpdateModDestination(s, ParamNone) // detach
+
+	slot.Source = src
+	p.UpdateModDestination(s, dest) // reattach
+}
+
+func (p *Polysynth) UpdateModDestination(s int, dst uint8) {
+	slot := p.modSlots[s]
+	if slot.Destination == dst {
+		return
+	}
+
+	if slot.Destination != ParamNone {
+		mods := *p.parameters[slot.Destination].ModInputs()
+		for i, mi := range mods {
+			if mi.Src() == p.modulators[slot.Source] {
+				mods = append(mods[:i], mods[i+1:]...)
+				*p.parameters[slot.Destination].ModInputs() = mods
+				break
+			}
+		}
+	}
+
+	if dst != ParamNone {
+		*p.parameters[dst].ModInputs() = append(*p.parameters[dst].ModInputs(),
+			dsp.NewModInput(p.modulators[slot.Source], dsp.NewParam(slot.Amount), nil),
+		)
+	}
+
+	slot.Destination = dst
+}
+
+func (p *Polysynth) UpdateModAmount(s int, amt float32) {
+	slot := p.modSlots[s]
+	slot.Amount = amt
+
+	if slot.Destination != ParamNone {
+		mods := *p.parameters[slot.Destination].ModInputs()
+		for _, mi := range mods {
+			if mi.Src() == p.modulators[slot.Source] {
+				mi.Amount().SetBase(amt)
+				break
+			}
+		}
+	}
+}
+
 func (p *Polysynth) LoadPreset(preset *Preset) {
 	for key, param := range preset.Params {
 		p.SetParam(key, param.GetBase())
+	}
+
+	for i, slot := range preset.ModSlots {
+		p.UpdateModSource(i, slot.Source)
+		p.UpdateModDestination(i, slot.Destination)
+		p.UpdateModAmount(i, slot.Amount)
 	}
 }
 
 func (p *Polysynth) HydratePreset(preset *Preset) *Preset {
 	for key, param := range p.parameters {
 		preset.Params[key] = dsp.NewParam(param.GetBase())
+	}
+
+	for i, slot := range p.modSlots {
+		preset.ModSlots[i] = &ModSlot{
+			Source:      slot.Source,
+			Destination: slot.Destination,
+			Amount:      slot.Amount,
+			Shape:       slot.Shape,
+		}
 	}
 
 	return preset

@@ -1,7 +1,6 @@
 package preset
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -69,22 +68,6 @@ func (m *Manager) GetPresets() []string {
 	return names
 }
 
-func (m *Manager) UpdateModMatrix(slot int, param uint8, val float32) {
-	switch param {
-	case ModParamSrc:
-		m.voices[m.current].preset.ModSlots[slot].Source = uint8(val)
-	case ModParamDst:
-		m.voices[m.current].preset.ModSlots[slot].Destination = uint8(val)
-	case ModParamAmt:
-		m.voices[m.current].preset.ModSlots[slot].Amount = val
-	case ModParamShp:
-		m.voices[m.current].preset.ModSlots[slot].Shape = uint8(val)
-	default:
-		panic("unknown param")
-	}
-	fmt.Printf("Slot: %d Param: %d Value: %.2f\n", slot, param, val)
-}
-
 func (m *Manager) HandleMessage(msg msg.Message) {
 	switch msg.Kind {
 	case UpdateParameterKind:
@@ -97,7 +80,7 @@ func (m *Manager) HandleMessage(msg msg.Message) {
 			m.savePreset(p)
 		}
 	case ModulationUpdateKind:
-		m.UpdateModMatrix(
+		m.voices[m.current].voice.UpdateModMatrix(
 			int(msg.Key/ModKeysSpacing),
 			msg.Key%ModKeysSpacing,
 			msg.ValF,
@@ -132,7 +115,6 @@ func (m *Manager) loadPreset(p int) {
 
 	// publish modulation slots
 	for i, slot := range m.voices[p].preset.ModSlots {
-		_ = slot
 		m.messenger.SendMessage(msg.Message{
 			Kind: ModulationUpdateKind,
 			Key:  uint8(ModKeysSpacing*i + ModParamSrc),

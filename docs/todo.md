@@ -30,3 +30,5 @@
  - [ ] **UI**: spectrum analyzer
  - [ ] **UI**: Current preset display
  - [ ] **UI**: LPF filter cutoff preview is wrong
+ - [ ] **Preset**: Use smoothed parameters for modulated values
+ - [ ] **Parameters const**: Remap them from 0 and prepend "Param"

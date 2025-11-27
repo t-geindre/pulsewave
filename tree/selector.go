@@ -7,6 +7,7 @@ type SelectorNode interface {
 	ValueNode
 
 	Options() []*SelectorOption
+	CurrentOption() *SelectorOption
 	RequiresValidation() bool
 	Validate()
 }
@@ -24,10 +25,11 @@ func NewSelectorNode(label string, kind msg.Kind, key uint8, options ...*Selecto
 		options:   options,
 		ValueNode: NewValueNode(label, kind, key),
 	}
-	s.AttachPreview(func() string {
-		return s.Options()[int(s.Val())].Label()
 
+	s.AttachPreview(func() string {
+		return s.CurrentOption().Label()
 	})
+
 	return s
 }
 
@@ -37,6 +39,16 @@ func NewValidatingSelectorNode(label string, kind msg.Kind, key uint8, options .
 		requiresValidation: true,
 		ValueNode:          NewValueNode(label, kind, key),
 	}
+}
+
+func (s *selectorNode) CurrentOption() *SelectorOption {
+	for _, opt := range s.options {
+		if opt.Value() == s.Val() {
+			return opt
+		}
+	}
+
+	return s.options[0]
 }
 
 func (s *selectorNode) Options() []*SelectorOption {

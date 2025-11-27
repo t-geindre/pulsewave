@@ -2,17 +2,10 @@ package preset
 
 import "synth/dsp"
 
-type modSlot struct {
-	Source      uint8
-	Destination uint8
-	Amount      float32
-	Shape       uint8
-}
-
 type Preset struct {
 	Params   map[uint8]dsp.Param
 	Name     string
-	ModSlots [ModSlots]modSlot
+	ModSlots map[int]*ModSlot
 }
 
 func NewPreset() *Preset {
@@ -32,7 +25,7 @@ func NewPresetFromProto(pb *ProtoPreset) *Preset {
 
 	for i := 0; i < ModSlots && i < len(pb.ModSlots); i++ {
 		slot := pb.ModSlots[i]
-		p.ModSlots[i] = modSlot{
+		p.ModSlots[i] = &ModSlot{
 			Source:      uint8(slot.Source),
 			Destination: uint8(slot.Destination),
 			Amount:      slot.Amount,
@@ -63,7 +56,7 @@ func (p *Preset) ToProto() *ProtoPreset {
 			Shape:       uint32(slot.Shape),
 		})
 	}
-	
+
 	return msg
 }
 
@@ -147,6 +140,7 @@ func (p *Preset) setDefaults() {
 	p.Params[VoicesStealMode] = dsp.NewParam(dsp.PolyStealOldest)
 	p.Params[VoicesActive] = dsp.NewParam(8)
 	p.Params[VoicesPitchGlide] = dsp.NewParam(0.000)
+	p.Params[VoicesGain] = dsp.NewParam(1.0)
 
 	// Noise oscillator
 	p.Params[NoiseGain] = dsp.NewParam(0)
@@ -158,41 +152,42 @@ func (p *Preset) setDefaults() {
 	p.Params[SubOscTranspose] = dsp.NewParam(0)
 
 	// LFOs
-	p.Params[Lfo0rate] = dsp.NewParam(0)
+	p.Params[Lfo0rate] = dsp.NewParam(0.33)
 	p.Params[Lfo0Phase] = dsp.NewParam(0)
 	p.Params[Lfo0Shape] = dsp.NewParam(0)
 
-	p.Params[Lfo1rate] = dsp.NewParam(0)
+	p.Params[Lfo1rate] = dsp.NewParam(0.33)
 	p.Params[Lfo1Phase] = dsp.NewParam(0)
 	p.Params[Lfo1Shape] = dsp.NewParam(0)
 
-	p.Params[Lfo2rate] = dsp.NewParam(0)
+	p.Params[Lfo2rate] = dsp.NewParam(0.33)
 	p.Params[Lfo2Phase] = dsp.NewParam(0)
 	p.Params[Lfo2Shape] = dsp.NewParam(0)
 
 	// ADSRs
-	p.Params[Adsr0Attack] = dsp.NewParam(0)
-	p.Params[Adsr0Decay] = dsp.NewParam(0)
-	p.Params[Adsr0Sustain] = dsp.NewParam(0)
-	p.Params[Adsr0Release] = dsp.NewParam(0)
+	p.Params[Adsr0Attack] = dsp.NewParam(10.0 / 1000)
+	p.Params[Adsr0Decay] = dsp.NewParam(10.0 / 1000)
+	p.Params[Adsr0Sustain] = dsp.NewParam(.9)
+	p.Params[Adsr0Release] = dsp.NewParam(10.0 / 1000)
 
-	p.Params[Adsr1Attack] = dsp.NewParam(0)
-	p.Params[Adsr1Decay] = dsp.NewParam(0)
-	p.Params[Adsr1Sustain] = dsp.NewParam(0)
-	p.Params[Adsr1Release] = dsp.NewParam(0)
+	p.Params[Adsr1Attack] = dsp.NewParam(10.0 / 1000)
+	p.Params[Adsr1Decay] = dsp.NewParam(10.0 / 1000)
+	p.Params[Adsr1Sustain] = dsp.NewParam(.9)
+	p.Params[Adsr1Release] = dsp.NewParam(10.0 / 1000)
 
-	p.Params[Adsr2Attack] = dsp.NewParam(0)
-	p.Params[Adsr2Decay] = dsp.NewParam(0)
-	p.Params[Adsr2Sustain] = dsp.NewParam(0)
-	p.Params[Adsr2Release] = dsp.NewParam(0)
+	p.Params[Adsr2Attack] = dsp.NewParam(10.0 / 1000)
+	p.Params[Adsr2Decay] = dsp.NewParam(10.0 / 1000)
+	p.Params[Adsr2Sustain] = dsp.NewParam(.9)
+	p.Params[Adsr2Release] = dsp.NewParam(10.0 / 1000)
 
 	// Reset modulation slots
+	p.ModSlots = make(map[int]*ModSlot)
 	for i := 0; i < ModSlots; i++ {
-		p.ModSlots[i] = modSlot{
-			Source:      0,
-			Destination: 0,
+		p.ModSlots[i] = &ModSlot{
+			Source:      ModSrcLfo0,
+			Destination: ParamNone,
 			Amount:      0,
-			Shape:       0,
+			Shape:       ModShapeLinear,
 		}
 	}
 }

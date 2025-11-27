@@ -29,9 +29,11 @@ type Selector struct {
 	forward     *ebiten.Image
 	clippingBox *ebiten.Image
 
+	currentIndex int
+	prevIndex    int
+
 	scrollY       float64
 	targetY       float64
-	prevIndex     int
 	isMoving      bool
 	dir           int
 	currentOffset float64
@@ -80,7 +82,7 @@ func NewSelector(asts *assets.Loader, node tree.SelectorNode) (*Selector, error)
 		forward:     forward,
 		icons:       icons,
 		clippingBox: ebiten.NewImage(BoxWith, BoxHeight),
-		prevIndex:   int(node.Val()),
+		prevIndex:   0,
 	}, nil
 }
 
@@ -121,14 +123,14 @@ func (s *Selector) Scroll(delta int) {
 		delta = -1
 	}
 
-	prev := int(s.node.Val())
-	v := prev + delta
-	for v < 0 {
-		v += len(s.node.Options())
+	prev := s.currentIndex
+	s.currentIndex = prev + delta
+	for s.currentIndex < 0 {
+		s.currentIndex += len(s.node.Options())
 	}
-	v = v % len(s.node.Options())
+	s.currentIndex = s.currentIndex % len(s.node.Options())
 
-	s.node.SetVal(float32(v))
+	s.node.SetVal(s.node.Options()[s.currentIndex].Value())
 	s.prevIndex = prev
 	s.isMoving = true
 
@@ -145,17 +147,16 @@ func (s *Selector) Draw(image *ebiten.Image) {
 	image.DrawImage(s.bg, nil)
 	s.clippingBox.Clear()
 
-	cur := int(s.node.Val())
 	options := s.node.Options()
 
 	if !s.isMoving {
-		s.drawOption(s.clippingBox, options[cur], 0)
+		s.drawOption(s.clippingBox, options[s.currentIndex], 0)
 	} else {
 		prev := s.prevIndex
 		dir := s.dir
 		offset := s.currentOffset
 		s.drawOption(s.clippingBox, options[prev], -offset)
-		s.drawOption(s.clippingBox, options[cur], float64(dir)*BoxHeight-offset)
+		s.drawOption(s.clippingBox, options[s.currentIndex], float64(dir)*BoxHeight-offset)
 	}
 
 	op := &ebiten.DrawImageOptions{}

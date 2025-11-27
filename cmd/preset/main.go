@@ -14,7 +14,7 @@ import (
 
 const dir = "assets/presets"
 
-const comment = "# proto-file: synth/preset/preset.proto\n" +
+const comment = "# proto-file: preset/preset.proto\n" +
 	"# proto-message: preset.ProtoPreset"
 
 // Encode and decode presets

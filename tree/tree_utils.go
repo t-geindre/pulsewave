@@ -1,7 +1,6 @@
 package tree
 
 import (
-	"fmt"
 	"synth/preset"
 )
 
@@ -40,10 +39,10 @@ func NewAdsrNode(label string, att, dec, sus, rel uint8, children ...Node) Node 
 }
 
 func NewAdsrNodeWithToggle(label string, toggle, att, dec, sus, rel uint8, children ...Node) Node {
-	node := NewAdsrNode(label, att, dec, sus, rel, children...)
-	node.Prepend(NewOnOffNode(toggle))
+	n := NewAdsrNode(label, att, dec, sus, rel, children...)
+	n.Prepend(NewOnOffNode(toggle))
 
-	return node
+	return n
 }
 
 func NewOnOffNode(key uint8) Node {
@@ -65,10 +64,18 @@ func NewPresetsNodes(presets []string) []Node {
 	return nodes
 }
 
-func NewLfoNode(label string, onOff, shape, rate, phase, amount uint8, min, max, step float32, f FormatFunc) Node {
+func NewOldLfoNode(label string, onOff, shape, rate, phase, amount uint8, min, max, step float32, f FormatFunc) Node {
 	return NewNode(label,
 		NewOnOffNode(onOff),
 		NewSliderNode("Amount", preset.UpdateParameterKind, amount, min, max, step, f),
+		NewWaveFormNode(shape),
+		NewSliderNode("Rate", preset.UpdateParameterKind, rate, 0.01, 20, .01, formatLowHertz),
+		NewSliderNode("Phase", preset.UpdateParameterKind, phase, 0, 1, .01, formatCycle),
+	)
+}
+
+func NewLfoNode(label string, shape, rate, phase uint8) Node {
+	return NewNode(label,
 		NewWaveFormNode(shape),
 		NewSliderNode("Rate", preset.UpdateParameterKind, rate, 0.01, 20, .01, formatLowHertz),
 		NewSliderNode("Phase", preset.UpdateParameterKind, phase, 0, 1, .01, formatCycle),
@@ -79,30 +86,43 @@ func NewModulationMatrixNode(label string) Node {
 	matrix := NewNode(label)
 
 	for i := uint8(0); i < preset.ModSlots; i++ {
-		matrix.Append(
-			NewNode(fmt.Sprintf("Slot %02d", i+1),
-				NewSelectorNode("Source", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamSrc,
-					NewSelectorOption("Velocity", "", preset.ModSrcVelocity),
-					NewSelectorOption("LFO 1", "", preset.ModSrcLfo1),
-					NewSelectorOption("LFO 2", "", preset.ModSrcLfo2),
-					NewSelectorOption("LFO 3", "", preset.ModSrcLfo3),
-					NewSelectorOption("ADSR 1", "", preset.ModSrcAdsr1),
-					NewSelectorOption("ADSR 2", "", preset.ModSrcAdsr2),
-					NewSelectorOption("ADSR 3", "", preset.ModSrcAdsr3),
-				),
-				NewSelectorNode("Destination", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamDst,
-					NewSelectorOption("Test", "", preset.None),
-				),
-				NewSliderNode("Amount", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamAmt, -1000, 1000, .01, formatSemiTon),
-				NewSelectorNode("Shape", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamShp,
-					NewSelectorOption("Linear", "", preset.ModShapeLinear),
-					NewSelectorOption("Exponential", "", preset.ModShapeExponential),
-					NewSelectorOption("Logarithmic", "", preset.ModShapeLogarithmic),
-				),
+		slotNode := NewNode("NONE",
+			NewSelectorNode("Source", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamSrc,
+				//NewSelectorOption("Velocity", "", preset.ModSrcVelocity), // TODO
+				NewSelectorOption("LFO 1", "", preset.ModSrcLfo0),
+				NewSelectorOption("LFO 2", "", preset.ModSrcLfo1),
+				NewSelectorOption("LFO 3", "", preset.ModSrcLfo2),
+				NewSelectorOption("ADSR 1", "", preset.ModSrcAdsr0),
+				NewSelectorOption("ADSR 2", "", preset.ModSrcAdsr1),
+				NewSelectorOption("ADSR 3", "", preset.ModSrcAdsr2),
+			),
+			NewSelectorNode("Destination", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamDst,
+				NewSelectorOption("NONE", "", preset.ParamNone),
+				NewSelectorOption("Osc 1 gain", "", preset.Osc0Gain),
+			),
+			NewSliderNode("Amount", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamAmt, -1000, 1000, .01, formatSemiTon),
+			NewSelectorNode("Shape", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamShp,
+				NewSelectorOption("Linear", "", preset.ModShapeLinear),
+				NewSelectorOption("Exponential", "", preset.ModShapeExponential),
+				NewSelectorOption("Logarithmic", "", preset.ModShapeLogarithmic),
 			),
 		)
+
+		slotNode.AttachPreview(func() string {
+			src := slotNode.QueryAll("Source")[0].(SelectorNode)
+			dst := slotNode.QueryAll("Destination")[0].(SelectorNode)
+
+			if dst.Val() != preset.ParamNone {
+				slotNode.SetLabel(src.CurrentOption().Label()) // trick for left/right preview display
+				return dst.CurrentOption().Label()
+			}
+
+			slotNode.SetLabel("NONE")
+			return ""
+		})
+
+		matrix.Append(slotNode)
 	}
 
 	return matrix
-
 }

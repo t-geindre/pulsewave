@@ -84,6 +84,7 @@ const (
 	VoicesStealMode  = 55
 	VoicesActive     = 56
 	VoicesPitchGlide = 57
+	VoicesGain       = 84
 
 	// Noise oscillator
 	NoiseGain = 58
@@ -124,7 +125,7 @@ const (
 	Adsr2Release = 83
 
 	// No parameter
-	None = 255
+	ParamNone = 255
 )
 
 // ModulationUpdateKind msg.key = slot, msg.channel = source, msg.val8 = destination, msg.valF = amount, msg.val16 = shape
@@ -142,12 +143,12 @@ const (
 
 const (
 	ModSrcVelocity = 0
-	ModSrcLfo1     = 1
-	ModSrcLfo2     = 2
-	ModSrcLfo3     = 3
-	ModSrcAdsr1    = 4
-	ModSrcAdsr2    = 5
-	ModSrcAdsr3    = 6
+	ModSrcLfo0     = 1
+	ModSrcLfo1     = 2
+	ModSrcLfo2     = 3
+	ModSrcAdsr0    = 4
+	ModSrcAdsr1    = 5
+	ModSrcAdsr2    = 6
 )
 
 const (
