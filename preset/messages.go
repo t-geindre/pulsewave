@@ -85,6 +85,7 @@ const (
 	VoicesActive     = 56
 	VoicesPitchGlide = 57
 	VoicesGain       = 84
+	VoicesPitch      = 85
 
 	// Noise oscillator
 	NoiseGain = 58

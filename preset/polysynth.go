@@ -13,13 +13,14 @@ type Polysynth struct {
 	parameters map[uint8]dsp.Param
 	messenger  *msg.Messenger
 	modSlots   map[int]*ModSlot
-	modulators map[uint8]dsp.ParamModulator
+
+	voiceModulators []map[uint8]dsp.ParamModulator // per voice
+	voiceParams     []map[uint8]dsp.Param          // per voice
 }
 
 func NewPolysynth(SampleRate float64) *Polysynth {
 	// Parameters map
 	preset := NewPreset()
-	constZero := dsp.NewConstParam(0)
 
 	// Shape registry (uniq for all oscillators)
 	reg := dsp.NewShapeRegistry()
@@ -27,15 +28,6 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	reg.Add(dsp.ShapeSquare)
 	reg.Add(dsp.ShapeSaw)
 	reg.Add(dsp.ShapeTriangle)
-
-	// Modulators
-	modulators := make(map[uint8]dsp.ParamModulator) // todo add pulse width on LFOs, add velocity
-	modulators[ModSrcLfo0] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo0Shape], preset.Params[Lfo0rate], preset.Params[Lfo0Phase], nil)
-	modulators[ModSrcLfo1] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo1Shape], preset.Params[Lfo1rate], preset.Params[Lfo1Phase], nil)
-	modulators[ModSrcLfo2] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo2Shape], preset.Params[Lfo2rate], preset.Params[Lfo2Phase], nil)
-	modulators[ModSrcAdsr0] = dsp.NewADSR(SampleRate, preset.Params[Adsr0Attack], preset.Params[Adsr0Decay], preset.Params[Adsr0Sustain], preset.Params[Adsr0Release])
-	modulators[ModSrcAdsr1] = dsp.NewADSR(SampleRate, preset.Params[Adsr1Attack], preset.Params[Adsr1Decay], preset.Params[Adsr1Sustain], preset.Params[Adsr1Release])
-	modulators[ModSrcAdsr2] = dsp.NewADSR(SampleRate, preset.Params[Adsr2Attack], preset.Params[Adsr2Decay], preset.Params[Adsr2Sustain], preset.Params[Adsr2Release])
 
 	// Modulation slots
 	modSlots := make(map[int]*ModSlot)
@@ -51,20 +43,40 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	// Global pitch bend
 	pitchBend := dsp.NewSmoothedParam(SampleRate, 0, dsp.NewConstParam(.01))
 
+	// Per voice parameters
+	voiceModulators := make([]map[uint8]dsp.ParamModulator, 0)
+	voiceParams := make([]map[uint8]dsp.Param, 0)
+
 	// Voice factory / 3 osc
 	voiceFact := func() *dsp.Voice {
+		// Voice modulators
+		modulators := make(map[uint8]dsp.ParamModulator)
+		modulators[ModSrcLfo0] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo0Shape], preset.Params[Lfo0rate], preset.Params[Lfo0Phase], nil)
+		modulators[ModSrcLfo1] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo1Shape], preset.Params[Lfo1rate], preset.Params[Lfo1Phase], nil)
+		modulators[ModSrcLfo2] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo2Shape], preset.Params[Lfo2rate], preset.Params[Lfo2Phase], nil)
+		modulators[ModSrcAdsr0] = dsp.NewADSR(SampleRate, preset.Params[Adsr0Attack], preset.Params[Adsr0Decay], preset.Params[Adsr0Sustain], preset.Params[Adsr0Release])
+		modulators[ModSrcAdsr1] = dsp.NewADSR(SampleRate, preset.Params[Adsr1Attack], preset.Params[Adsr1Decay], preset.Params[Adsr1Sustain], preset.Params[Adsr1Release])
+		modulators[ModSrcAdsr2] = dsp.NewADSR(SampleRate, preset.Params[Adsr2Attack], preset.Params[Adsr2Decay], preset.Params[Adsr2Sustain], preset.Params[Adsr2Release])
+		voiceModulators = append(voiceModulators, modulators)
+
+		// Voice params
+		params := createLocalParametersMap(preset.Params,
+			// Oscillators
+			Osc0Phase, Osc1Phase, Osc2Phase,
+			Osc0Detune, Osc1Detune, Osc2Detune,
+			Osc0Pw, Osc1Pw, Osc2Pw,
+			Osc0Gain, Osc1Gain, Osc2Gain,
+			// Voices
+			VoicesPitch,
+			// LPF
+			LPFCutoff, LPFResonance,
+		)
+		voiceParams = append(voiceParams, params)
+
 		// Base frequency param (uniq per voice)
 		freq := dsp.NewSmoothedParam(SampleRate, 440, preset.Params[VoicesPitchGlide])
-		pitchMod := dsp.NewParam(0)
+		pitchMod := params[VoicesPitch]
 		pitch := dsp.NewTunerParam(dsp.NewTunerParam(freq, pitchBend), pitchMod)
-
-		pitchLfo := dsp.NewRegOscillator(SampleRate, reg, preset.Params[PitchLfoShape], preset.Params[PitchLfoFreq], preset.Params[PitchLfoPhase], nil)
-		pitchAdsr := dsp.NewADSR(SampleRate, preset.Params[PitchAdsrAttack], preset.Params[PitchAdsrDecay], preset.Params[PitchAdsrSustain], preset.Params[PitchAdsrRelease])
-
-		*pitchMod.ModInputs() = append(*pitchMod.ModInputs(),
-			dsp.NewModInput(pitchLfo, NewParamSkipper(preset.Params[PitchLfoAmount], constZero, preset.Params[PitchLfoOnOff]), nil),
-			dsp.NewModInput(pitchAdsr, NewParamSkipper(preset.Params[PitchAdsrAmount], constZero, preset.Params[PitchAdsrOnOff]), nil),
-		)
 
 		// Oscillator factory
 		oscFact := func(ph, dt dsp.Param) dsp.Node {
@@ -76,11 +88,11 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 			ph0 := dsp.NewParam(0)
 			*ph0.ModInputs() = append(*ph0.ModInputs(),
 				dsp.NewModInput(ph, dsp.NewConstParam(1), nil),
-				dsp.NewModInput(preset.Params[Osc0Phase], dsp.NewConstParam(1), nil),
+				dsp.NewModInput(params[Osc0Phase], dsp.NewConstParam(1), nil),
 			)
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc0Shape], dsp.NewTunerParam(ft, preset.Params[Osc0Detune]), ph0, preset.Params[Osc0Pw]),
-				preset.Params[Osc0Gain],
+				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc0Shape], dsp.NewTunerParam(ft, params[Osc0Detune]), ph0, params[Osc0Pw]),
+				params[Osc0Gain],
 				dsp.NewParam(0),
 			))
 
@@ -88,11 +100,11 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 			ph1 := dsp.NewParam(0)
 			*ph1.ModInputs() = append(*ph1.ModInputs(),
 				dsp.NewModInput(ph, dsp.NewConstParam(1), nil),
-				dsp.NewModInput(preset.Params[Osc1Phase], dsp.NewConstParam(1), nil),
+				dsp.NewModInput(params[Osc1Phase], dsp.NewConstParam(1), nil),
 			)
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc1Shape], dsp.NewTunerParam(ft, preset.Params[Osc1Detune]), ph1, preset.Params[Osc1Pw]),
-				preset.Params[Osc1Gain],
+				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc1Shape], dsp.NewTunerParam(ft, params[Osc1Detune]), ph1, params[Osc1Pw]),
+				params[Osc1Gain],
 				dsp.NewParam(0),
 			))
 
@@ -100,11 +112,11 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 			ph2 := dsp.NewParam(0)
 			*ph2.ModInputs() = append(*ph2.ModInputs(),
 				dsp.NewModInput(ph, dsp.NewConstParam(1), nil),
-				dsp.NewModInput(preset.Params[Osc2Phase], dsp.NewConstParam(1), nil),
+				dsp.NewModInput(params[Osc2Phase], dsp.NewConstParam(1), nil),
 			)
 			mixer.Add(dsp.NewInput(
-				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc2Shape], dsp.NewTunerParam(ft, preset.Params[Osc2Detune]), ph2, preset.Params[Osc2Pw]),
-				preset.Params[Osc2Gain],
+				dsp.NewRegOscillator(SampleRate, reg, preset.Params[Osc2Shape], dsp.NewTunerParam(ft, params[Osc2Detune]), ph2, params[Osc2Pw]),
+				params[Osc2Gain],
 				dsp.NewParam(0),
 			))
 
@@ -140,31 +152,26 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 		globalMix.Add(dsp.NewInput(subOsc, preset.Params[SubOscGain], nil))
 
 		// LPF
-		cutoffLfo := dsp.NewRegOscillator(SampleRate, reg, preset.Params[LpfLfoShape], preset.Params[LpfLfoFreq], preset.Params[LpfLfoPhase], nil)
-		cutoffAdsr := dsp.NewADSR(SampleRate, preset.Params[LpfAdsrAttack], preset.Params[LpfAdsrDecay], preset.Params[LpfAdsrSustain], preset.Params[LpfAdsrRelease])
-
-		cutoff := dsp.NewParam(0)
-		*cutoff.ModInputs() = append(*cutoff.ModInputs(),
-			dsp.NewModInput(preset.Params[LPFCutoff], dsp.NewParam(1), nil),
-			dsp.NewModInput(cutoffLfo, NewParamSkipper(preset.Params[LpfLfoAmount], constZero, preset.Params[LpfLfoOnOff]), nil),
-			dsp.NewModInput(cutoffAdsr, NewParamSkipper(preset.Params[LpfAdsrAmount], constZero, preset.Params[LpfAdsrOnOff]), nil),
-		)
-
-		lpf := dsp.NewLowPassSVF(SampleRate, globalMix, cutoff, preset.Params[LPFResonance])
+		lpf := dsp.NewLowPassSVF(SampleRate, globalMix, params[LPFCutoff], params[LPFResonance])
 		lpfSkip := NewNodeSkipper(lpf, globalMix, preset.Params[LPFOnOff])
 
 		// Amplitude envelope
-		gainAdsr := dsp.NewADSR(SampleRate, preset.Params[AmpEnvAttack], preset.Params[AmpEnvDecay], preset.Params[AmpEnvSustain], preset.Params[AmpEnvRelease])
-
 		gain := dsp.NewParam(0)
 		*gain.ModInputs() = append(*gain.ModInputs(),
-			dsp.NewModInput(gainAdsr, preset.Params[VoicesGain], nil),
+			dsp.NewModInput(modulators[ModSrcAdsr0], preset.Params[VoicesGain], nil),
 		)
 
 		vca := dsp.NewVca(lpfSkip, gain)
 
 		// Voice
-		voice := dsp.NewVoice(vca, freq, gainAdsr, cutoffLfo, cutoffAdsr, pitchLfo, pitchAdsr)
+		voice := dsp.NewVoice(vca, freq,
+			modulators[ModSrcAdsr0], // First one drives the voice
+			modulators[ModSrcAdsr1],
+			modulators[ModSrcAdsr2],
+			modulators[ModSrcLfo0],
+			modulators[ModSrcLfo1],
+			modulators[ModSrcLfo2],
+		)
 
 		return voice
 	}
@@ -177,12 +184,13 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	delaySkip := NewNodeSkipper(delay, poly, preset.Params[FBOnOff])
 
 	return &Polysynth{
-		Node:       delaySkip,
-		voice:      poly,
-		pitch:      pitchBend,
-		parameters: preset.Params,
-		modulators: modulators,
-		modSlots:   modSlots,
+		Node:            delaySkip,
+		voice:           poly,
+		pitch:           pitchBend,
+		parameters:      preset.Params,
+		modSlots:        modSlots,
+		voiceModulators: voiceModulators,
+		voiceParams:     voiceParams,
 	}
 }
 
@@ -240,20 +248,35 @@ func (p *Polysynth) UpdateModDestination(s int, dst uint8) {
 	}
 
 	if slot.Destination != ParamNone {
-		mods := *p.parameters[slot.Destination].ModInputs()
-		for i, mi := range mods {
-			if mi.Src() == p.modulators[slot.Source] {
-				mods = append(mods[:i], mods[i+1:]...)
-				*p.parameters[slot.Destination].ModInputs() = mods
-				break
+		for v, _ := range p.voiceModulators {
+			voiceDest := p.voiceParams[v][slot.Destination]
+			if voiceDest == nil {
+				globalDest := p.parameters[slot.Destination]
+				if globalDest == nil {
+					break // Not available globally
+				}
+				// TODO HANDLE GLOBAL MOD
+				break // Not available per voice
 			}
+			voiceDest.RemoveModInputBySource(p.voiceModulators[v][slot.Source])
 		}
 	}
 
 	if dst != ParamNone {
-		*p.parameters[dst].ModInputs() = append(*p.parameters[dst].ModInputs(),
-			dsp.NewModInput(p.modulators[slot.Source], dsp.NewParam(slot.Amount), nil),
-		)
+		for v, _ := range p.voiceModulators {
+			voiceDest := p.voiceParams[v][dst]
+			if voiceDest == nil {
+				globalDest := p.parameters[dst]
+				if globalDest == nil {
+					break // Not available globally
+				}
+				// TODO HANDLE GLOBAL MOD
+				break // Not available per voice
+			}
+			voiceDest.AddModInput(
+				dsp.NewModInput(p.voiceModulators[v][slot.Source], dsp.NewParam(slot.Amount), nil),
+			)
+		}
 	}
 
 	slot.Destination = dst
@@ -264,11 +287,22 @@ func (p *Polysynth) UpdateModAmount(s int, amt float32) {
 	slot.Amount = amt
 
 	if slot.Destination != ParamNone {
-		mods := *p.parameters[slot.Destination].ModInputs()
-		for _, mi := range mods {
-			if mi.Src() == p.modulators[slot.Source] {
-				mi.Amount().SetBase(amt)
-				break
+		for v, _ := range p.voiceModulators {
+			voiceDest := p.voiceParams[v][slot.Destination]
+			if voiceDest == nil {
+				globalDest := p.parameters[slot.Destination]
+				if globalDest == nil {
+					break // Not available globally
+				}
+				// TODO HANDLE GLOBAL MOD
+				break // Not available per voice
+			}
+			mods := *voiceDest.ModInputs()
+			for _, mi := range mods {
+				if mi.Src() == p.voiceModulators[v][slot.Source] {
+					mi.Amount().SetBase(amt)
+					break
+				}
 			}
 		}
 	}
@@ -305,4 +339,17 @@ func (p *Polysynth) HydratePreset(preset *Preset) *Preset {
 
 func (p *Polysynth) AllNotesOff() {
 	p.voice.AllNotesOff()
+}
+
+func createLocalParametersMap(src map[uint8]dsp.Param, keys ...uint8) map[uint8]dsp.Param {
+	local := make(map[uint8]dsp.Param)
+
+	for _, k := range keys {
+		local[k] = dsp.NewParam(0)
+		*local[k].ModInputs() = append(*local[k].ModInputs(),
+			dsp.NewModInput(src[k], dsp.NewConstParam(1), nil),
+		)
+	}
+
+	return local
 }

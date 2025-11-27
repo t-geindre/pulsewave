@@ -141,6 +141,7 @@ func (p *Preset) setDefaults() {
 	p.Params[VoicesActive] = dsp.NewParam(8)
 	p.Params[VoicesPitchGlide] = dsp.NewParam(0.000)
 	p.Params[VoicesGain] = dsp.NewParam(1.0)
+	p.Params[VoicesPitch] = dsp.NewParam(0)
 
 	// Noise oscillator
 	p.Params[NoiseGain] = dsp.NewParam(0)

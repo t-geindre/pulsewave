@@ -27,25 +27,3 @@ func (s *NodeSkipper) Process(block *dsp.Block) {
 func (s *NodeSkipper) Reset(soft bool) {
 	s.normal.Reset(soft)
 }
-
-type ParamSkipper struct {
-	dsp.Param
-	toggle dsp.Param
-	def    *dsp.ConstParam
-}
-
-func NewParamSkipper(param dsp.Param, def *dsp.ConstParam, toggle dsp.Param) *ParamSkipper {
-	return &ParamSkipper{
-		Param:  param,
-		def:    def,
-		toggle: toggle,
-	}
-}
-
-func (p *ParamSkipper) Resolve(cycle uint64) []float32 {
-	if p.toggle.Resolve(cycle)[0] < 0.5 {
-		return p.def.Resolve(cycle)
-	}
-
-	return p.Param.Resolve(cycle)
-}

@@ -84,6 +84,7 @@ func NewTree(presets []string) Node {
 			NewSliderNode("Active voices", preset.UpdateParameterKind, preset.VoicesActive, 1, 16, 1, formatVoice),
 			NewSliderNode("Pitch glide", preset.UpdateParameterKind, preset.VoicesPitchGlide, 0, 1, .001, formatMillisecond),
 			NewSliderNode("Gain", preset.UpdateParameterKind, preset.VoicesGain, 0, 1, .01, nil),
+			NewSliderNode("Pitch", preset.UpdateParameterKind, preset.VoicesPitch, -48, 48, .01, formatSemiTon),
 		),
 		NewNode("Visualizer",
 			NewFeatureNode("Spectrum", 0), // todo implement spectrum analyzer

@@ -5,6 +5,8 @@ type Param interface {
 	GetBase() float32
 	Resolve(cycle uint64) []float32
 	ModInputs() *[]ParamModInput
+	RemoveModInputBySource(ParamModulator) bool // returns true if something was removed
+	AddModInput(ParamModInput)
 }
 
 type ParamSimple struct {
@@ -53,6 +55,25 @@ func (s *ParamSimple) Resolve(cycle uint64) []float32 {
 	return s.buf[:]
 }
 
+func (s *ParamSimple) RemoveModInputBySource(src ParamModulator) bool {
+	removed := false
+	newInputs := s.inputs[:0]
+	for _, mi := range s.inputs {
+		if mi.Src() != src {
+			newInputs = append(newInputs, mi)
+		} else {
+			removed = true
+		}
+	}
+	s.inputs = newInputs
+
+	return removed
+}
+
+func (s *ParamSimple) AddModInput(mi ParamModInput) {
+	s.inputs = append(s.inputs, mi)
+}
+
 type ConstParam struct {
 	buff [BlockSize]float32
 }
@@ -69,3 +90,9 @@ func (c *ConstParam) Resolve(cycle uint64) []float32 { return c.buff[:] }
 func (c *ConstParam) SetBase(float32)                { panic("not implemented") } // const never changes
 func (c *ConstParam) GetBase() float32               { panic("not implemented") } // const is not retrievable
 func (c *ConstParam) ModInputs() *[]ParamModInput    { panic("not implemented") } // const never changes
+func (c *ConstParam) RemoveModInputBySource(ParamModulator) bool {
+	panic("not implemented")
+}
+func (c *ConstParam) AddModInput(ParamModInput) {
+	panic("not implemented")
+}
