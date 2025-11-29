@@ -32,7 +32,9 @@ func NewSliderNode(label string, kind msg.Kind, key uint8, min, max, step float3
 		ValueNode: NewValueNode(label, kind, key),
 	}
 
-	s.AttachPreview(s.Display)
+	s.AttachPreview(func() (string, string) {
+		return s.Display(), ""
+	})
 
 	return s
 }

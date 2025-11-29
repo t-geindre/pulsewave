@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"fmt"
 	"synth/preset"
 )
 
@@ -69,7 +70,7 @@ func NewModulationMatrixNode(label string) Node {
 	matrix := NewNode(label)
 
 	for i := uint8(0); i < preset.ModSlots; i++ {
-		slotNode := NewNode("NONE",
+		slotNode := NewNode(fmt.Sprintf("Mod Slot %d", i+1),
 			NewSelectorNode("Source", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamSrc,
 				//NewSelectorOption("Velocity", "", preset.ModSrcVelocity), // TODO
 				NewSelectorOption("LFO 1", "", preset.ModSrcLfo0),
@@ -108,17 +109,15 @@ func NewModulationMatrixNode(label string) Node {
 			),
 		)
 
-		slotNode.AttachPreview(func() string {
+		slotNode.AttachPreview(func() (string, string) {
 			src := slotNode.QueryAll("Source")[0].(SelectorNode)
 			dst := slotNode.QueryAll("Destination")[0].(SelectorNode)
 
 			if dst.Val() != preset.ParamNone {
-				slotNode.SetLabel(src.CurrentOption().Label()) // trick for left/right preview display
-				return dst.CurrentOption().Label()
+				return dst.CurrentOption().Label(), src.CurrentOption().Label()
 			}
 
-			slotNode.SetLabel("NONE")
-			return ""
+			return "", "EMPTY"
 		})
 
 		matrix.Append(slotNode)

@@ -26,8 +26,8 @@ func NewSelectorNode(label string, kind msg.Kind, key uint8, options ...*Selecto
 		ValueNode: NewValueNode(label, kind, key),
 	}
 
-	s.AttachPreview(func() string {
-		return s.CurrentOption().Label()
+	s.AttachPreview(func() (string, string) {
+		return s.CurrentOption().Label(), ""
 	})
 
 	return s

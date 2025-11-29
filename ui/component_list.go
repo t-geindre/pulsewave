@@ -259,24 +259,29 @@ func (l *List) finishScroll() {
 func (l *List) drawEntry(screen *ebiten.Image, idx int, y float64) {
 	entry := l.node.Children()[idx]
 
-	// Label
+	// Define label and preview
 	label := entry.Label()
+	preview, ovrLabel := entry.Preview()
+
+	if ovrLabel != "" {
+		label = ovrLabel
+	}
+
+	// Draw label
 	_, th := text.Measure(label, l.faceEntry, 0)
 	textCenterY := (ListEntryHeight - th) / 2
 
-	entry.Label()
 	opts := &text.DrawOptions{}
 	opts.GeoM.Translate(ListHorPadding, y+textCenterY)
-	text.Draw(screen, entry.Label(), l.faceEntry, opts)
+	text.Draw(screen, label, l.faceEntry, opts)
 
-	// Arrow
+	// Draw arrow
 	arrBds := l.arrowEntry.Bounds()
 	arrOpts := &ebiten.DrawImageOptions{}
 	arrOpts.GeoM.Translate(ListEntryWidth-float64(arrBds.Dx())+ListHorPadding, y+(ListEntryHeight-float64(arrBds.Dy()))/2)
 	screen.DrawImage(l.arrowEntry, arrOpts)
 
-	// Preview
-	preview := entry.Preview()
+	// Draw preview if any
 	if preview != "" {
 		prewOpts := &text.DrawOptions{}
 		pw, _ := text.Measure(preview, l.faceEntry, 0)

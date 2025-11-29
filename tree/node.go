@@ -3,7 +3,7 @@ package tree
 import "synth/msg"
 
 type AttachFunc func(msg.Kind, uint8, float32)
-type PreviewFunc func() string
+type PreviewFunc func() (string, string) // Preview, override label
 
 type Node interface {
 	Label() string
@@ -16,7 +16,7 @@ type Node interface {
 	Remove(Node)
 	AttachMessenger(*msg.Messenger)
 	AttachPreview(PreviewFunc)
-	Preview() string
+	Preview() (string, string) // Preview, override label
 	// QueryAll returns all child nodes with the given label in the subtree
 	QueryAll(names ...string) []Node
 }
@@ -104,9 +104,9 @@ func (n *node) AttachPreview(p PreviewFunc) {
 	n.preview = p
 }
 
-func (n *node) Preview() string {
+func (n *node) Preview() (string, string) {
 	if n.preview != nil {
 		return n.preview()
 	}
-	return ""
+	return "", ""
 }

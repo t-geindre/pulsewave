@@ -84,9 +84,8 @@ func NewTree(presets []string) Node {
 		),
 	)
 
-	AttachOscPreviews(tree, "Osc 01", "Osc 02", "Osc 03", "Noise", "Sub")
+	AttachOscPreviews(tree, "Osc 01", "Osc 02", "Osc 03", "Noise", "Sub", "LFO 01", "LFO 02", "LFO 03")
 	AttachPreviewToParent(tree, "Status")
-	AttachNameIfSubNodeVal(tree, "Status", 1, " + ", "OFF", "Cutoff", "Pitch")
 
 	return tree
 }
