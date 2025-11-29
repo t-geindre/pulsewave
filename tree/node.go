@@ -13,12 +13,16 @@ type Node interface {
 	SetParent(Node)
 	Append(Node)
 	Prepend(Node)
-	Remove(Node)
 	AttachMessenger(*msg.Messenger)
 	AttachPreview(PreviewFunc)
 	Preview() (string, string) // Preview, override label
 	// QueryAll returns all child nodes with the given label in the subtree
 	QueryAll(names ...string) []Node
+
+	SetContext(*Context)
+	Context() *Context
+
+	Root() Node
 }
 
 type node struct {
@@ -26,12 +30,14 @@ type node struct {
 	children []Node
 	parent   Node
 	preview  PreviewFunc
+	context  *Context
 }
 
 func NewNode(label string, children ...Node) Node {
 	n := &node{
 		label:    label,
 		children: []Node{},
+		context:  NewContext(),
 	}
 	for _, c := range children {
 		n.Append(c)
@@ -57,6 +63,7 @@ func (n *node) Parent() Node {
 
 func (n *node) SetParent(p Node) {
 	n.parent = p
+	n.SetContext(p.Context())
 }
 
 func (n *node) Append(child Node) {
@@ -67,16 +74,6 @@ func (n *node) Append(child Node) {
 func (n *node) Prepend(child Node) {
 	child.SetParent(n)
 	n.children = append([]Node{child}, n.children...)
-}
-
-func (n *node) Remove(child Node) {
-	for i, c := range n.children {
-		if c == child {
-			n.children = append(n.children[:i], n.children[i+1:]...)
-			child.SetParent(nil)
-			return
-		}
-	}
 }
 
 func (n *node) AttachMessenger(m *msg.Messenger) {
@@ -109,4 +106,23 @@ func (n *node) Preview() (string, string) {
 		return n.preview()
 	}
 	return "", ""
+}
+
+func (n *node) SetContext(c *Context) {
+	n.context = c
+	for _, child := range n.children {
+		child.SetContext(c)
+	}
+}
+
+func (n *node) Context() *Context {
+	return n.context
+}
+
+func (n *node) Root() Node {
+	root := Node(n)
+	for root.Parent() != nil {
+		root = root.Parent()
+	}
+	return root
 }

@@ -88,6 +88,15 @@ func (u *Ui) Update() error {
 	// Forward
 	if hDelta > 0 {
 		tr := u.components[u.current].CurrentTarget()
+
+		// Target node, follow redirect if any
+		if target, ok := tr.(tree.RedirectionNode); ok {
+			redirect := target.GetRedirection()
+			if redirect != nil {
+				tr = redirect
+			}
+		}
+
 		if tr != nil {
 			u.next = tr
 			u.components[u.current].Blur()
@@ -103,9 +112,21 @@ func (u *Ui) Update() error {
 	}
 
 	// Backward
-	if hDelta < 0 && u.current.Parent() != nil {
-		u.next = u.current.Parent()
-		u.transDir = -1
+	if hDelta < 0 {
+		// Leaving a subtree
+		leaving := u.current.Context().IsLeavingSubTree(u.current)
+		if leaving != nil {
+			u.next = leaving
+			u.transDir = -1
+			return nil
+		}
+
+		// Normal back to parent
+		p := u.current.Parent()
+		if p != nil {
+			u.next = p
+			u.transDir = -1
+		}
 		return nil
 	}
 

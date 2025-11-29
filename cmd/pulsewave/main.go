@@ -25,7 +25,7 @@ func main() {
 	helpF := flag.Bool("help", false, "show help")
 	debugF := flag.Bool("debug", false, "enable debug mode")
 	fullsF := flag.Bool("full-screen", false, "enable full screen mode")
-	buffF := flag.Int("buffer", 25, "disable gui")
+	buffF := flag.Int("buffer", 25, "buffer size in milliseconds")
 	flag.Parse()
 
 	// Help

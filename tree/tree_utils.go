@@ -80,6 +80,7 @@ func NewModulationMatrixNode(label string) Node {
 				NewSelectorOption("ADSR 2", "", preset.ModSrcAdsr1),
 				NewSelectorOption("ADSR 3", "", preset.ModSrcAdsr2),
 			),
+			NewRedirectionNode("Destination new"),
 			NewSelectorNode("Destination", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamDst, // TODO remove already assigned destinations with the same source
 				NewSelectorOption("NONE", "", preset.ParamNone),
 				NewSelectorOption("Osc 1 > Gain", "", preset.Osc0Gain),
