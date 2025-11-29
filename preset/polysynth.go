@@ -8,15 +8,19 @@ import (
 
 type Polysynth struct {
 	dsp.Node
-	voice      *dsp.PolyVoice
-	pitch      dsp.Param
+	voice     *dsp.PolyVoice
+	pitch     dsp.Param
+	messenger *msg.Messenger
+	modSlots  map[int]*ModSlot
+
+	modulators map[uint8]dsp.ParamModulator
 	parameters map[uint8]dsp.Param
-	messenger  *msg.Messenger
-	modSlots   map[int]*ModSlot
 
 	voiceModulators []map[uint8]dsp.ParamModulator // per voice
 	voiceParams     []map[uint8]dsp.Param          // per voice
 }
+
+const MaxVoices = 16
 
 func NewPolysynth(SampleRate float64) *Polysynth {
 	// Parameters map
@@ -28,17 +32,6 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	reg.Add(dsp.ShapeSquare)
 	reg.Add(dsp.ShapeSaw)
 	reg.Add(dsp.ShapeTriangle)
-
-	// Modulation slots
-	modSlots := make(map[int]*ModSlot)
-	for i, slot := range preset.ModSlots {
-		modSlots[i] = &ModSlot{
-			Source:      slot.Source,
-			Destination: slot.Destination,
-			Amount:      slot.Amount,
-			Shape:       slot.Shape,
-		}
-	}
 
 	// Global pitch bend
 	pitchBend := dsp.NewSmoothedParam(SampleRate, 0, dsp.NewConstParam(.01))
@@ -177,18 +170,42 @@ func NewPolysynth(SampleRate float64) *Polysynth {
 	}
 
 	// Polyphonic voice
-	poly := dsp.NewPolyVoice(16, preset.Params[VoicesActive], preset.Params[VoicesStealMode], voiceFact)
+	poly := dsp.NewPolyVoice(MaxVoices, preset.Params[VoicesActive], preset.Params[VoicesStealMode], voiceFact)
 
 	// Delay with skipper
 	delay := dsp.NewFeedbackDelay(SampleRate, 2.0, poly, preset.Params[FBDelayParam], preset.Params[FBFeedBack], preset.Params[FBMix], preset.Params[FBTone])
 	delaySkip := NewNodeSkipper(delay, poly, preset.Params[FBOnOff])
 
+	// Global modulators
+	modulators := make(map[uint8]dsp.ParamModulator)
+	modulators[ModSrcLfo0] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo0Shape], preset.Params[Lfo0rate], preset.Params[Lfo0Phase], nil)
+	modulators[ModSrcLfo1] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo1Shape], preset.Params[Lfo1rate], preset.Params[Lfo1Phase], nil)
+	modulators[ModSrcLfo2] = dsp.NewRegOscillator(SampleRate, reg, preset.Params[Lfo2Shape], preset.Params[Lfo2rate], preset.Params[Lfo2Phase], nil)
+
+	// Modulation slots
+	modSlots := make(map[int]*ModSlot)
+	for i, slot := range preset.ModSlots {
+		modSlots[i] = &ModSlot{
+			Source:         slot.Source,
+			Destination:    slot.Destination,
+			Amount:         slot.Amount,
+			Shape:          slot.Shape,
+			GlobalModInput: dsp.NewModInput(modulators[slot.Source], dsp.NewParam(slot.Amount), nil),
+		}
+		for j := 0; j < MaxVoices; j++ {
+			modSlots[i].PerVoiceModInput = append(modSlots[i].PerVoiceModInput,
+				dsp.NewModInput(voiceModulators[j][slot.Source], dsp.NewParam(slot.Amount), nil),
+			)
+		}
+	}
+
 	return &Polysynth{
 		Node:            delaySkip,
 		voice:           poly,
 		pitch:           pitchBend,
-		parameters:      preset.Params,
 		modSlots:        modSlots,
+		modulators:      modulators,
+		parameters:      preset.Params,
 		voiceModulators: voiceModulators,
 		voiceParams:     voiceParams,
 	}
@@ -233,12 +250,12 @@ func (p *Polysynth) UpdateModSource(s int, src uint8) {
 	if slot.Source == src {
 		return
 	}
-
-	dest := slot.Destination
-	p.UpdateModDestination(s, ParamNone) // detach
-
 	slot.Source = src
-	p.UpdateModDestination(s, dest) // reattach
+
+	slot.GlobalModInput.SetSrc(p.modulators[slot.Source])
+	for v, mi := range slot.PerVoiceModInput {
+		mi.SetSrc(p.voiceModulators[v][slot.Source])
+	}
 }
 
 func (p *Polysynth) UpdateModDestination(s int, dst uint8) {
@@ -247,35 +264,39 @@ func (p *Polysynth) UpdateModDestination(s int, dst uint8) {
 		return
 	}
 
+	// Detach previous destination
 	if slot.Destination != ParamNone {
-		for v, _ := range p.voiceModulators {
-			voiceDest := p.voiceParams[v][slot.Destination]
-			if voiceDest == nil {
-				globalDest := p.parameters[slot.Destination]
-				if globalDest == nil {
-					break // Not available globally
-				}
-				// TODO HANDLE GLOBAL MOD
-				break // Not available per voice
+		// Per voice
+		for v, mi := range slot.PerVoiceModInput {
+			param := p.voiceParams[v][slot.Destination]
+			if param != nil {
+				param.RemoveModInput(mi)
 			}
-			voiceDest.RemoveModInputBySource(p.voiceModulators[v][slot.Source])
+		}
+		// Global
+		param := p.parameters[slot.Destination]
+		if param != nil {
+			param.RemoveModInput(slot.GlobalModInput)
 		}
 	}
 
+	// Attach new destination
 	if dst != ParamNone {
-		for v, _ := range p.voiceModulators {
-			voiceDest := p.voiceParams[v][dst]
-			if voiceDest == nil {
-				globalDest := p.parameters[dst]
-				if globalDest == nil {
-					break // Not available globally
-				}
-				// TODO HANDLE GLOBAL MOD
-				break // Not available per voice
+		// Per voice
+		found := false
+		for v, mi := range slot.PerVoiceModInput {
+			param := p.voiceParams[v][dst]
+			if param != nil {
+				found = true
+				param.AddModInput(mi)
 			}
-			voiceDest.AddModInput(
-				dsp.NewModInput(p.voiceModulators[v][slot.Source], dsp.NewParam(slot.Amount), nil),
-			)
+		}
+		// Global only if not found per voice
+		if !found {
+			param := p.parameters[dst]
+			if param != nil {
+				param.AddModInput(slot.GlobalModInput)
+			}
 		}
 	}
 
@@ -283,28 +304,10 @@ func (p *Polysynth) UpdateModDestination(s int, dst uint8) {
 }
 
 func (p *Polysynth) UpdateModAmount(s int, amt float32) {
-	slot := p.modSlots[s]
-	slot.Amount = amt
-
-	if slot.Destination != ParamNone {
-		for v, _ := range p.voiceModulators {
-			voiceDest := p.voiceParams[v][slot.Destination]
-			if voiceDest == nil {
-				globalDest := p.parameters[slot.Destination]
-				if globalDest == nil {
-					break // Not available globally
-				}
-				// TODO HANDLE GLOBAL MOD
-				break // Not available per voice
-			}
-			mods := *voiceDest.ModInputs()
-			for _, mi := range mods {
-				if mi.Src() == p.voiceModulators[v][slot.Source] {
-					mi.Amount().SetBase(amt)
-					break
-				}
-			}
-		}
+	p.modSlots[s].Amount = amt
+	p.modSlots[s].GlobalModInput.Amount().SetBase(amt)
+	for _, mi := range p.modSlots[s].PerVoiceModInput {
+		mi.Amount().SetBase(amt)
 	}
 }
 

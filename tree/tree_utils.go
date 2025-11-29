@@ -38,13 +38,6 @@ func NewAdsrNode(label string, att, dec, sus, rel uint8, children ...Node) Node 
 	return n
 }
 
-func NewAdsrNodeWithToggle(label string, toggle, att, dec, sus, rel uint8, children ...Node) Node {
-	n := NewAdsrNode(label, att, dec, sus, rel, children...)
-	n.Prepend(NewOnOffNode(toggle))
-
-	return n
-}
-
 func NewOnOffNode(key uint8) Node {
 	return NewSelectorNode("Status", preset.UpdateParameterKind, key,
 		NewSelectorOption("OFF", "", 0),
@@ -62,16 +55,6 @@ func NewPresetsNodes(presets []string) []Node {
 	}
 
 	return nodes
-}
-
-func NewOldLfoNode(label string, onOff, shape, rate, phase, amount uint8, min, max, step float32, f FormatFunc) Node {
-	return NewNode(label,
-		NewOnOffNode(onOff),
-		NewSliderNode("Amount", preset.UpdateParameterKind, amount, min, max, step, f),
-		NewWaveFormNode(shape),
-		NewSliderNode("Rate", preset.UpdateParameterKind, rate, 0.01, 20, .01, formatLowHertz),
-		NewSliderNode("Phase", preset.UpdateParameterKind, phase, 0, 1, .01, formatCycle),
-	)
 }
 
 func NewLfoNode(label string, shape, rate, phase uint8) Node {
@@ -99,10 +82,23 @@ func NewModulationMatrixNode(label string) Node {
 			NewSelectorNode("Destination", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamDst, // TODO remove already assigned destinations with the same source
 				NewSelectorOption("NONE", "", preset.ParamNone),
 				NewSelectorOption("Osc 1 > Gain", "", preset.Osc0Gain),
+				NewSelectorOption("Osc 1 > Phase", "", preset.Osc0Phase),
+				NewSelectorOption("Osc 1 > Detune", "", preset.Osc0Detune),
+				NewSelectorOption("Osc 1 > Pw", "", preset.Osc0Pw),
+				NewSelectorOption("Osc 1 > Gain", "", preset.Osc0Gain),
+				NewSelectorOption("Osc 2 > Gain", "", preset.Osc1Gain),
+				NewSelectorOption("Osc 2 > Phase", "", preset.Osc1Phase),
+				NewSelectorOption("Osc 2 > Detune", "", preset.Osc1Detune),
+				NewSelectorOption("Osc 2 > Pw", "", preset.Osc1Pw),
 				NewSelectorOption("Osc 2 > Gain", "", preset.Osc1Gain),
 				NewSelectorOption("Osc 3 > Gain", "", preset.Osc2Gain),
-				NewSelectorOption("Osc 1 > Pulse width", "", preset.Osc0Pw),
-				NewSelectorOption("Pitch", "", preset.VoicesPitch),
+				NewSelectorOption("Osc 3 > Phase", "", preset.Osc2Phase),
+				NewSelectorOption("Osc 3 > Detune", "", preset.Osc2Detune),
+				NewSelectorOption("Osc 3 > Pw", "", preset.Osc2Pw),
+				NewSelectorOption("Osc 3 > Gain", "", preset.Osc2Gain),
+				NewSelectorOption("Voices > Pitch", "", preset.VoicesPitch),
+				NewSelectorOption("LPF > Cutoff", "", preset.LPFCutoff),
+				NewSelectorOption("LPF > Resonance", "", preset.LPFResonance),
 			),
 			NewSliderNode("Amount", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamAmt, -1000, 1000, .01, formatSemiTon),
 			NewSelectorNode("Shape", preset.ModulationUpdateKind, preset.ModKeysSpacing*i+preset.ModParamShp,

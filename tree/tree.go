@@ -28,7 +28,7 @@ func NewTree(presets []string) Node {
 				NewSliderNode("Transpose", preset.UpdateParameterKind, preset.SubOscTranspose, -48, 48, 12, formatOctave),
 			),
 		),
-		NewNode("Modulation V2",
+		NewNode("Modulation",
 			NewModulationMatrixNode("Matrix"),
 			// NewNode("Velocity"), // todo implement velocity modulation source
 			NewLfoNode("LFO 01", preset.Lfo0Shape, preset.Lfo0rate, preset.Lfo0Phase),
@@ -37,21 +37,6 @@ func NewTree(presets []string) Node {
 			NewAdsrNode("ADSR 01", preset.Adsr0Attack, preset.Adsr0Decay, preset.Adsr0Sustain, preset.Adsr0Release),
 			NewAdsrNode("ADSR 02", preset.Adsr1Attack, preset.Adsr1Decay, preset.Adsr1Sustain, preset.Adsr1Release),
 			NewAdsrNode("ADSR 03", preset.Adsr2Attack, preset.Adsr2Decay, preset.Adsr2Sustain, preset.Adsr2Release),
-		),
-		NewNode("Modulation",
-			NewAdsrNode("Amplitude", preset.AmpEnvAttack, preset.AmpEnvDecay, preset.AmpEnvSustain, preset.AmpEnvRelease),
-			NewNode("Cutoff",
-				NewOldLfoNode("LFO", preset.LpfLfoOnOff, preset.LpfLfoShape, preset.LpfLfoFreq, preset.LpfLfoPhase, preset.LpfLfoAmount, 1, 20000, 1, formatHertz),
-				NewAdsrNodeWithToggle("ADSR", preset.LpfAdsrOnOff, preset.LpfAdsrAttack, preset.LpfAdsrDecay, preset.LpfAdsrSustain, preset.LpfAdsrRelease,
-					NewSliderNode("Amount", preset.UpdateParameterKind, preset.LpfAdsrAmount, -20000, 20000, 1, formatHertz),
-				),
-			),
-			NewNode("Pitch",
-				NewOldLfoNode("LFO", preset.PitchLfoOnOff, preset.PitchLfoShape, preset.PitchLfoFreq, preset.PitchLfoPhase, preset.PitchLfoAmount, 1, 1000, .01, formatSemiTon),
-				NewAdsrNodeWithToggle("ADSR", preset.PitchAdsrOnOff, preset.PitchAdsrAttack, preset.PitchAdsrDecay, preset.PitchAdsrSustain, preset.PitchAdsrRelease,
-					NewSliderNode("Amount", preset.UpdateParameterKind, preset.PitchAdsrAmount, -1000, 1000, .01, formatSemiTon),
-				),
-			),
 		),
 		NewNode("Effects",
 			NewNode("Feedback delay",
@@ -81,7 +66,7 @@ func NewTree(presets []string) Node {
 				NewSelectorOption("Lowest pitch", "", dsp.PolyStealLowest),
 				NewSelectorOption("Highest pitch", "", dsp.PolyStealHighest),
 			),
-			NewSliderNode("Active voices", preset.UpdateParameterKind, preset.VoicesActive, 1, 16, 1, formatVoice),
+			NewSliderNode("Active voices", preset.UpdateParameterKind, preset.VoicesActive, 1, preset.MaxVoices, 1, formatVoice),
 			NewSliderNode("Pitch glide", preset.UpdateParameterKind, preset.VoicesPitchGlide, 0, 1, .001, formatMillisecond),
 			NewSliderNode("Gain", preset.UpdateParameterKind, preset.VoicesGain, 0, 1, .01, nil),
 			NewSliderNode("Pitch", preset.UpdateParameterKind, preset.VoicesPitch, -48, 48, .01, formatSemiTon),
@@ -102,11 +87,6 @@ func NewTree(presets []string) Node {
 	AttachOscPreviews(tree, "Osc 01", "Osc 02", "Osc 03", "Noise", "Sub")
 	AttachPreviewToParent(tree, "Status")
 	AttachNameIfSubNodeVal(tree, "Status", 1, " + ", "OFF", "Cutoff", "Pitch")
-
-	// For now, amp is modulated only by and ADSR
-	tree.QueryAll("Amplitude")[0].AttachPreview(func() string {
-		return "ADSR"
-	})
 
 	return tree
 }

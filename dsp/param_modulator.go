@@ -6,8 +6,10 @@ type ParamModulator interface {
 
 type ParamModInput interface {
 	Src() ParamModulator
+	SetSrc(ParamModulator)
 	Amount() Param
 	Map() func(x float32) float32
+	SetMap(func(x float32) float32)
 }
 
 type ParamModulatorInput struct {
@@ -17,20 +19,26 @@ type ParamModulatorInput struct {
 }
 
 func NewModInput(src ParamModulator, amount Param, mapping func(x float32) float32) ParamModInput {
-	return ParamModulatorInput{
+	return &ParamModulatorInput{
 		src:    src,
 		amount: amount,
 		mapf:   mapping,
 	}
 }
 
-func (p ParamModulatorInput) Src() ParamModulator {
+func (p *ParamModulatorInput) Src() ParamModulator {
 	return p.src
 }
+func (p *ParamModulatorInput) SetSrc(src ParamModulator) {
+	p.src = src
+}
 
-func (p ParamModulatorInput) Amount() Param {
+func (p *ParamModulatorInput) Amount() Param {
 	return p.amount
 }
-func (p ParamModulatorInput) Map() func(x float32) float32 {
+func (p *ParamModulatorInput) Map() func(x float32) float32 {
 	return p.mapf
+}
+func (p *ParamModulatorInput) SetMap(f func(x float32) float32) {
+	p.mapf = f
 }

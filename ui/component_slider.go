@@ -92,3 +92,6 @@ func (s *Slider) Scroll(delta int) {
 func (s *Slider) CurrentTarget() tree.Node {
 	return nil
 }
+
+func (s *Slider) Focus() {}
+func (s *Slider) Blur()  {}

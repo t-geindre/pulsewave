@@ -38,19 +38,13 @@ func NewSmoothedParam(sr float64, base float32, tc Param) *SmoothedParam {
 	return s
 }
 
-func (s *SmoothedParam) RemoveModInputBySource(src ParamModulator) bool {
-	removed := false
-	newInputs := s.inputs[:0]
-	for _, mi := range s.inputs {
-		if mi.Src() != src {
-			newInputs = append(newInputs, mi)
-		} else {
-			removed = true
+func (s *SmoothedParam) RemoveModInput(m ParamModInput) {
+	for i, mi := range s.inputs {
+		if mi == m {
+			s.inputs = append(s.inputs[:i], s.inputs[i+1:]...)
+			return
 		}
 	}
-	s.inputs = newInputs
-
-	return removed
 }
 
 func (s *SmoothedParam) AddModInput(mi ParamModInput) {

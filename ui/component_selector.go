@@ -221,3 +221,15 @@ func (s *Selector) CurrentTarget() tree.Node {
 
 	return nil
 }
+
+func (s *Selector) Focus() {
+	s.currentIndex = 0
+	v := s.node.Val()
+	for i, opt := range s.node.Options() {
+		if opt.Value() == v {
+			s.currentIndex = i
+			break
+		}
+	}
+}
+func (s *Selector) Blur() {}

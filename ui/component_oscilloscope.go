@@ -209,3 +209,6 @@ func (o *Oscilloscope) Scroll(delta int) {
 func (o *Oscilloscope) CurrentTarget() tree.Node {
 	return nil
 }
+
+func (o *Oscilloscope) Focus() {}
+func (o *Oscilloscope) Blur()  {}

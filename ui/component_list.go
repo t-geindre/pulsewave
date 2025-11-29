@@ -284,3 +284,6 @@ func (l *List) drawEntry(screen *ebiten.Image, idx int, y float64) {
 		text.Draw(screen, preview, l.faceEntry, prewOpts)
 	}
 }
+
+func (l *List) Focus() {}
+func (l *List) Blur()  {}
