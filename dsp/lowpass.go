@@ -1,16 +1,13 @@
 package dsp
 
-import (
-	"math"
-)
+import "math"
 
 type LowPassSVF struct {
 	Src    Node
 	Cutoff Param // Hz
-	ResonQ Param // Q (1/sqrt(2) ≈ 0.707, clamp [0.3..20]
+	ResonQ Param // Q (≈ resonance)
 	sr     float64
 
-	// Canal states
 	ic1L, ic2L float64
 	ic1R, ic2R float64
 
@@ -26,7 +23,7 @@ func NewLowPassSVF(sr float64, src Node, cutoff Param, q Param) *LowPassSVF {
 	}
 }
 
-// Todo bug with high resonance and high cutoff (self-oscillation ?)
+// Process low-pass TPT SVF (Zavalishin) on tmp -> b.
 func (f *LowPassSVF) Process(b *Block) {
 	f.tmp.Cycle = b.Cycle
 	f.Src.Process(&f.tmp)
@@ -39,8 +36,6 @@ func (f *LowPassSVF) Process(b *Block) {
 	maxFc := 0.49 * nyq
 
 	for i := 0; i < BlockSize; i++ {
-		x := float64(f.tmp.L[i])
-
 		fc := float64(cb[i])
 		if fc < minFc {
 			fc = minFc
@@ -48,44 +43,51 @@ func (f *LowPassSVF) Process(b *Block) {
 		if fc > maxFc {
 			fc = maxFc
 		}
-		g := math.Tan(math.Pi * fc / f.sr)
 
 		Q := float64(qb[i])
-		if Q <= 0.3 {
+		if Q < 0.3 {
 			Q = 0.3
 		}
 		if Q > 20 {
 			Q = 20
 		}
+
+		g := math.Tan(math.Pi * fc / f.sr)
 		R := 1.0 / Q
+		h := 1.0 / (1.0 + R*g + g*g)
 
-		// ZDF SVF (Zavalishin)
-		h := 1.0 / (1.0 + g*(g+R))
-		hp := (x - R*f.ic1L - f.ic2L) * h
-		bp := g*hp + f.ic1L
-		lp := g*bp + f.ic2L
-		// update states
-		f.ic1L = g*hp + bp
-		f.ic2L = g*bp + lp
+		// Left channel
+		xL := float64(f.tmp.L[i])
 
-		b.L[i] = float32(lp)
+		v1L := (f.ic1L + g*(xL-f.ic2L)) * h
+		v2L := f.ic2L + g*v1L
 
-		xr := float64(f.tmp.R[i])
+		lpL := v2L
 
-		hp = (xr - R*f.ic1R - f.ic2R) * h
-		bp = g*hp + f.ic1R
-		lp = g*bp + f.ic2R
-		f.ic1R = g*hp + bp
-		f.ic2R = g*bp + lp
+		f.ic1L = 2*v1L - f.ic1L
+		f.ic2L = 2*v2L - f.ic2L
 
-		b.R[i] = float32(lp)
+		b.L[i] = float32(lpL)
+
+		// Right channel
+		xR := float64(f.tmp.R[i])
+
+		v1R := (f.ic1R + g*(xR-f.ic2R)) * h
+		v2R := f.ic2R + g*v1R
+
+		lpR := v2R
+
+		f.ic1R = 2*v1R - f.ic1R
+		f.ic2R = 2*v2R - f.ic2R
+
+		b.R[i] = float32(lpR)
 	}
 }
 
 func (f *LowPassSVF) Reset(soft bool) {
-	//f.ic1L = 0
-	//f.ic2L = 0
-	//f.ic1R = 0
-	//f.ic2R = 0
+	if !soft {
+		f.ic1L, f.ic2L = 0, 0
+		f.ic1R, f.ic2R = 0, 0
+	}
 	f.Src.Reset(soft)
 }
