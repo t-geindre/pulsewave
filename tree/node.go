@@ -8,13 +8,18 @@ type PreviewFunc func() (string, string) // Preview, override label
 type Node interface {
 	Label() string
 	SetLabel(string)
+
 	Children() []Node
-	Parent() Node
-	SetParent(Node)
 	Append(Node)
 	Prepend(Node)
+
+	Root() Node
+	Parent() Node
+	SetParent(Node)
+
 	AttachMessenger(*msg.Messenger)
 	AttachPreview(PreviewFunc)
+
 	Preview() (string, string) // Preview, override label
 	// QueryAll returns all child nodes with the given label in the subtree
 	QueryAll(names ...string) []Node
@@ -22,22 +27,27 @@ type Node interface {
 	SetContext(*Context)
 	Context() *Context
 
-	Root() Node
+	Focus()
+	Blur()
 }
 
 type node struct {
 	label    string
 	children []Node
 	parent   Node
-	preview  PreviewFunc
 	context  *Context
+
+	preview   PreviewFunc
+	prevCache [2]string
+	prevDirty bool
 }
 
 func NewNode(label string, children ...Node) Node {
 	n := &node{
-		label:    label,
-		children: []Node{},
-		context:  NewContext(),
+		label:     label,
+		children:  []Node{},
+		context:   NewContext(),
+		prevDirty: true,
 	}
 	for _, c := range children {
 		n.Append(c)
@@ -102,10 +112,10 @@ func (n *node) AttachPreview(p PreviewFunc) {
 }
 
 func (n *node) Preview() (string, string) {
-	if n.preview != nil {
-		return n.preview()
+	if n.prevDirty && n.preview != nil {
+		n.prevCache[0], n.prevCache[1] = n.preview()
 	}
-	return "", ""
+	return n.prevCache[0], n.prevCache[1]
 }
 
 func (n *node) SetContext(c *Context) {
@@ -125,4 +135,12 @@ func (n *node) Root() Node {
 		root = root.Parent()
 	}
 	return root
+}
+
+func (n *node) Focus() {
+	// No-op
+}
+
+func (n *node) Blur() {
+	n.prevDirty = true // Invalidate preview cache
 }

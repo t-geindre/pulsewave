@@ -99,8 +99,12 @@ func (u *Ui) Update() error {
 
 		if tr != nil {
 			u.next = tr
+			u.current.Blur()
 			u.components[u.current].Blur()
+
+			u.next.Focus()
 			u.components[u.next].Focus()
+
 			u.transDir = 1
 			if tr == u.current.Parent() {
 				// Component sending us back up the tree should slide left
